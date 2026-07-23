@@ -1,22 +1,67 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title><%= content_for(:title) || "Pos Mockup Backend" %></title>
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>
+      <%= content_for(:title) || "Business POS" %>
+    </title>
+
+    <meta name="viewport"
+          content="width=device-width,initial-scale=1">
+
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
-    <%= yield :head %>
+    <%= stylesheet_link_tag "application",
+                            "data-turbo-track": "reload" %>
 
-    <link rel="manifest" href="/manifest.json">
-    <link rel="icon" href="/icon.png" type="image/png">
-    <link rel="icon" href="/icon.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/icon.png">
-    <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
   </head>
 
   <body>
-    <%= yield %>
+    <header class="site-header">
+      <%= link_to root_path, class: "brand" do %>
+        <span class="brand-mark">P</span>
+        <span>Business POS</span>
+      <% end %>
+
+      <nav class="site-navigation">
+        <% if signed_in? %>
+          <% if current_organization.present? %>
+            <%= link_to "Dashboard", dashboard_path %>
+          <% end %>
+
+          <span class="nav-user">
+            <%= current_user.name %>
+          </span>
+
+          <%= button_to "Log out",
+                        logout_path,
+                        method: :delete,
+                        class: "button button-secondary" %>
+        <% else %>
+          <%= link_to "Log in", login_path %>
+
+          <%= link_to "Create account",
+                      sign_up_path,
+                      class: "button button-primary" %>
+        <% end %>
+      </nav>
+    </header>
+
+    <% if notice.present? %>
+      <div class="flash flash-notice">
+        <%= notice %>
+      </div>
+    <% end %>
+
+    <% if alert.present? %>
+      <div class="flash flash-alert">
+        <%= alert %>
+      </div>
+    <% end %>
+
+    <main>
+      <%= yield %>
+    </main>
   </body>
 </html>

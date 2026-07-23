@@ -1,2 +1,62 @@
-<h1>About Us</h1>
-<button>Click Me</button>
+<% content_for :title, "Business POS" %>
+
+<section class="hero">
+  <div class="hero-content">
+    <span class="eyebrow">Business management platform</span>
+
+    <h1>
+      Run sales, stock and business records from one place.
+    </h1>
+
+    <p>
+      A front-desk POS designed for Kenyan businesses,
+      with inventory, accounting and eTIMS support planned
+      in later phases.
+    </p>
+
+    <div class="hero-actions">
+      <% if signed_in? %>
+        <%= link_to "Open dashboard",
+                    dashboard_path,
+                    class: "button button-primary" %>
+      <% else %>
+        <%= link_to "Create organization",
+                    sign_up_path,
+                    class: "button button-primary" %>
+
+        <%= link_to "Log in",
+                    login_path,
+                    class: "button button-secondary" %>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="hero-preview">
+    <div class="preview-top">
+      <span>Organization overview</span>
+      <span class="status-badge">In development</span>
+    </div>
+
+    <div class="preview-grid">
+      <div>
+        <small>Sales</small>
+        <strong>Coming soon</strong>
+      </div>
+
+      <div>
+        <small>Inventory</small>
+        <strong>Coming soon</strong>
+      </div>
+
+      <div>
+        <small>Branches</small>
+        <strong>Ready</strong>
+      </div>
+
+      <div>
+        <small>Users</small>
+        <strong>Phase 1</strong>
+      </div>
+    </div>
+  </div>
+</section>

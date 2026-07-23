@@ -1,0 +1,67 @@
+<% content_for :title, "Create Account" %>
+
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-heading">
+      <span class="eyebrow">Get started</span>
+      <h1>Create your account</h1>
+
+      <p>
+        Create the owner account that will manage your
+        organization.
+      </p>
+    </div>
+
+    <%= render "shared/errors", object: @user %>
+
+    <%= form_with model: @user,
+                  url: sign_up_path,
+                  class: "app-form" do |form| %>
+
+      <div class="form-group">
+        <%= form.label :name, "Full name" %>
+
+        <%= form.text_field :name,
+                            required: true,
+                            autofocus: true,
+                            autocomplete: "name",
+                            placeholder: "e.g. Mark Trevor" %>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :email %>
+
+        <%= form.email_field :email,
+                             required: true,
+                             autocomplete: "email",
+                             placeholder: "you@example.com" %>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :password %>
+
+        <%= form.password_field :password,
+                                required: true,
+                                autocomplete: "new-password",
+                                placeholder: "At least 8 characters" %>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :password_confirmation,
+                       "Confirm password" %>
+
+        <%= form.password_field :password_confirmation,
+                                required: true,
+                                autocomplete: "new-password" %>
+      </div>
+
+      <%= form.submit "Create account",
+                      class: "button button-primary button-full" %>
+    <% end %>
+
+    <p class="auth-footer">
+      Already have an account?
+      <%= link_to "Log in", login_path %>
+    </p>
+  </div>
+</div>

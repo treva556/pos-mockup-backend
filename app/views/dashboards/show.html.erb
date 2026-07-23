@@ -1,0 +1,77 @@
+<% content_for :title, "#{@organization.name} Dashboard" %>
+
+<div class="dashboard-page">
+  <header class="dashboard-header">
+    <div>
+      <span class="eyebrow">Organization dashboard</span>
+      <h1><%= @organization.name %></h1>
+
+      <p>
+        Current branch:
+        <strong><%= @branch&.name || "Not selected" %></strong>
+      </p>
+    </div>
+
+    <div class="dashboard-user">
+      <strong><%= current_user.name %></strong>
+      <small><%= @membership.role.titleize %></small>
+    </div>
+  </header>
+
+  <section class="summary-grid">
+    <article class="summary-card">
+      <span>Branches</span>
+      <strong><%= @branches_count %></strong>
+      <small>Active business locations</small>
+    </article>
+
+    <article class="summary-card">
+      <span>Users</span>
+      <strong><%= @users_count %></strong>
+      <small>Active organization members</small>
+    </article>
+
+    <article class="summary-card">
+      <span>Your role</span>
+      <strong class="summary-word">
+        <%= @membership.role.titleize %>
+      </strong>
+    </article>
+
+    <article class="summary-card">
+      <span>System status</span>
+      <strong class="summary-word">Setup</strong>
+      <small>Phase 1 in progress</small>
+    </article>
+  </section>
+
+  <section class="dashboard-panel">
+    <h2>Setup progress</h2>
+
+    <div class="setup-list">
+      <div class="setup-item complete">
+        <span class="setup-check">✓</span>
+        <div>
+          <strong>Owner account created</strong>
+          <p><%= current_user.email %></p>
+        </div>
+      </div>
+
+      <div class="setup-item complete">
+        <span class="setup-check">✓</span>
+        <div>
+          <strong>Organization created</strong>
+          <p><%= @organization.name %></p>
+        </div>
+      </div>
+
+      <div class="setup-item complete">
+        <span class="setup-check">✓</span>
+        <div>
+          <strong>Main branch created</strong>
+          <p><%= @branch&.name || "Missing" %></p>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>

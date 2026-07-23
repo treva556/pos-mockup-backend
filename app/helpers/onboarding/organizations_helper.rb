@@ -1,0 +1,2 @@
+module Onboarding::OrganizationsHelper
+end

@@ -1,0 +1,15 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  user: one
+  organization: one
+  branch: one
+  role: MyString
+  active: false
+
+two:
+  user: two
+  organization: two
+  branch: two
+  role: MyString
+  active: false
