@@ -22,7 +22,7 @@ class CreateMemberships < ActiveRecord::Migration[7.2]
     end
 
     add_index :memberships,
-              [:user_id, :organization_id],
+              [ :user_id, :organization_id ],
               unique: true
   end
 end

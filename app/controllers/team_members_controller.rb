@@ -29,7 +29,7 @@ class TeamMembersController < ApplicationController
     unless assignable_roles.include?(requested_role)
       prepare_new_form(
         values: team_member_params.to_h,
-        errors: ["You cannot assign that role."]
+        errors: [ "You cannot assign that role." ]
       )
 
       render :new, status: :unprocessable_entity
@@ -130,13 +130,13 @@ class TeamMembersController < ApplicationController
     if current_membership.owner?
       Membership::TEAM_ROLES
     else
-      Membership::TEAM_ROLES - ["admin"]
+      Membership::TEAM_ROLES - [ "admin" ]
     end
   end
 
   def assignable_role_options
     assignable_roles.map do |role|
-      [role.titleize, role]
+      [ role.titleize, role ]
     end
   end
 

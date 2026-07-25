@@ -19,7 +19,7 @@ class CreateBranches < ActiveRecord::Migration[7.2]
     end
 
     add_index :branches,
-              [:organization_id, :code],
+              [ :organization_id, :code ],
               unique: true
   end
 end
