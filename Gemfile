@@ -4,7 +4,7 @@ source "https://rubygems.org"
 
 ruby "3.4.10"
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
-gem "rails", "~> 7.2.2", ">= 7.2.2.2"
+gem "rails", "~> 8.0.5"
 #  for secured password
 gem "bcrypt", "~> 3.1.7"
 # The original asset pipeline for Rails [https://github.com/rails/sprockets-rails]
