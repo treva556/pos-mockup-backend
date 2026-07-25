@@ -84,7 +84,7 @@ GEM
     bindex (0.8.1)
     bootsnap (1.23.0)
       msgpack (~> 1.2)
-    brakeman (7.1.1)
+    brakeman (8.0.5)
       racc
     builder (3.3.0)
     capybara (3.40.0)
@@ -323,5 +323,8 @@ DEPENDENCIES
   tzinfo-data
   web-console
 
+RUBY VERSION
+  ruby 3.4.10
+
 BUNDLED WITH
-   2.3.3
+  4.0.17

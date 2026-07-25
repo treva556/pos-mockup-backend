@@ -2,11 +2,11 @@
 # gemfile
 source "https://rubygems.org"
 
+ruby "3.4.10"
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem "rails", "~> 7.2.2", ">= 7.2.2.2"
 #  for secured password
 gem "bcrypt", "~> 3.1.7"
-# gem "ruby", ">=3.1.0"
 # The original asset pipeline for Rails [https://github.com/rails/sprockets-rails]
 gem "sprockets-rails"
 # Use sqlite3 as the database for Active Record
@@ -50,7 +50,7 @@ group :development, :test do
   gem "rubocop-rails-omakase", require: false
 end
 
-gem "dotenv-rails", groups: [:development, :test]
+gem "dotenv-rails", groups: [ :development, :test ]
 
 group :development do
   # Use console on exceptions pages [https://github.com/rails/web-console]
@@ -65,5 +65,3 @@ group :test do
   gem "capybara"
   gem "selenium-webdriver"
 end
-
-
