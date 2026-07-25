@@ -1,0 +1,70 @@
+<% content_for :title,
+               "Edit #{@membership.user.name}" %>
+
+<div class="setup-page">
+  <div class="setup-card">
+    <div class="auth-heading">
+      <span class="eyebrow">Team management</span>
+      <h1>Edit <%= @membership.user.name %></h1>
+
+      <p>
+        <%= @membership.user.email %>
+      </p>
+    </div>
+
+    <%= render "shared/errors",
+               object: @membership %>
+
+    <%= form_with model: @membership,
+                  url: team_member_path(@membership),
+                  scope: :membership,
+                  class: "app-form" do |form| %>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <%= form.label :role %>
+
+          <%= form.select :role,
+                          assignable_role_options,
+                          {},
+                          required: true %>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :branch_id,
+                         "Assigned branch" %>
+
+          <%= form.collection_select :branch_id,
+                                     @branches,
+                                     :id,
+                                     :name,
+                                     {
+                                       include_blank:
+                                         "All branches / not assigned"
+                                     } %>
+        </div>
+      </div>
+
+      <div class="checkbox-group">
+        <%= form.check_box :active %>
+        <%= form.label :active,
+                       "Team member has active access" %>
+      </div>
+
+      <div class="information-box">
+        Deactivating this membership removes access to
+        <%= current_organization.name %> without deleting the
+        employee or their historical records.
+      </div>
+
+      <div class="form-actions">
+        <%= form.submit "Save changes",
+                        class: "button button-primary" %>
+
+        <%= link_to "Cancel",
+                    team_members_path,
+                    class: "button button-secondary" %>
+      </div>
+    <% end %>
+  </div>
+</div>

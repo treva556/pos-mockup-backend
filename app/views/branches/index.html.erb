@@ -1,2 +1,116 @@
-<h1>Branches#index</h1>
-<p>Find me in app/views/branches/index.html.erb</p>
+<% content_for :title, "Branches" %>
+
+<div class="dashboard-page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">Organization settings</span>
+      <h1>Branches</h1>
+
+      <p>
+        Manage the locations operated by
+        <strong><%= current_organization.name %></strong>.
+      </p>
+    </div>
+
+    <%= link_to "Add branch",
+                new_branch_path,
+                class: "button button-primary" %>
+  </header>
+
+  <section class="dashboard-panel">
+    <div class="panel-heading">
+      <div>
+        <h2>Business locations</h2>
+
+        <p>
+          Current branch:
+          <strong><%= current_branch&.name %></strong>
+        </p>
+      </div>
+
+      <span class="status-badge">
+        <%= pluralize(@branches.count, "branch") %>
+      </span>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Branch</th>
+            <th>Code</th>
+            <th>Contact</th>
+            <th>Status</th>
+            <th>Current</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% @branches.each do |branch| %>
+            <tr>
+              <td>
+                <strong><%= branch.name %></strong>
+
+                <% if branch.main? %>
+                  <span class="small-badge">Main</span>
+                <% end %>
+
+                <% if branch.address.present? %>
+                  <small class="table-subtext">
+                    <%= branch.address %>
+                  </small>
+                <% end %>
+              </td>
+
+              <td>
+                <%= branch.code %>
+              </td>
+
+              <td>
+                <%= branch.phone.presence ||
+                    branch.email.presence ||
+                    "Not provided" %>
+              </td>
+
+              <td>
+                <% if branch.active? %>
+                  <span class="status-pill status-active">
+                    Active
+                  </span>
+                <% else %>
+                  <span class="status-pill status-inactive">
+                    Inactive
+                  </span>
+                <% end %>
+              </td>
+
+              <td>
+                <% if current_branch == branch %>
+                  <span class="status-pill status-current">
+                    Selected
+                  </span>
+                <% elsif branch.active? &&
+                         branch_switching_allowed? %>
+
+                  <%= button_to "Use branch",
+                                select_branch_path(branch),
+                                method: :patch,
+                                class: "text-button" %>
+                <% else %>
+                  —
+                <% end %>
+              </td>
+
+              <td class="table-actions">
+                <%= link_to "Edit",
+                            edit_branch_path(branch),
+                            class: "text-link" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>

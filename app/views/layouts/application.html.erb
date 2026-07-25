@@ -24,28 +24,38 @@
         <span>Business POS</span>
       <% end %>
 
-      <nav class="site-navigation">
-        <% if signed_in? %>
-          <% if current_organization.present? %>
-            <%= link_to "Dashboard", dashboard_path %>
-          <% end %>
-
-          <span class="nav-user">
-            <%= current_user.name %>
+          <nav class="site-navigation">
+      <% if signed_in? %>
+        <% if current_organization.present? %>
+          <span class="nav-context">
+            <strong><%= current_organization.name %></strong>
+            <small><%= current_branch&.name %></small>
           </span>
 
-          <%= button_to "Log out",
-                        logout_path,
-                        method: :delete,
-                        class: "button button-secondary" %>
-        <% else %>
-          <%= link_to "Log in", login_path %>
+          <%= link_to "Dashboard", dashboard_path %>
 
-          <%= link_to "Create account",
-                      sign_up_path,
-                      class: "button button-primary" %>
+          <% if current_membership&.organization_admin? %>
+            <%= link_to "Branches", branches_path %>
+            <%= link_to "Team", team_members_path %>
+          <% end %>
         <% end %>
-      </nav>
+
+        <span class="nav-user">
+          <%= current_user.name %>
+        </span>
+
+        <%= button_to "Log out",
+                      logout_path,
+                      method: :delete,
+                      class: "button button-secondary" %>
+      <% else %>
+        <%= link_to "Log in", login_path %>
+
+        <%= link_to "Create account",
+                    sign_up_path,
+                    class: "button button-primary" %>
+      <% end %>
+    </nav>
     </header>
 
     <% if notice.present? %>

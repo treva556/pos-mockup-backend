@@ -1,2 +1,23 @@
-<h1>Branches#edit</h1>
-<p>Find me in app/views/branches/edit.html.erb</p>
+<% content_for :title, "Edit #{@branch.name}" %>
+
+<div class="setup-page">
+  <div class="setup-card">
+    <div class="auth-heading">
+      <span class="eyebrow">Organization settings</span>
+      <h1>Edit <%= @branch.name %></h1>
+
+      <p>
+        Update this branch’s contact information and status.
+      </p>
+    </div>
+
+    <% if @branch.main? %>
+      <div class="information-box">
+        This is the organization’s main branch. It cannot be
+        deactivated or deleted.
+      </div>
+    <% end %>
+
+    <%= render "form", branch: @branch %>
+  </div>
+</div>

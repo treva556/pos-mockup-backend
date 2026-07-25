@@ -1,0 +1,117 @@
+<% content_for :title, "Team Members" %>
+
+<div class="dashboard-page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">Organization settings</span>
+      <h1>Team members</h1>
+
+      <p>
+        Manage users, roles and branch access for
+        <strong><%= current_organization.name %></strong>.
+      </p>
+    </div>
+
+    <%= link_to "Add team member",
+                new_team_member_path,
+                class: "button button-primary" %>
+  </header>
+
+  <section class="dashboard-panel">
+    <div class="panel-heading">
+      <div>
+        <h2>Organization users</h2>
+
+        <p>
+          Deactivate access rather than deleting historical users.
+        </p>
+      </div>
+
+      <span class="status-badge">
+        <%= pluralize(@memberships.count, "member") %>
+      </span>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Role</th>
+            <th>Branch access</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% @memberships.each do |membership| %>
+            <tr>
+              <td>
+                <strong><%= membership.user.name %></strong>
+
+                <% if membership == current_membership %>
+                  <span class="small-badge">You</span>
+                <% end %>
+
+                <small class="table-subtext">
+                  <%= membership.user.email %>
+                </small>
+              </td>
+
+              <td>
+                <%= membership.role.titleize %>
+              </td>
+
+              <td>
+                <% if membership.branch.present? %>
+                  <%= membership.branch.name %>
+                <% else %>
+                  <span class="status-pill status-current">
+                    All branches
+                  </span>
+                <% end %>
+              </td>
+
+              <td>
+                <% if membership.active? %>
+                  <span class="status-pill status-active">
+                    Active
+                  </span>
+                <% else %>
+                  <span class="status-pill status-inactive">
+                    Inactive
+                  </span>
+                <% end %>
+
+                <% if membership.user.must_change_password? %>
+                  <small class="table-subtext">
+                    Temporary password
+                  </small>
+                <% end %>
+              </td>
+
+              <td class="table-actions">
+                <% protected_member =
+                     membership.owner? ||
+                     membership == current_membership ||
+                     (
+                       current_membership.admin? &&
+                       membership.admin?
+                     ) %>
+
+                <% if protected_member %>
+                  <span class="muted-text">Protected</span>
+                <% else %>
+                  <%= link_to "Edit",
+                              edit_team_member_path(membership),
+                              class: "text-link" %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>

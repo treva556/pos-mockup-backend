@@ -1,0 +1,116 @@
+<% content_for :title, "Add Team Member" %>
+
+<div class="setup-page">
+  <div class="setup-card">
+    <div class="auth-heading">
+      <span class="eyebrow">Team management</span>
+      <h1>Add a team member</h1>
+
+      <p>
+        Create an employee login and assign their initial
+        organization access.
+      </p>
+    </div>
+
+    <% if @errors.any? %>
+      <div class="form-errors" role="alert">
+        <strong>Please correct the following:</strong>
+
+        <ul>
+          <% @errors.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <%= form_with url: team_members_path,
+                  scope: :team_member,
+                  class: "app-form" do |form| %>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <%= form.label :name, "Full name" %>
+
+          <%= form.text_field :name,
+                              required: true,
+                              autofocus: true,
+                              value: @form_values["name"] %>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :email %>
+
+          <%= form.email_field :email,
+                               required: true,
+                               autocomplete: "off",
+                               value: @form_values["email"] %>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :password,
+                         "Temporary password" %>
+
+          <%= form.password_field :password,
+                                  required: true,
+                                  minlength: 8,
+                                  autocomplete: "new-password" %>
+
+          <small class="form-help">
+            The employee must change this after logging in.
+          </small>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :password_confirmation,
+                         "Confirm temporary password" %>
+
+          <%= form.password_field :password_confirmation,
+                                  required: true,
+                                  autocomplete: "new-password" %>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :role %>
+
+          <%= form.select :role,
+                          assignable_role_options,
+                          {
+                            selected: @form_values["role"]
+                          },
+                          required: true %>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :branch_id,
+                         "Assigned branch" %>
+
+          <%= form.collection_select :branch_id,
+                                     @branches,
+                                     :id,
+                                     :name,
+                                     {
+                                       selected:
+                                         @form_values["branch_id"],
+                                       include_blank:
+                                         "All branches / not assigned"
+                                     } %>
+
+          <small class="form-help">
+            Cashiers and stock clerks require a branch.
+            Owners and admins must use all branches.
+          </small>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <%= form.submit "Create team member",
+                        class: "button button-primary" %>
+
+        <%= link_to "Cancel",
+                    team_members_path,
+                    class: "button button-secondary" %>
+      </div>
+    <% end %>
+  </div>
+</div>

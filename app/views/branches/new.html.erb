@@ -1,2 +1,17 @@
-<h1>Branches#new</h1>
-<p>Find me in app/views/branches/new.html.erb</p>
+<% content_for :title, "Add Branch" %>
+
+<div class="setup-page">
+  <div class="setup-card">
+    <div class="auth-heading">
+      <span class="eyebrow">Organization settings</span>
+      <h1>Add a branch</h1>
+
+      <p>
+        Create another business location for
+        <%= current_organization.name %>.
+      </p>
+    </div>
+
+    <%= render "form", branch: @branch %>
+  </div>
+</div>

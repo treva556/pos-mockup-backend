@@ -30,13 +30,16 @@ class SessionsController < ApplicationController
       @current_user = user
       @current_membership = membership
 
-      destination =
-        return_to.presence ||
-        if membership.present?
-          dashboard_path
-        else
-          new_onboarding_organization_path
-        end
+     destination =
+      if user.must_change_password?
+        edit_account_password_path
+      elsif return_to.present?
+        return_to
+      elsif membership.present?
+        dashboard_path
+      else
+        new_onboarding_organization_path
+      end
 
       redirect_to destination,
                   notice: "Welcome back, #{user.name}."

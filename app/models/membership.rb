@@ -1,4 +1,14 @@
 class Membership < ApplicationRecord
+  ORGANIZATION_WIDE_ROLES = %w[owner admin].freeze
+  BRANCH_REQUIRED_ROLES = %w[cashier stock_clerk].freeze
+  TEAM_ROLES = %w[
+    admin
+    manager
+    cashier
+    accountant
+    stock_clerk
+  ].freeze
+
   belongs_to :user
   belongs_to :organization
   belongs_to :branch, optional: true
@@ -19,11 +29,16 @@ class Membership < ApplicationRecord
             }
 
   validate :branch_belongs_to_organization
+  validate :branch_assignment_matches_role
 
   scope :active, -> { where(active: true) }
 
   def organization_admin?
     owner? || admin?
+  end
+
+  def branch_restricted?
+    branch_id.present?
   end
 
   private
@@ -36,5 +51,23 @@ class Membership < ApplicationRecord
       :branch,
       "must belong to the same organization"
     )
+  end
+
+  def branch_assignment_matches_role
+    return if role.blank?
+
+    if ORGANIZATION_WIDE_ROLES.include?(role) && branch.present?
+      errors.add(
+        :branch,
+        "must be blank for owners and administrators"
+      )
+    end
+
+    if BRANCH_REQUIRED_ROLES.include?(role) && branch.blank?
+      errors.add(
+        :branch,
+        "must be selected for cashiers and stock clerks"
+      )
+    end
   end
 end

@@ -1,6 +1,7 @@
 class ApplicationController < ActionController::Base
   # Only allow modern browsers supporting webp images, web push, badges, import maps, CSS nesting, and CSS :has.
   allow_browser versions: :modern
+  before_action :enforce_password_change!
   helper_method :current_user,
                 :current_membership,
                 :current_organization,
@@ -108,11 +109,31 @@ end
     redirect_to after_login_path
   end
 
+  def enforce_password_change!
+  return unless signed_in?
+  return unless current_user.must_change_password?
+
+  return if controller_path == "account/passwords"
+
+  if controller_path == "sessions" &&
+     action_name == "destroy"
+    return
+  end
+
+  redirect_to edit_account_password_path,
+              alert:
+                "Change your temporary password to continue."
+  end
+
   def after_login_path
-    if current_user.memberships.active.exists?
-      dashboard_path
-    else
-      new_onboarding_organization_path
-    end
+   if current_user&.must_change_password?
+     return edit_account_password_path
+   end
+
+   if current_user.memberships.active.exists?
+     dashboard_path
+   else
+     new_onboarding_organization_path
+   end
   end
 end

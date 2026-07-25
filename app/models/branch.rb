@@ -14,6 +14,8 @@ class Branch < ApplicationRecord
 
   validate :main_branch_must_remain_active
 
+  validate :inactive_branch_cannot_have_active_members
+
   before_validation :normalize_code
 
   scope :active, -> { where(active: true) }
@@ -35,6 +37,16 @@ class Branch < ApplicationRecord
     errors.add(
       :active,
       "must remain enabled for the main branch"
+    )
+  end
+  def inactive_branch_cannot_have_active_members
+    return unless persisted?
+    return if active?
+    return unless memberships.active.exists?
+
+    errors.add(
+      :active,
+      "cannot be disabled while active team members are assigned"
     )
   end
 end

@@ -22,6 +22,14 @@ Rails.application.routes.draw do
     patch :select, on: :member
   end
 
+  resources :team_members,
+          except: %i[show destroy]
+
+  namespace :account do
+     resource :password,
+           only: %i[edit update]
+  end
+
   get "up" => "rails/health#show",
       as: :rails_health_check
 end
