@@ -5,7 +5,8 @@ class ApplicationController < ActionController::Base
                 :current_membership,
                 :current_organization,
                 :current_branch,
-                :signed_in?
+                :signed_in?,
+                :branch_switching_allowed?
 
   private
 
@@ -47,8 +48,42 @@ class ApplicationController < ActionController::Base
   end
 
   def current_branch
-    current_membership&.branch ||
-      current_organization&.main_branch
+  return @current_branch if defined?(@current_branch)
+
+  unless current_organization
+    return @current_branch = nil
+  end
+
+  # A branch-restricted employee must always use their
+  # assigned branch.
+  if current_membership&.branch_id.present?
+    return @current_branch = current_membership.branch
+  end
+
+  # Organization-wide users may select a branch.
+  if session[:branch_id].present?
+    @current_branch =
+      current_organization
+        .branches
+        .active
+        .find_by(id: session[:branch_id])
+  end
+
+  @current_branch ||=
+    current_organization.main_branch ||
+    current_organization.branches.active.order(:name).first
+end
+
+ def branch_switching_allowed?
+  current_membership.present? &&
+    current_membership.branch_id.nil?
+  end
+
+  def require_organization_admin!
+  return if current_membership&.organization_admin?
+
+  redirect_to dashboard_path,
+              alert: "Only organization owners and admins can do that."
   end
 
   def authenticate_user!

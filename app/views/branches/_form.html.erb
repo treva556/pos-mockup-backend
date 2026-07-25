@@ -1,0 +1,76 @@
+<%= render "shared/errors", object: branch %>
+
+<%= form_with model: branch,
+              class: "app-form" do |form| %>
+
+  <div class="form-grid">
+    <div class="form-group">
+      <%= form.label :name, "Branch name" %>
+
+      <%= form.text_field :name,
+                          required: true,
+                          autofocus: true,
+                          placeholder: "e.g. Thika Branch" %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :code, "Branch code" %>
+
+      <%= form.text_field :code,
+                          required: true,
+                          placeholder: "e.g. THIKA" %>
+
+      <small class="form-help">
+        The code must be unique within this organization.
+      </small>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :phone %>
+
+      <%= form.telephone_field :phone,
+                               placeholder: "+254..." %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :email %>
+
+      <%= form.email_field :email,
+                           placeholder: "branch@example.com" %>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :address %>
+
+    <%= form.text_area :address,
+                       rows: 3,
+                       placeholder: "Physical or postal address" %>
+  </div>
+
+  <% if branch.persisted? %>
+    <div class="checkbox-group">
+      <%= form.check_box :active,
+                         disabled: branch.main? %>
+
+      <%= form.label :active, "Branch is active" %>
+
+      <% if branch.main? %>
+        <small>
+          The main branch must remain active.
+        </small>
+
+        <%= form.hidden_field :active, value: true %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <div class="form-actions">
+    <%= form.submit branch.persisted? ? "Save changes" : "Create branch",
+                    class: "button button-primary" %>
+
+    <%= link_to "Cancel",
+                branches_path,
+                class: "button button-secondary" %>
+  </div>
+<% end %>

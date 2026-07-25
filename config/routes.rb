@@ -4,7 +4,6 @@ Rails.application.routes.draw do
 
   get "about", to: "about#index"
 
-  # Authentication
   get "sign-up", to: "registrations#new", as: :sign_up
   post "sign-up", to: "registrations#create"
 
@@ -13,14 +12,16 @@ Rails.application.routes.draw do
 
   delete "logout", to: "sessions#destroy", as: :logout
 
-  # Organization onboarding
   namespace :onboarding do
     resource :organization, only: %i[new create]
   end
 
-  # Main organization dashboard
   resource :dashboard, only: :show
 
-  # Health check
-  get "up" => "rails/health#show", as: :rails_health_check
+  resources :branches, except: %i[show destroy] do
+    patch :select, on: :member
+  end
+
+  get "up" => "rails/health#show",
+      as: :rails_health_check
 end
