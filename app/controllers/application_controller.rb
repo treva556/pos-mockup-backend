@@ -90,7 +90,9 @@ end
   def authenticate_user!
     return if signed_in?
 
-    session[:return_to] = request.fullpath if request.get?
+    if request.get? || request.head?
+      session[:return_to] = request.fullpath
+    end
 
     redirect_to login_path,
                 alert: "Please log in to continue."
