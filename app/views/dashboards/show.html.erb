@@ -45,6 +45,37 @@
     </article>
   </section>
 
+  <% if current_membership&.organization_admin? %>
+  <section class="dashboard-panel">
+    <div class="panel-heading">
+      <div>
+        <h2>Quick actions</h2>
+        <p>Manage the organization foundation.</p>
+      </div>
+    </div>
+
+    <div class="quick-actions-grid">
+      <%= link_to edit_settings_organization_path,
+                  class: "quick-action-card" do %>
+        <strong>Company settings</strong>
+        <span>Update business and receipt details</span>
+      <% end %>
+
+      <%= link_to branches_path,
+                  class: "quick-action-card" do %>
+        <strong>Manage branches</strong>
+        <span>Create, edit and select locations</span>
+      <% end %>
+
+      <%= link_to team_members_path,
+                  class: "quick-action-card" do %>
+        <strong>Manage team</strong>
+        <span>Add users and control access</span>
+      <% end %>
+    </div>
+  </section>
+<% end %>
+
   <section class="dashboard-panel">
     <h2>Setup progress</h2>
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_07_25_105644) do
+ActiveRecord::Schema[7.2].define(version: 2026_07_25_120605) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -55,6 +55,12 @@ ActiveRecord::Schema[7.2].define(version: 2026_07_25_105644) do
     t.boolean "active", default: true, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "address"
+    t.string "registration_number"
+    t.string "kra_pin"
+    t.boolean "vat_registered", default: false, null: false
+    t.text "receipt_footer"
+    t.index ["kra_pin"], name: "index_organizations_on_unique_kra_pin", unique: true, where: "(kra_pin IS NOT NULL)"
     t.index ["name"], name: "index_organizations_on_name"
   end
 

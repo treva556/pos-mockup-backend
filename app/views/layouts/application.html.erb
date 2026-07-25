@@ -35,8 +35,14 @@
           <%= link_to "Dashboard", dashboard_path %>
 
           <% if current_membership&.organization_admin? %>
-            <%= link_to "Branches", branches_path %>
-            <%= link_to "Team", team_members_path %>
+            <%= link_to "Company",
+                        edit_settings_organization_path %>
+
+            <%= link_to "Branches",
+                        branches_path %>
+
+            <%= link_to "Team",
+                        team_members_path %>
           <% end %>
         <% end %>
 

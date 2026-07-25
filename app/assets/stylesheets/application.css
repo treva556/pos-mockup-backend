@@ -741,3 +741,72 @@ main {
 .data-table td:first-child {
   min-width: 210px;
 }
+
+.settings-card {
+  width: min(900px, 100%);
+  margin: 0 auto;
+}
+
+.form-section {
+  padding: 26px 0;
+  border-top: 1px solid var(--border);
+}
+
+.form-section:first-of-type {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.form-section-heading {
+  margin-bottom: 20px;
+}
+
+.form-section-heading h2 {
+  margin: 0 0 6px;
+  font-size: 1.15rem;
+}
+
+.form-section-heading p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.quick-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.quick-action-card {
+  min-height: 125px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: #f8f9fc;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition:
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.quick-action-card:hover {
+  border-color: var(--primary);
+  text-decoration: none;
+  transform: translateY(-2px);
+}
+
+.quick-action-card span {
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 750px) {
+  .quick-actions-grid {
+    grid-template-columns: 1fr;
+  }
+}

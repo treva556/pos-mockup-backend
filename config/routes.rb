@@ -18,6 +18,11 @@ Rails.application.routes.draw do
 
   resource :dashboard, only: :show
 
+  namespace :settings do
+  resource :organization,
+           only: %i[edit update]
+  end
+
   resources :branches, except: %i[show destroy] do
     patch :select, on: :member
   end

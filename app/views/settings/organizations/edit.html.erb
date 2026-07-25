@@ -1,0 +1,189 @@
+<% content_for :title, "Company Settings" %>
+
+<div class="setup-page">
+  <div class="setup-card settings-card">
+    <div class="auth-heading">
+      <span class="eyebrow">Organization settings</span>
+      <h1>Company profile</h1>
+
+      <p>
+        Manage the business information used throughout the POS
+        and on future receipts.
+      </p>
+    </div>
+
+    <%= render "shared/errors",
+               object: @organization %>
+
+    <%= form_with model: @organization,
+                  url: settings_organization_path,
+                  method: :patch,
+                  class: "app-form" do |form| %>
+
+      <section class="form-section">
+        <div class="form-section-heading">
+          <h2>Business identity</h2>
+
+          <p>
+            The trading and registered details of the organization.
+          </p>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <%= form.label :name, "Trading name" %>
+
+            <%= form.text_field :name,
+                                required: true,
+                                autofocus: true,
+                                placeholder: "e.g. Mwangaza Hardware" %>
+          </div>
+
+          <div class="form-group">
+            <%= form.label :legal_name,
+                           "Registered/legal name" %>
+
+            <%= form.text_field :legal_name,
+                                placeholder: "e.g. Mwangaza Hardware Ltd" %>
+          </div>
+
+          <div class="form-group">
+            <%= form.label :registration_number,
+                           "Registration number" %>
+
+            <%= form.text_field :registration_number,
+                                placeholder: "Optional" %>
+          </div>
+
+          <div class="form-group">
+            <%= form.label :kra_pin, "KRA PIN" %>
+
+            <%= form.text_field :kra_pin,
+                                maxlength: 20,
+                                autocomplete: "off",
+                                placeholder: "Optional for now" %>
+          </div>
+        </div>
+
+        <div class="checkbox-group">
+          <%= form.check_box :vat_registered %>
+
+          <%= form.label :vat_registered,
+                         "This organization is VAT registered" %>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <div class="form-section-heading">
+          <h2>Contact information</h2>
+
+          <p>
+            Details customers and suppliers may use to contact
+            the organization.
+          </p>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <%= form.label :phone %>
+
+            <%= form.telephone_field :phone,
+                                     placeholder: "+254..." %>
+          </div>
+
+          <div class="form-group">
+            <%= form.label :email,
+                           "Organization email" %>
+
+            <%= form.email_field :email,
+                                 placeholder: "accounts@example.com" %>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :address %>
+
+          <%= form.text_area :address,
+                             rows: 3,
+                             placeholder:
+                               "Physical or postal business address" %>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <div class="form-section-heading">
+          <h2>Regional settings</h2>
+
+          <p>
+            These values will control dates, currency and future
+            financial reports.
+          </p>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <%= form.label :country_code, "Country" %>
+
+            <%= form.select :country_code,
+                            [["Kenya", "KE"]],
+                            {},
+                            required: true %>
+          </div>
+
+          <div class="form-group">
+            <%= form.label :currency_code, "Currency" %>
+
+            <%= form.select :currency_code,
+                            [["Kenyan Shilling (KES)", "KES"]],
+                            {},
+                            required: true %>
+          </div>
+
+          <div class="form-group">
+            <%= form.label :time_zone, "Time zone" %>
+
+            <%= form.select :time_zone,
+                            [["Africa/Nairobi", "Africa/Nairobi"]],
+                            {},
+                            required: true %>
+          </div>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <div class="form-section-heading">
+          <h2>Receipt settings</h2>
+
+          <p>
+            This message will later appear at the bottom of printed
+            or digital receipts.
+          </p>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :receipt_footer,
+                         "Receipt footer message" %>
+
+          <%= form.text_area :receipt_footer,
+                             rows: 3,
+                             maxlength: 250,
+                             placeholder:
+                               "e.g. Thank you for shopping with us." %>
+
+          <small class="form-help">
+            Maximum 250 characters.
+          </small>
+        </div>
+      </section>
+
+      <div class="form-actions">
+        <%= form.submit "Save company settings",
+                        class: "button button-primary" %>
+
+        <%= link_to "Return to dashboard",
+                    dashboard_path,
+                    class: "button button-secondary" %>
+      </div>
+    <% end %>
+  </div>
+</div>
