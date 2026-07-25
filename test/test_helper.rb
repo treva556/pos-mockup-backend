@@ -54,3 +54,37 @@ module ActiveSupport
     include TestRecordHelpers
   end
 end
+
+module IntegrationTestHelpers
+  TEST_PASSWORD = "Password123!".freeze
+
+  def sign_in_as(user, password: TEST_PASSWORD)
+    post login_path,
+         params: {
+           email: user.email,
+           password: password
+         }
+  end
+
+  def provision_organization_for(user, overrides = {})
+    token = SecureRandom.hex(5)
+
+    Organizations::Provision.call(
+      user: user,
+      organization_attributes: {
+        name: "Test Business #{token}",
+        email: "business-#{token}@example.com",
+        country_code: "KE",
+        currency_code: "KES",
+        time_zone: "Africa/Nairobi",
+        active: true
+      }.merge(overrides)
+    )
+  end
+end
+
+module ActionDispatch
+  class IntegrationTest
+    include IntegrationTestHelpers
+  end
+end
