@@ -73,11 +73,11 @@ jobs:
           --health-retries 5
 
     env:
-      RAILS_ENV: test
-      POS_DB_HOST: 127.0.0.1
-      POS_DB_PORT: 5432
-      POS_DB_USERNAME: postgres
-      POS_DB_PASSWORD: postgres
+          RAILS_ENV: test
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_USERNAME: postgres
+          DB_PASSWORD: postgres
 
     steps:
       - name: Checkout code
