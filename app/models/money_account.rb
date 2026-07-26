@@ -5,6 +5,18 @@ class MoneyAccount < ApplicationRecord
   has_many :branch_payment_settings,
            dependent: :restrict_with_error
 
+  has_many :outgoing_money_transfers,
+            class_name: "MoneyTransfer",
+            foreign_key: :from_money_account_id,
+            inverse_of: :from_money_account,
+            dependent: :restrict_with_error
+
+  has_many :incoming_money_transfers,
+            class_name: "MoneyTransfer",
+            foreign_key: :to_money_account_id,
+            inverse_of: :to_money_account,
+            dependent: :restrict_with_error
+
   enum :account_type, {
     cash: "cash",
     petty_cash: "petty_cash",
@@ -46,6 +58,20 @@ class MoneyAccount < ApplicationRecord
   def organization_wide?
     branch_id.nil?
   end
+
+  def incoming_transfer_total
+      incoming_money_transfers.sum(:amount)
+    end
+
+    def outgoing_transfer_total
+      outgoing_money_transfers.sum(:amount)
+    end
+
+    def current_balance
+      opening_balance.to_d +
+        incoming_transfer_total -
+        outgoing_transfer_total
+    end
 
   private
 

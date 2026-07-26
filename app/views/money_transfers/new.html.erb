@@ -1,0 +1,21 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>New Money Transfer</h1>
+
+      <p>
+        Record movement between two business money accounts.
+      </p>
+    </div>
+
+    <%= link_to "Back to Transfers",
+                money_transfers_path,
+                class:
+                  "button button--secondary" %>
+  </header>
+
+  <div class="panel">
+    <%= render "form",
+               money_transfer: @money_transfer %>
+  </div>
+</section>

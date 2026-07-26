@@ -28,6 +28,9 @@ class Organization < ApplicationRecord
   has_many :branch_payment_settings,
           dependent: :restrict_with_error
 
+  has_many :money_transfers,
+         dependent: :restrict_with_error
+
   before_validation :normalize_business_details
 
   validates :name, presence: true

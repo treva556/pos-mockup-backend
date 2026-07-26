@@ -76,6 +76,7 @@
             <th>Type</th>
             <th>Branch</th>
             <th>Opening balance</th>
+            <th>Current balance</th>
             <th>Capabilities</th>
             <th>Status</th>
             <th>Actions</th>
@@ -114,6 +115,15 @@
                       precision: 2
                     ) %>
               </td>
+              <td>
+                <strong>
+                    <%= number_to_currency(
+                        account.current_balance,
+                        unit: "KSh ",
+                        precision: 2
+                        ) %>
+                </strong>
+                </td>
 
               <td>
                 <% capabilities = [] %>

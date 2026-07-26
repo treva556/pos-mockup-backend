@@ -1,0 +1,127 @@
+<%= form_with model: money_transfer,
+              class: "record-form" do |form| %>
+  <% if money_transfer.errors.any? %>
+    <section class="form-errors">
+      <h2>
+        <%= pluralize(
+              money_transfer.errors.count,
+              "error"
+            ) %>
+        prevented this transfer from being recorded
+      </h2>
+
+      <ul>
+        <% money_transfer.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+
+ <%= form.collection_select(
+        :from_money_account_id,
+        @from_accounts,
+        :id,
+        ->(account) {
+            branch =
+            account.branch&.name ||
+            "Organization-wide"
+
+            balance =
+            number_to_currency(
+                account.current_balance,
+                unit: "KSh ",
+                precision: 2
+            )
+
+            "#{account.name} — #{branch} — Available: #{balance}"
+        },
+        {
+            prompt: "Select source account"
+        },
+        {
+            required: true
+        }
+        ) %>
+    </div>
+
+    <div class="field">
+        <%= form.label :to_money_account_id,
+                        "Transfer to" %>
+
+       <%= form.collection_select(
+      :to_money_account_id,
+      @to_accounts,
+      :id,
+      ->(account) {
+        branch =
+          account.branch&.name ||
+          "Organization-wide"
+
+        balance =
+          number_to_currency(
+            account.current_balance,
+            unit: "KSh ",
+            precision: 2
+          )
+
+        "#{account.name} — #{branch} — Balance: #{balance}"
+      },
+      {
+        prompt: "Select destination account"
+      },
+      {
+        required: true
+      }
+    ) %>
+    </div>
+
+    <div class="field">
+      <%= form.label :amount %>
+
+      <%= form.number_field :amount,
+                            min: 0.01,
+                            step: 0.01,
+                            required: true,
+                            placeholder: "0.00" %>
+    </div>
+
+    <div class="field">
+      <%= form.label :transferred_at,
+                     "Transfer date and time" %>
+
+      <%= form.datetime_local_field(
+            :transferred_at,
+            required: true
+          ) %>
+    </div>
+
+    <div class="field field--full">
+      <%= form.label :reference %>
+
+      <%= form.text_field :reference,
+                          placeholder:
+                            "Bank, M-Pesa or deposit reference" %>
+    </div>
+
+    <div class="field field--full">
+      <%= form.label :notes %>
+
+      <%= form.text_area :notes,
+                         rows: 4,
+                         placeholder:
+                           "Optional transfer explanation" %>
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <%= form.submit "Record Transfer",
+                    class:
+                      "button button--primary" %>
+
+    <%= link_to "Cancel",
+                money_transfers_path,
+                class:
+                  "button button--secondary" %>
+  </div>
+<% end %>

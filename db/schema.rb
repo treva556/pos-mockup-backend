@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_26_140141) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_26_151222) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -132,6 +132,27 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_26_140141) do
     t.index ["organization_id", "name"], name: "index_money_accounts_on_org_and_name", unique: true
     t.index ["organization_id"], name: "index_money_accounts_on_organization_id"
     t.check_constraint "account_type::text = ANY (ARRAY['cash'::character varying, 'petty_cash'::character varying, 'mpesa_till'::character varying, 'mpesa_paybill'::character varying, 'bank'::character varying, 'card_clearing'::character varying, 'mobile_wallet'::character varying, 'other'::character varying]::text[])", name: "money_accounts_valid_account_type"
+  end
+
+  create_table "money_transfers", force: :cascade do |t|
+    t.decimal "amount", precision: 15, scale: 2, null: false
+    t.datetime "created_at", null: false
+    t.bigint "from_money_account_id", null: false
+    t.text "notes"
+    t.bigint "organization_id", null: false
+    t.bigint "recorded_by_id", null: false
+    t.string "reference"
+    t.bigint "to_money_account_id", null: false
+    t.datetime "transferred_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["from_money_account_id"], name: "index_money_transfers_on_from_money_account_id"
+    t.index ["organization_id", "reference"], name: "index_money_transfers_on_organization_id_and_reference"
+    t.index ["organization_id", "transferred_at"], name: "index_money_transfers_on_organization_id_and_transferred_at"
+    t.index ["organization_id"], name: "index_money_transfers_on_organization_id"
+    t.index ["recorded_by_id"], name: "index_money_transfers_on_recorded_by_id"
+    t.index ["to_money_account_id"], name: "index_money_transfers_on_to_money_account_id"
+    t.check_constraint "amount > 0::numeric", name: "money_transfers_positive_amount"
+    t.check_constraint "from_money_account_id <> to_money_account_id", name: "money_transfers_different_accounts"
   end
 
   create_table "organizations", force: :cascade do |t|
@@ -259,6 +280,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_26_140141) do
   add_foreign_key "memberships", "users"
   add_foreign_key "money_accounts", "branches"
   add_foreign_key "money_accounts", "organizations"
+  add_foreign_key "money_transfers", "money_accounts", column: "from_money_account_id"
+  add_foreign_key "money_transfers", "money_accounts", column: "to_money_account_id"
+  add_foreign_key "money_transfers", "organizations"
+  add_foreign_key "money_transfers", "users", column: "recorded_by_id"
   add_foreign_key "payment_methods", "organizations"
   add_foreign_key "product_categories", "organizations"
   add_foreign_key "suppliers", "organizations"

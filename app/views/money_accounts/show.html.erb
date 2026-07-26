@@ -59,6 +59,7 @@
         </dd>
       </div>
 
+
       <div>
         <dt>Opening balance date</dt>
         <dd>
@@ -66,6 +67,40 @@
                 "Not provided" %>
         </dd>
       </div>
+      <div>
+  <dt>Current balance</dt>
+        <dd>
+            <strong>
+            <%= number_to_currency(
+                    @money_account.current_balance,
+                    unit: "KSh ",
+                    precision: 2
+                ) %>
+            </strong>
+        </dd>
+        </div>
+
+        <div>
+        <dt>Incoming transfers</dt>
+        <dd>
+            <%= number_to_currency(
+                @money_account.incoming_transfer_total,
+                unit: "KSh ",
+                precision: 2
+                ) %>
+        </dd>
+        </div>
+
+        <div>
+        <dt>Outgoing transfers</dt>
+        <dd>
+            <%= number_to_currency(
+                @money_account.outgoing_transfer_total,
+                unit: "KSh ",
+                precision: 2
+                ) %>
+        </dd>
+        </div>
 
       <div>
         <dt>Can receive money</dt>

@@ -76,6 +76,9 @@ Rails.application.routes.draw do
               on: :collection
     end
 
+    resources :money_transfers,
+          only: %i[index show new create]
+
   get "up" => "rails/health#show",
       as: :rails_health_check
 end
