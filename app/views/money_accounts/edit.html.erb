@@ -1,0 +1,18 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>Edit Money Account</h1>
+      <p>Update <%= @money_account.name %>.</p>
+    </div>
+
+    <%= link_to "View Account",
+                money_account_path(@money_account),
+                class:
+                  "button button--secondary" %>
+  </header>
+
+  <div class="panel">
+    <%= render "form",
+               money_account: @money_account %>
+  </div>
+</section>

@@ -1,0 +1,134 @@
+<%= form_with model: money_account,
+              class: "record-form" do |form| %>
+  <% if money_account.errors.any? %>
+    <section class="form-errors">
+      <h2>
+        <%= pluralize(
+              money_account.errors.count,
+              "error"
+            ) %>
+        prevented this account from being saved
+      </h2>
+
+      <ul>
+        <% money_account.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+
+  <div class="form-grid">
+    <div class="field">
+      <%= form.label :name, "Account name" %>
+
+      <%= form.text_field :name,
+                          required: true,
+                          autofocus: true,
+                          placeholder:
+                            "Main Cash Till" %>
+    </div>
+
+    <div class="field">
+      <%= form.label :account_type %>
+
+      <%= form.select :account_type,
+                      MoneyAccount.account_types.keys.map {
+                        |type|
+                        [type.titleize, type]
+                      } %>
+    </div>
+
+    <div class="field">
+      <%= form.label :branch_id, "Branch" %>
+
+      <%= form.collection_select(
+            :branch_id,
+            @branches,
+            :id,
+            :name,
+            {
+              include_blank:
+                "Organization-wide account"
+            }
+          ) %>
+
+      <small class="field-help">
+        Leave blank when all branches use the account.
+      </small>
+    </div>
+
+    <div class="field">
+      <%= form.label :account_number,
+                     "Account or reference number" %>
+
+      <%= form.text_field :account_number,
+                          placeholder:
+                            "Till, paybill or bank account number" %>
+    </div>
+
+    <div class="field">
+      <%= form.label :opening_balance,
+                     "Opening balance" %>
+
+      <%= form.number_field :opening_balance,
+                            step: 0.01,
+                            required: true %>
+
+      <small class="field-help">
+        This is the balance when the business starts using
+        the POS, not a calculated current balance.
+      </small>
+    </div>
+
+    <div class="field">
+      <%= form.label :opening_balance_date,
+                     "Opening balance date" %>
+
+      <%= form.date_field :opening_balance_date %>
+
+      <small class="field-help">
+        Required when the opening balance is not zero.
+      </small>
+    </div>
+
+    <div class="field field--full">
+      <label class="checkbox-field">
+        <%= form.check_box :can_receive %>
+
+        <span>
+          This account can receive money
+        </span>
+      </label>
+    </div>
+
+    <div class="field field--full">
+      <label class="checkbox-field">
+        <%= form.check_box :can_pay %>
+
+        <span>
+          This account can make payments
+        </span>
+      </label>
+    </div>
+
+    <div class="field field--full">
+      <%= form.label :notes %>
+
+      <%= form.text_area :notes,
+                         rows: 4,
+                         placeholder:
+                           "Optional account notes" %>
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <%= form.submit class:
+                      "button button--primary" %>
+
+    <%= link_to "Cancel",
+                money_accounts_path,
+                class:
+                  "button button--secondary" %>
+  </div>
+<% end %>
