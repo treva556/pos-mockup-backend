@@ -43,6 +43,21 @@ Rails.application.routes.draw do
       patch :toggle_status, on: :member
     end
 
+  resources :product_categories,
+              except: %i[show destroy] do
+      patch :toggle_status, on: :member
+    end
+
+    resources :unit_of_measures,
+              except: %i[show destroy] do
+      patch :toggle_status, on: :member
+    end
+
+    resources :tax_rates,
+              except: %i[show destroy] do
+      patch :toggle_status, on: :member
+    end
+
   get "up" => "rails/health#show",
       as: :rails_health_check
 end
