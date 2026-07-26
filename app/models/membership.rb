@@ -57,6 +57,13 @@ class Membership < ApplicationRecord
       stock_clerk?
   end
 
+  def money_setup_management?
+      owner? ||
+        admin? ||
+        manager? ||
+        accountant?
+    end
+
   private
 
   def branch_belongs_to_organization

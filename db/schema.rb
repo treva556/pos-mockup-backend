@@ -10,9 +10,25 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_26_120612) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_26_140141) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "branch_payment_settings", force: :cascade do |t|
+    t.bigint "branch_id", null: false
+    t.datetime "created_at", null: false
+    t.boolean "enabled", default: true, null: false
+    t.bigint "money_account_id"
+    t.bigint "organization_id", null: false
+    t.bigint "payment_method_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["branch_id", "payment_method_id"], name: "index_branch_payment_settings_on_branch_and_method", unique: true
+    t.index ["branch_id"], name: "index_branch_payment_settings_on_branch_id"
+    t.index ["money_account_id"], name: "index_branch_payment_settings_on_money_account_id"
+    t.index ["organization_id", "enabled"], name: "index_branch_payment_settings_on_organization_id_and_enabled"
+    t.index ["organization_id"], name: "index_branch_payment_settings_on_organization_id"
+    t.index ["payment_method_id"], name: "index_branch_payment_settings_on_payment_method_id"
+  end
 
   create_table "branches", force: :cascade do |t|
     t.boolean "active", default: true, null: false
@@ -94,6 +110,30 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_26_120612) do
     t.index ["user_id"], name: "index_memberships_on_user_id"
   end
 
+  create_table "money_accounts", force: :cascade do |t|
+    t.string "account_number"
+    t.string "account_type", default: "cash", null: false
+    t.boolean "active", default: true, null: false
+    t.bigint "branch_id"
+    t.boolean "can_pay", default: true, null: false
+    t.boolean "can_receive", default: true, null: false
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.text "notes"
+    t.decimal "opening_balance", precision: 15, scale: 2, default: "0.0", null: false
+    t.date "opening_balance_date"
+    t.bigint "organization_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["branch_id"], name: "index_money_accounts_on_branch_id"
+    t.index ["organization_id", "account_number"], name: "index_money_accounts_on_org_and_number", unique: true, where: "(account_number IS NOT NULL)"
+    t.index ["organization_id", "account_type"], name: "index_money_accounts_on_organization_id_and_account_type"
+    t.index ["organization_id", "active"], name: "index_money_accounts_on_organization_id_and_active"
+    t.index ["organization_id", "branch_id"], name: "index_money_accounts_on_organization_id_and_branch_id"
+    t.index ["organization_id", "name"], name: "index_money_accounts_on_org_and_name", unique: true
+    t.index ["organization_id"], name: "index_money_accounts_on_organization_id"
+    t.check_constraint "account_type::text = ANY (ARRAY['cash'::character varying, 'petty_cash'::character varying, 'mpesa_till'::character varying, 'mpesa_paybill'::character varying, 'bank'::character varying, 'card_clearing'::character varying, 'mobile_wallet'::character varying, 'other'::character varying]::text[])", name: "money_accounts_valid_account_type"
+  end
+
   create_table "organizations", force: :cascade do |t|
     t.boolean "active", default: true, null: false
     t.text "address"
@@ -112,6 +152,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_26_120612) do
     t.boolean "vat_registered", default: false, null: false
     t.index ["kra_pin"], name: "index_organizations_on_unique_kra_pin", unique: true, where: "(kra_pin IS NOT NULL)"
     t.index ["name"], name: "index_organizations_on_name"
+  end
+
+  create_table "payment_methods", force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.string "code", null: false
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.bigint "organization_id", null: false
+    t.string "payment_type", default: "cash", null: false
+    t.boolean "requires_reference", default: false, null: false
+    t.datetime "updated_at", null: false
+    t.index ["organization_id", "active"], name: "index_payment_methods_on_organization_id_and_active"
+    t.index ["organization_id", "code"], name: "index_payment_methods_on_org_and_code", unique: true
+    t.index ["organization_id", "name"], name: "index_payment_methods_on_org_and_name", unique: true
+    t.index ["organization_id", "payment_type"], name: "index_payment_methods_on_organization_id_and_payment_type"
+    t.index ["organization_id"], name: "index_payment_methods_on_organization_id"
+    t.check_constraint "payment_type::text = ANY (ARRAY['cash'::character varying, 'mobile_money'::character varying, 'bank_transfer'::character varying, 'card'::character varying, 'credit'::character varying, 'other'::character varying]::text[])", name: "payment_methods_valid_payment_type"
   end
 
   create_table "product_categories", force: :cascade do |t|
@@ -187,6 +244,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_26_120612) do
     t.index ["email"], name: "index_users_on_email", unique: true
   end
 
+  add_foreign_key "branch_payment_settings", "branches"
+  add_foreign_key "branch_payment_settings", "money_accounts"
+  add_foreign_key "branch_payment_settings", "organizations"
+  add_foreign_key "branch_payment_settings", "payment_methods"
   add_foreign_key "branches", "organizations"
   add_foreign_key "customers", "organizations"
   add_foreign_key "items", "organizations"
@@ -196,6 +257,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_26_120612) do
   add_foreign_key "memberships", "branches"
   add_foreign_key "memberships", "organizations"
   add_foreign_key "memberships", "users"
+  add_foreign_key "money_accounts", "branches"
+  add_foreign_key "money_accounts", "organizations"
+  add_foreign_key "payment_methods", "organizations"
   add_foreign_key "product_categories", "organizations"
   add_foreign_key "suppliers", "organizations"
   add_foreign_key "tax_rates", "organizations"
