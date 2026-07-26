@@ -1,0 +1,13 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>Edit Product Category</h1>
+      <p>Update <%= @product_category.name %>.</p>
+    </div>
+  </header>
+
+  <div class="panel">
+    <%= render "form",
+               product_category: @product_category %>
+  </div>
+</section>

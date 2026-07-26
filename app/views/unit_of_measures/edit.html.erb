@@ -1,0 +1,13 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>Edit Unit of Measure</h1>
+      <p>Update <%= @unit_of_measure.name %>.</p>
+    </div>
+  </header>
+
+  <div class="panel">
+    <%= render "form",
+               unit_of_measure: @unit_of_measure %>
+  </div>
+</section>

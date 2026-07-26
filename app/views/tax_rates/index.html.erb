@@ -1,0 +1,76 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>Tax Rates</h1>
+      <p>Configure tax treatment for products and services.</p>
+    </div>
+
+    <%= link_to "New Tax Rate",
+                new_tax_rate_path,
+                class: "button button--primary" %>
+  </header>
+
+  <div class="panel">
+    <%= form_with url: tax_rates_path,
+                  method: :get,
+                  local: true do |form| %>
+      <div class="form-actions">
+        <%= form.select :status,
+                        [
+                          [ "Active", "active" ],
+                          [ "Inactive", "inactive" ],
+                          [ "All", "all" ]
+                        ],
+                        selected: @status %>
+
+        <%= form.submit "Filter" %>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="panel">
+    <% if @tax_rates.any? %>
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Code</th>
+            <th>Type</th>
+            <th>Rate</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% @tax_rates.each do |tax_rate| %>
+            <tr>
+              <td><%= tax_rate.name %></td>
+              <td><%= tax_rate.code %></td>
+              <td><%= tax_rate.tax_type.titleize %></td>
+              <td><%= number_to_percentage(
+                        tax_rate.rate,
+                        precision: 2
+                      ) %></td>
+              <td>
+                <%= tax_rate.active? ? "Active" : "Inactive" %>
+              </td>
+              <td>
+                <%= link_to "Edit",
+                            edit_tax_rate_path(tax_rate) %>
+
+                <%= button_to(
+                      tax_rate.active? ? "Disable" : "Enable",
+                      toggle_status_tax_rate_path(tax_rate),
+                      method: :patch
+                    ) %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p>No tax rates found.</p>
+    <% end %>
+  </div>
+</section>

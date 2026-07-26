@@ -1070,3 +1070,71 @@ tbody tr:last-child td {
     overflow-x: auto;
   }
 }
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 18px;
+}
+
+.checkbox-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.checkbox-field input {
+  width: auto;
+  margin: 0;
+}
+
+.field-help {
+  display: block;
+  margin-top: 6px;
+  color: var(--text-secondary);
+}
+
+.details-list {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 0;
+  margin: 0;
+}
+
+.details-list > div {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.details-list > div:nth-child(odd) {
+  padding-right: 24px;
+}
+
+.details-list dt {
+  margin-bottom: 4px;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.details-list dd {
+  margin: 0;
+  font-weight: 500;
+}
+
+small {
+  color: var(--text-secondary);
+}
+
+@media (max-width: 720px) {
+  .filter-grid,
+  .details-list {
+    grid-template-columns: 1fr;
+  }
+
+  .details-list > div:nth-child(odd) {
+    padding-right: 0;
+  }
+}

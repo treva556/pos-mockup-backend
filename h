@@ -1,0 +1,19 @@
+ app/controllers/product_categories_controller.rb | 104 [32m++++++++++++++++++++++[m
+ app/controllers/tax_rates_controller.rb          | 104 [32m++++++++++++++++++++++[m
+ app/controllers/unit_of_measures_controller.rb   | 106 [32m+++++++++++++++++++++++[m
+ app/models/membership.rb                         |   8 [32m++[m
+ app/views/dashboards/show.html.erb               |  20 [32m+++++[m
+ app/views/product_categories/_form.html.erb      |  42 [32m+++++++++[m
+ app/views/product_categories/edit.html.erb       |  13 [32m+++[m
+ app/views/product_categories/index.html.erb      |  71 [32m+++++++++++++++[m
+ app/views/product_categories/new.html.erb        |  13 [32m+++[m
+ app/views/tax_rates/_form.html.erb               |  54 [32m++++++++++++[m
+ app/views/tax_rates/edit.html.erb                |  17 [32m++++[m
+ app/views/tax_rates/index.html.erb               |  76 [32m++++++++++++++++[m
+ app/views/tax_rates/new.html.erb                 |  17 [32m++++[m
+ app/views/unit_of_measures/_form.html.erb        |  43 [32m+++++++++[m
+ app/views/unit_of_measures/edit.html.erb         |  13 [32m+++[m
+ app/views/unit_of_measures/index.html.erb        |  73 [32m++++++++++++++++[m
+ app/views/unit_of_measures/new.html.erb          |  13 [32m+++[m
+ config/routes.rb                                 |  15 [32m++++[m
+ 18 files changed, 802 insertions(+)

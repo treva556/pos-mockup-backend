@@ -1,0 +1,73 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>Units of Measure</h1>
+      <p>Define how products and services are measured.</p>
+    </div>
+
+    <%= link_to "New Unit",
+                new_unit_of_measure_path,
+                class: "button button--primary" %>
+  </header>
+
+  <div class="panel">
+    <%= form_with url: unit_of_measures_path,
+                  method: :get,
+                  local: true do |form| %>
+      <div class="form-actions">
+        <%= form.select :status,
+                        [
+                          [ "Active", "active" ],
+                          [ "Inactive", "inactive" ],
+                          [ "All", "all" ]
+                        ],
+                        selected: @status %>
+
+        <%= form.submit "Filter" %>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="panel">
+    <% if @unit_of_measures.any? %>
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Symbol</th>
+            <th>Decimals</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% @unit_of_measures.each do |unit| %>
+            <tr>
+              <td><%= unit.name %></td>
+              <td><%= unit.symbol %></td>
+              <td>
+                <%= unit.decimal_allowed? ? "Allowed" : "Whole only" %>
+              </td>
+              <td>
+                <%= unit.active? ? "Active" : "Inactive" %>
+              </td>
+              <td>
+                <%= link_to "Edit",
+                            edit_unit_of_measure_path(unit) %>
+
+                <%= button_to(
+                      unit.active? ? "Disable" : "Enable",
+                      toggle_status_unit_of_measure_path(unit),
+                      method: :patch
+                    ) %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p>No units found.</p>
+    <% end %>
+  </div>
+</section>

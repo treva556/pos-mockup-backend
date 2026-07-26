@@ -1,0 +1,157 @@
+<%= form_with model: item,
+              class: "record-form" do |form| %>
+  <% if item.errors.any? %>
+    <section class="form-errors">
+      <h2>
+        <%= pluralize(item.errors.count, "error") %>
+        prevented this item from being saved
+      </h2>
+
+      <ul>
+        <% item.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+
+  <div class="form-grid">
+    <div class="field">
+      <%= form.label :name %>
+
+      <%= form.text_field :name,
+                          required: true,
+                          autofocus: true,
+                          placeholder:
+                            "Cement 50 kg" %>
+    </div>
+
+    <div class="field">
+      <%= form.label :item_type, "Type" %>
+
+      <%= form.select :item_type,
+                      [
+                        [ "Product", "product" ],
+                        [ "Service", "service" ]
+                      ] %>
+    </div>
+
+    <div class="field">
+      <%= form.label :sku, "SKU" %>
+
+      <%= form.text_field :sku,
+                          placeholder: "CEM-50" %>
+    </div>
+
+    <div class="field">
+      <%= form.label :barcode %>
+
+      <%= form.text_field :barcode,
+                          placeholder:
+                            "Scan or enter barcode" %>
+    </div>
+
+    <div class="field">
+      <%= form.label :product_category_id,
+                     "Category" %>
+
+      <%= form.collection_select(
+            :product_category_id,
+            @product_categories,
+            :id,
+            :name,
+            {
+              include_blank: "No category"
+            }
+          ) %>
+    </div>
+
+    <div class="field">
+      <%= form.label :unit_of_measure_id,
+                     "Unit of measure" %>
+
+      <%= form.collection_select(
+            :unit_of_measure_id,
+            @unit_of_measures,
+            :id,
+            ->(unit) {
+              "#{unit.name} (#{unit.symbol})"
+            },
+            {
+              prompt: "Select a unit"
+            },
+            {
+              required: true
+            }
+          ) %>
+    </div>
+
+    <div class="field">
+      <%= form.label :tax_rate_id,
+                     "Tax rate" %>
+
+      <%= form.collection_select(
+            :tax_rate_id,
+            @tax_rates,
+            :id,
+            ->(tax_rate) {
+              "#{tax_rate.name} (#{tax_rate.rate}%)"
+            },
+            {
+              include_blank: "No tax rate"
+            }
+          ) %>
+    </div>
+
+    <div class="field">
+      <%= form.label :selling_price %>
+
+      <%= form.number_field :selling_price,
+                            min: 0,
+                            step: 0.01,
+                            required: true %>
+    </div>
+
+    <div class="field">
+      <%= form.label :purchase_cost %>
+
+      <%= form.number_field :purchase_cost,
+                            min: 0,
+                            step: 0.01,
+                            required: true %>
+    </div>
+
+    <div class="field field--full">
+      <label class="checkbox-field">
+        <%= form.check_box :track_inventory %>
+
+        <span>
+          Track inventory for this item
+        </span>
+      </label>
+
+      <small class="field-help">
+        Services automatically have inventory tracking disabled.
+      </small>
+    </div>
+
+    <div class="field field--full">
+      <%= form.label :description %>
+
+      <%= form.text_area :description,
+                         rows: 4,
+                         placeholder:
+                           "Optional product or service description" %>
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <%= form.submit class:
+                      "button button--primary" %>
+
+    <%= link_to "Cancel",
+                items_path,
+                class:
+                  "button button--secondary" %>
+  </div>
+<% end %>

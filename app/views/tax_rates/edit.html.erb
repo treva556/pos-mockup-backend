@@ -1,0 +1,17 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>Edit Tax Rate</h1>
+      <p>Update <%= @tax_rate.name %>.</p>
+    </div>
+
+    <%= link_to "Back to Tax Rates",
+                tax_rates_path,
+                class: "button button--secondary" %>
+  </header>
+
+  <div class="panel">
+    <%= render "form",
+               tax_rate: @tax_rate %>
+  </div>
+</section>

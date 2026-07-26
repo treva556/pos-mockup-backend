@@ -1,0 +1,54 @@
+<%= form_with model: tax_rate,
+              class: "record-form" do |form| %>
+  <% if tax_rate.errors.any? %>
+    <section class="form-errors">
+      <ul>
+        <% tax_rate.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+
+  <div class="form-grid">
+    <div class="field">
+      <%= form.label :name %>
+      <%= form.text_field :name,
+                          required: true,
+                          autofocus: true %>
+    </div>
+
+    <div class="field">
+      <%= form.label :code %>
+      <%= form.text_field :code,
+                          required: true,
+                          placeholder: "VAT16" %>
+    </div>
+
+    <div class="field">
+      <%= form.label :tax_type %>
+
+      <%= form.select :tax_type,
+                      TaxRate.tax_types.keys.map {
+                        |type|
+                        [ type.titleize, type ]
+                      } %>
+    </div>
+
+    <div class="field">
+      <%= form.label :rate, "Rate (%)" %>
+      <%= form.number_field :rate,
+                            min: 0,
+                            max: 100,
+                            step: 0.0001 %>
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <%= form.submit class: "button button--primary" %>
+
+    <%= link_to "Cancel",
+                tax_rates_path,
+                class: "button button--secondary" %>
+  </div>
+<% end %>

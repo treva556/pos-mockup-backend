@@ -1,0 +1,42 @@
+<%= form_with model: product_category,
+              class: "record-form" do |form| %>
+  <% if product_category.errors.any? %>
+    <section class="form-errors">
+      <h2>
+        <%= pluralize(
+              product_category.errors.count,
+              "error"
+            ) %>
+        prevented this category from being saved
+      </h2>
+
+      <ul>
+        <% product_category.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+
+  <div class="form-grid">
+    <div class="field field--full">
+      <%= form.label :name %>
+      <%= form.text_field :name,
+                          required: true,
+                          autofocus: true %>
+    </div>
+
+    <div class="field field--full">
+      <%= form.label :description %>
+      <%= form.text_area :description, rows: 4 %>
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <%= form.submit class: "button button--primary" %>
+
+    <%= link_to "Cancel",
+                product_categories_path,
+                class: "button button--secondary" %>
+  </div>
+<% end %>

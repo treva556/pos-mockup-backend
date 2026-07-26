@@ -41,9 +41,11 @@
     <article class="summary-card">
       <span>System status</span>
       <strong class="summary-word">Setup</strong>
-      <small>Phase 1 in progress</small>
+      <small>Phase 2 in progress</small>
     </article>
   </section>
+
+
 
   <% if current_membership&.organization_admin? %>
   <section class="dashboard-panel">
@@ -76,21 +78,78 @@
   </section>
 <% end %>
 
-  <section>
-    <h2>Business Records</h2>
 
-    <p>
-      <%= link_to "Customers", customers_path %>
-      <%= link_to "New Customer", new_customer_path %>
-    </p>
+  <% if current_membership.product_setup_management? %>
+  <section class="dashboard-panel">
+    <div class="panel-heading">
+      <div>
+        <h2>Product Setup</h2>
+        <p>Configure your catalogue, units and taxes.</p>
+      </div>
+    </div>
 
-    <% if current_membership.supplier_management? %>
-      <p>
-        <%= link_to "Suppliers", suppliers_path %>
-        <%= link_to "New Supplier", new_supplier_path %>
-      </p>
-    <% end %>
+    <div class="form-actions">
+      <%= link_to "Product Categories",
+                  product_categories_path,
+                  class: "button button--secondary" %>
+
+      <%= link_to "Units",
+                  unit_of_measures_path,
+                  class: "button button--secondary" %>
+
+      <%= link_to "Tax Rates",
+                  tax_rates_path,
+                  class: "button button--secondary" %>
+
+      <%= link_to "Items and Services",
+                  items_path,
+                  class: "button button--primary" %>
+
+      <%= link_to "New Item",
+                  new_item_path,
+                  class: "button button--secondary" %>
+    </div>
   </section>
+<% end %>
+
+
+  <section>
+    <section class="dashboard-panel">
+      <div class="panel-heading">
+        <div>
+          <h2>Business Records</h2>
+          <p>Manage customers and suppliers.</p>
+        </div>
+      </div>
+
+      <div class="quick-actions-grid">
+        <%= link_to customers_path,
+                    class: "quick-action-card" do %>
+          <strong>Customers</strong>
+          <span>View and manage customer records</span>
+        <% end %>
+
+        <%= link_to new_customer_path,
+                    class: "quick-action-card" do %>
+          <strong>New Customer</strong>
+          <span>Create a new customer record</span>
+        <% end %>
+
+        <% if current_membership.supplier_management? %>
+          <%= link_to suppliers_path,
+                      class: "quick-action-card" do %>
+            <strong>Suppliers</strong>
+            <span>View and manage supplier records</span>
+          <% end %>
+
+          <%= link_to new_supplier_path,
+                      class: "quick-action-card" do %>
+            <strong>New Supplier</strong>
+            <span>Create a new supplier record</span>
+          <% end %>
+        <% end %>
+      </div>
+    </section>
 
   <section class="dashboard-panel">
     <h2>Setup progress</h2>
@@ -122,3 +181,4 @@
     </div>
   </section>
 </div>
+

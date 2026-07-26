@@ -1,0 +1,71 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>Product Categories</h1>
+      <p>Organise products and services into groups.</p>
+    </div>
+
+    <%= link_to "New Category",
+                new_product_category_path,
+                class: "button button--primary" %>
+  </header>
+
+  <div class="panel">
+    <%= form_with url: product_categories_path,
+                  method: :get,
+                  local: true do |form| %>
+      <div class="form-actions">
+        <%= form.select :status,
+                        [
+                          [ "Active", "active" ],
+                          [ "Inactive", "inactive" ],
+                          [ "All", "all" ]
+                        ],
+                        selected: @status %>
+
+        <%= form.submit "Filter" %>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="panel">
+    <% if @product_categories.any? %>
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% @product_categories.each do |category| %>
+            <tr>
+              <td><%= category.name %></td>
+              <td>
+                <%= category.description.presence || "—" %>
+              </td>
+              <td>
+                <%= category.active? ? "Active" : "Inactive" %>
+              </td>
+              <td>
+                <%= link_to "Edit",
+                            edit_product_category_path(category) %>
+
+                <%= button_to(
+                      category.active? ? "Disable" : "Enable",
+                      toggle_status_product_category_path(category),
+                      method: :patch
+                    ) %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p>No product categories found.</p>
+    <% end %>
+  </div>
+</section>

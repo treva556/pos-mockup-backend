@@ -1,0 +1,43 @@
+<%= form_with model: unit_of_measure,
+              class: "record-form" do |form| %>
+  <% if unit_of_measure.errors.any? %>
+    <section class="form-errors">
+      <ul>
+        <% unit_of_measure.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+
+  <div class="form-grid">
+    <div class="field">
+      <%= form.label :name %>
+      <%= form.text_field :name,
+                          required: true,
+                          autofocus: true %>
+    </div>
+
+    <div class="field">
+      <%= form.label :symbol %>
+      <%= form.text_field :symbol,
+                          required: true,
+                          placeholder: "pcs, kg, L, hr" %>
+    </div>
+
+    <div class="field field--full">
+      <label>
+        <%= form.check_box :decimal_allowed %>
+        Allow decimal quantities, such as 1.5 kg
+      </label>
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <%= form.submit class: "button button--primary" %>
+
+    <%= link_to "Cancel",
+                unit_of_measures_path,
+                class: "button button--secondary" %>
+  </div>
+<% end %>
