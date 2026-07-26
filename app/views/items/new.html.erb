@@ -1,0 +1,21 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>New Item or Service</h1>
+
+      <p>
+        Add a product or service for
+        <%= current_organization.name %>.
+      </p>
+    </div>
+
+    <%= link_to "Back to Items",
+                items_path,
+                class:
+                  "button button--secondary" %>
+  </header>
+
+  <div class="panel">
+    <%= render "form", item: @item %>
+  </div>
+</section>

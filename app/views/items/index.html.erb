@@ -1,0 +1,146 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>Items and Services</h1>
+
+      <p>
+        Manage products, services, prices and barcodes.
+      </p>
+    </div>
+
+    <%= link_to "New Item or Service",
+                new_item_path,
+                class:
+                  "button button--primary" %>
+  </header>
+
+  <div class="panel">
+    <%= form_with url: items_path,
+                  method: :get,
+                  local: true do |form| %>
+      <div class="filter-grid">
+        <div class="field">
+          <%= form.label :q, "Search" %>
+
+          <%= form.search_field :q,
+                                value: @query,
+                                placeholder:
+                                  "Name, SKU or barcode" %>
+        </div>
+
+        <div class="field">
+          <%= form.label :item_type, "Type" %>
+
+          <%= form.select :item_type,
+                          [
+                            [ "All types", "all" ],
+                            [ "Products", "product" ],
+                            [ "Services", "service" ]
+                          ],
+                          selected: @item_type %>
+        </div>
+
+        <div class="field">
+          <%= form.label :status %>
+
+          <%= form.select :status,
+                          [
+                            [ "Active", "active" ],
+                            [ "Inactive", "inactive" ],
+                            [ "All", "all" ]
+                          ],
+                          selected: @status %>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <%= form.submit "Search" %>
+
+        <%= link_to "Clear",
+                    items_path,
+                    class:
+                      "button button--secondary" %>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="panel">
+    <% if @items.any? %>
+      <table>
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Type</th>
+            <th>SKU / Barcode</th>
+            <th>Unit</th>
+            <th>Selling price</th>
+            <th>Stock tracking</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% @items.each do |item| %>
+            <tr>
+              <td>
+                <%= link_to item.name, item_path(item) %>
+
+                <% if item.product_category.present? %>
+                  <br>
+
+                  <small>
+                    <%= item.product_category.name %>
+                  </small>
+                <% end %>
+              </td>
+
+              <td><%= item.item_type.titleize %></td>
+
+              <td>
+                <%= item.sku.presence || "—" %>
+                <br>
+                <small>
+                  <%= item.barcode.presence || "No barcode" %>
+                </small>
+              </td>
+
+              <td>
+                <%= item.unit_of_measure.symbol %>
+              </td>
+
+              <td>
+                <%= number_to_currency(
+                      item.selling_price,
+                      unit: "KSh ",
+                      precision: 2
+                    ) %>
+              </td>
+
+              <td>
+                <%= item.stockable? ? "Tracked" : "Not tracked" %>
+              </td>
+
+              <td>
+                <%= item.active? ? "Active" : "Inactive" %>
+              </td>
+
+              <td>
+                <%= link_to "Edit",
+                            edit_item_path(item) %>
+
+                <%= button_to(
+                      item.active? ? "Disable" : "Enable",
+                      toggle_status_item_path(item),
+                      method: :patch
+                    ) %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p>No items or services found.</p>
+    <% end %>
+  </div>
+</section>

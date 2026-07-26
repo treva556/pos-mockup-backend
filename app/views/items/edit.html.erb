@@ -1,0 +1,17 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>Edit Item</h1>
+      <p>Update <%= @item.name %>.</p>
+    </div>
+
+    <%= link_to "View Item",
+                item_path(@item),
+                class:
+                  "button button--secondary" %>
+  </header>
+
+  <div class="panel">
+    <%= render "form", item: @item %>
+  </div>
+</section>

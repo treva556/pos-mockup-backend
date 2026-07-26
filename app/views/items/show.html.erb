@@ -1,0 +1,105 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1><%= @item.name %></h1>
+
+      <p>
+        <%= @item.item_type.titleize %>
+        ·
+        <%= @item.active? ? "Active" : "Inactive" %>
+      </p>
+    </div>
+
+    <div class="form-actions">
+      <%= link_to "Edit Item",
+                  edit_item_path(@item),
+                  class:
+                    "button button--primary" %>
+
+      <%= link_to "Back to Items",
+                  items_path,
+                  class:
+                    "button button--secondary" %>
+    </div>
+  </header>
+
+  <div class="panel">
+    <dl class="details-list">
+      <div>
+        <dt>SKU</dt>
+        <dd><%= @item.sku.presence || "Not provided" %></dd>
+      </div>
+
+      <div>
+        <dt>Barcode</dt>
+        <dd>
+          <%= @item.barcode.presence || "Not provided" %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Category</dt>
+        <dd>
+          <%= @item.product_category&.name ||
+                "No category" %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Unit</dt>
+        <dd>
+          <%= @item.unit_of_measure.name %>
+          (<%= @item.unit_of_measure.symbol %>)
+        </dd>
+      </div>
+
+      <div>
+        <dt>Tax rate</dt>
+        <dd>
+          <% if @item.tax_rate.present? %>
+            <%= @item.tax_rate.name %>
+            (<%= @item.tax_rate.rate %>%)
+          <% else %>
+            No tax rate
+          <% end %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Selling price</dt>
+        <dd>
+          <%= number_to_currency(
+                @item.selling_price,
+                unit: "KSh ",
+                precision: 2
+              ) %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Purchase cost</dt>
+        <dd>
+          <%= number_to_currency(
+                @item.purchase_cost,
+                unit: "KSh ",
+                precision: 2
+              ) %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Inventory tracking</dt>
+        <dd>
+          <%= @item.stockable? ? "Enabled" : "Disabled" %>
+        </dd>
+      </div>
+    </dl>
+  </div>
+
+  <% if @item.description.present? %>
+    <div class="panel">
+      <h2>Description</h2>
+      <%= simple_format(@item.description) %>
+    </div>
+  <% end %>
+</section>

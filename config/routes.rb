@@ -58,6 +58,10 @@ Rails.application.routes.draw do
       patch :toggle_status, on: :member
     end
 
+    resources :items, except: :destroy do
+      patch :toggle_status, on: :member
+    end
+
   get "up" => "rails/health#show",
       as: :rails_health_check
 end
