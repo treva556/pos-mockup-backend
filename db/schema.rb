@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_26_093056) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_26_095810) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -28,6 +28,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_26_093056) do
     t.index ["organization_id", "code"], name: "index_branches_on_organization_id_and_code", unique: true
     t.index ["organization_id"], name: "index_branches_on_one_main_per_organization", unique: true, where: "(main = true)"
     t.index ["organization_id"], name: "index_branches_on_organization_id"
+  end
+
+  create_table "customers", force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.text "address"
+    t.datetime "created_at", null: false
+    t.decimal "credit_limit", precision: 15, scale: 2, default: "0.0", null: false
+    t.string "email"
+    t.string "kra_pin"
+    t.string "name", null: false
+    t.text "notes"
+    t.bigint "organization_id", null: false
+    t.integer "payment_terms_days", default: 0, null: false
+    t.string "phone"
+    t.datetime "updated_at", null: false
+    t.index ["organization_id", "active"], name: "index_customers_on_organization_id_and_active"
+    t.index ["organization_id", "kra_pin"], name: "index_customers_on_org_and_kra_pin", unique: true, where: "(kra_pin IS NOT NULL)"
+    t.index ["organization_id", "name"], name: "index_customers_on_organization_id_and_name"
+    t.index ["organization_id"], name: "index_customers_on_organization_id"
   end
 
   create_table "memberships", force: :cascade do |t|
@@ -64,6 +83,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_26_093056) do
     t.index ["name"], name: "index_organizations_on_name"
   end
 
+  create_table "suppliers", force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.text "address"
+    t.string "contact_person"
+    t.datetime "created_at", null: false
+    t.string "email"
+    t.string "kra_pin"
+    t.string "name", null: false
+    t.text "notes"
+    t.bigint "organization_id", null: false
+    t.integer "payment_terms_days", default: 0, null: false
+    t.string "phone"
+    t.datetime "updated_at", null: false
+    t.index ["organization_id", "active"], name: "index_suppliers_on_organization_id_and_active"
+    t.index ["organization_id", "kra_pin"], name: "index_suppliers_on_org_and_kra_pin", unique: true, where: "(kra_pin IS NOT NULL)"
+    t.index ["organization_id", "name"], name: "index_suppliers_on_organization_id_and_name"
+    t.index ["organization_id"], name: "index_suppliers_on_organization_id"
+  end
+
   create_table "users", force: :cascade do |t|
     t.boolean "active", default: true, null: false
     t.datetime "created_at", null: false
@@ -77,7 +115,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_26_093056) do
   end
 
   add_foreign_key "branches", "organizations"
+  add_foreign_key "customers", "organizations"
   add_foreign_key "memberships", "branches"
   add_foreign_key "memberships", "organizations"
   add_foreign_key "memberships", "users"
+  add_foreign_key "suppliers", "organizations"
 end
