@@ -76,6 +76,22 @@
   </section>
 <% end %>
 
+  <section>
+    <h2>Business Records</h2>
+
+    <p>
+      <%= link_to "Customers", customers_path %>
+      <%= link_to "New Customer", new_customer_path %>
+    </p>
+
+    <% if current_membership.supplier_management? %>
+      <p>
+        <%= link_to "Suppliers", suppliers_path %>
+        <%= link_to "New Supplier", new_supplier_path %>
+      </p>
+    <% end %>
+  </section>
+
   <section class="dashboard-panel">
     <h2>Setup progress</h2>
 

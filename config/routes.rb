@@ -35,6 +35,14 @@ Rails.application.routes.draw do
            only: %i[edit update]
   end
 
+  resources :customers, except: :destroy do
+      patch :toggle_status, on: :member
+    end
+
+    resources :suppliers, except: :destroy do
+      patch :toggle_status, on: :member
+    end
+
   get "up" => "rails/health#show",
       as: :rails_health_check
 end

@@ -41,6 +41,14 @@ class Membership < ApplicationRecord
     branch_id.present?
   end
 
+  def supplier_management?
+    owner? ||
+      admin? ||
+      manager? ||
+      accountant? ||
+      stock_clerk?
+  end
+
   private
 
   def branch_belongs_to_organization

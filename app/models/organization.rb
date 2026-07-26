@@ -2,6 +2,11 @@ class Organization < ApplicationRecord
   has_many :branches, dependent: :destroy
   has_many :memberships, dependent: :destroy
   has_many :users, through: :memberships
+  has_many :customers,
+         dependent: :restrict_with_error
+
+  has_many :suppliers,
+          dependent: :restrict_with_error
 
   before_validation :normalize_business_details
 
