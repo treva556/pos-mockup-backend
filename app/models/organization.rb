@@ -7,6 +7,17 @@ class Organization < ApplicationRecord
 
   has_many :suppliers,
           dependent: :restrict_with_error
+   has_many :product_categories,
+         dependent: :restrict_with_error
+
+    has_many :unit_of_measures,
+            dependent: :restrict_with_error
+
+    has_many :tax_rates,
+            dependent: :restrict_with_error
+
+    has_many :items,
+            dependent: :restrict_with_error
 
   before_validation :normalize_business_details
 
