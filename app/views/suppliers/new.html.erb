@@ -1,0 +1,16 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>New Supplier</h1>
+      <p>Add a supplier for <%= current_organization.name %>.</p>
+    </div>
+
+    <%= link_to "Back to Suppliers",
+                suppliers_path,
+                class: "button button--secondary" %>
+  </header>
+
+  <div class="panel">
+    <%= render "form", supplier: @supplier %>
+  </div>
+</section>

@@ -1,0 +1,16 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>Edit Supplier</h1>
+      <p>Update <%= @supplier.name %>.</p>
+    </div>
+
+    <%= link_to "View Supplier",
+                supplier_path(@supplier),
+                class: "button button--secondary" %>
+  </header>
+
+  <div class="panel">
+    <%= render "form", supplier: @supplier %>
+  </div>
+</section>

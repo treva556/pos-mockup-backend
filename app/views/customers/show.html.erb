@@ -1,0 +1,59 @@
+<h1><%= @customer.name %></h1>
+
+<p>
+  <strong>Status:</strong>
+  <%= @customer.active? ? "Active" : "Inactive" %>
+</p>
+
+<p>
+  <strong>Phone:</strong>
+  <%= @customer.phone.presence || "Not provided" %>
+</p>
+
+<p>
+  <strong>Email:</strong>
+  <%= @customer.email.presence || "Not provided" %>
+</p>
+
+<p>
+  <strong>KRA PIN:</strong>
+  <%= @customer.kra_pin.presence || "Not provided" %>
+</p>
+
+<p>
+  <strong>Credit limit:</strong>
+  <%= number_to_currency(
+        @customer.credit_limit,
+        unit: "KSh ",
+        precision: 2
+      ) %>
+</p>
+
+<p>
+  <strong>Payment terms:</strong>
+  <%= pluralize(@customer.payment_terms_days, "day") %>
+</p>
+
+<p>
+  <strong>Address:</strong><br>
+  <%= simple_format(
+        @customer.address.presence || "Not provided"
+      ) %>
+</p>
+
+<p>
+  <strong>Notes:</strong><br>
+  <%= simple_format(
+        @customer.notes.presence || "No notes"
+      ) %>
+</p>
+
+<p>
+  <%= link_to "Edit customer",
+              edit_customer_path(@customer) %>
+
+  |
+
+  <%= link_to "Back to customers",
+              customers_path %>
+</p>

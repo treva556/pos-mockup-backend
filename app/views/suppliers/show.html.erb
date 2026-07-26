@@ -1,0 +1,41 @@
+<h1><%= @supplier.name %></h1>
+
+<p>
+  <strong>Status:</strong>
+  <%= @supplier.active? ? "Active" : "Inactive" %>
+</p>
+
+<p>
+  <strong>Contact person:</strong>
+  <%= @supplier.contact_person.presence || "Not provided" %>
+</p>
+
+<p>
+  <strong>Phone:</strong>
+  <%= @supplier.phone.presence || "Not provided" %>
+</p>
+
+<p>
+  <strong>Email:</strong>
+  <%= @supplier.email.presence || "Not provided" %>
+</p>
+
+<p>
+  <strong>KRA PIN:</strong>
+  <%= @supplier.kra_pin.presence || "Not provided" %>
+</p>
+
+<p>
+  <strong>Payment terms:</strong>
+  <%= pluralize(@supplier.payment_terms_days, "day") %>
+</p>
+
+<p>
+  <%= link_to "Edit supplier",
+              edit_supplier_path(@supplier) %>
+
+  |
+
+  <%= link_to "Back to suppliers",
+              suppliers_path %>
+</p>

@@ -1,0 +1,68 @@
+<%= form_with model: customer do |form| %>
+  <% if customer.errors.any? %>
+    <section>
+      <h2>
+        <%= pluralize(customer.errors.count, "error") %>
+        prevented this customer from being saved
+      </h2>
+
+      <ul>
+        <% customer.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+
+  <div>
+    <%= form.label :name %>
+    <%= form.text_field :name,
+                        required: true,
+                        autofocus: true %>
+  </div>
+
+  <div>
+    <%= form.label :phone %>
+    <%= form.telephone_field :phone %>
+  </div>
+
+  <div>
+    <%= form.label :email %>
+    <%= form.email_field :email %>
+  </div>
+
+  <div>
+    <%= form.label :kra_pin, "KRA PIN" %>
+    <%= form.text_field :kra_pin %>
+  </div>
+
+  <div>
+    <%= form.label :credit_limit %>
+    <%= form.number_field :credit_limit,
+                          min: 0,
+                          step: 0.01 %>
+  </div>
+
+  <div>
+    <%= form.label :payment_terms_days,
+                   "Payment terms (days)" %>
+
+    <%= form.number_field :payment_terms_days,
+                          min: 0,
+                          step: 1 %>
+  </div>
+
+  <div>
+    <%= form.label :address %>
+    <%= form.text_area :address, rows: 3 %>
+  </div>
+
+  <div>
+    <%= form.label :notes %>
+    <%= form.text_area :notes, rows: 4 %>
+  </div>
+
+  <div>
+    <%= form.submit %>
+  </div>
+<% end %>
