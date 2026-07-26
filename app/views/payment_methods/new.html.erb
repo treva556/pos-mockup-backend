@@ -1,0 +1,21 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>New Payment Method</h1>
+
+      <p>
+        Add a method customers can use to pay.
+      </p>
+    </div>
+
+    <%= link_to "Back to Payment Methods",
+                payment_methods_path,
+                class:
+                  "button button--secondary" %>
+  </header>
+
+  <div class="panel">
+    <%= render "form",
+               payment_method: @payment_method %>
+  </div>
+</section>

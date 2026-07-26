@@ -15,6 +15,8 @@ class BranchPaymentSetting < ApplicationRecord
   validate :money_account_matches_branch
   validate :money_account_is_receivable
   validate :money_account_is_present_when_required
+  validate :payment_method_is_active_when_enabled
+  validate :money_account_is_active_when_enabled
 
   scope :enabled, -> { where(enabled: true) }
 
@@ -66,6 +68,7 @@ class BranchPaymentSetting < ApplicationRecord
   end
 
   def money_account_is_receivable
+    return unless enabled?
     return if money_account.blank?
     return if money_account.can_receive?
 
@@ -76,6 +79,7 @@ class BranchPaymentSetting < ApplicationRecord
   end
 
   def money_account_is_present_when_required
+    return unless enabled?
     return if payment_method.blank?
     return unless payment_method.money_account_required?
     return if money_account.present?
@@ -85,4 +89,26 @@ class BranchPaymentSetting < ApplicationRecord
       "must be selected for this payment method"
     )
   end
+
+  def payment_method_is_active_when_enabled
+      return unless enabled?
+      return if payment_method.blank?
+      return if payment_method.active?
+
+      errors.add(
+        :payment_method,
+        "must be active when the setting is enabled"
+      )
+    end
+
+    def money_account_is_active_when_enabled
+      return unless enabled?
+      return if money_account.blank?
+      return if money_account.active?
+
+      errors.add(
+        :money_account,
+        "must be active when the setting is enabled"
+      )
+    end
 end

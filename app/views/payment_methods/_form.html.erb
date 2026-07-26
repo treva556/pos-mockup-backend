@@ -1,0 +1,78 @@
+<%= form_with model: payment_method,
+              class: "record-form" do |form| %>
+  <% if payment_method.errors.any? %>
+    <section class="form-errors">
+      <h2>
+        <%= pluralize(
+              payment_method.errors.count,
+              "error"
+            ) %>
+        prevented this payment method from being saved
+      </h2>
+
+      <ul>
+        <% payment_method.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+
+  <div class="form-grid">
+    <div class="field">
+      <%= form.label :name %>
+
+      <%= form.text_field :name,
+                          required: true,
+                          autofocus: true,
+                          placeholder: "M-Pesa" %>
+    </div>
+
+    <div class="field">
+      <%= form.label :code %>
+
+      <%= form.text_field :code,
+                          required: true,
+                          placeholder: "MPESA" %>
+
+      <small class="field-help">
+        A short internal code such as CASH, MPESA or BANK.
+      </small>
+    </div>
+
+    <div class="field">
+      <%= form.label :payment_type %>
+
+      <%= form.select :payment_type,
+                      PaymentMethod.payment_types.keys.map {
+                        |type|
+                        [type.titleize, type]
+                      } %>
+    </div>
+
+    <div class="field field--full">
+      <label class="checkbox-field">
+        <%= form.check_box :requires_reference %>
+
+        <span>
+          Require a payment reference
+        </span>
+      </label>
+
+      <small class="field-help">
+        Useful for M-Pesa codes, bank references and
+        card transaction references.
+      </small>
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <%= form.submit class:
+                      "button button--primary" %>
+
+    <%= link_to "Cancel",
+                payment_methods_path,
+                class:
+                  "button button--secondary" %>
+  </div>
+<% end %>

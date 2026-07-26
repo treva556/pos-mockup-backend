@@ -1,0 +1,147 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>Branch Payment Defaults</h1>
+
+      <p>
+        Choose where each payment method sends money
+        for the selected branch.
+      </p>
+    </div>
+  </header>
+
+  <div class="panel">
+    <%= form_with url: branch_payment_settings_path,
+                  method: :get,
+                  local: true do |form| %>
+      <div class="form-grid">
+        <div class="field">
+          <%= form.label :branch_id, "Branch" %>
+
+          <%= form.collection_select(
+                :branch_id,
+                @branches,
+                :id,
+                :name,
+                {
+                  selected: @branch.id
+                }
+              ) %>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <%= form.submit "Load Branch",
+                        class: "button button--secondary" %>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="panel">
+    <h2><%= @branch.name %></h2>
+
+    <% if @payment_methods.any? %>
+      <%= form_with(
+            url:
+              update_defaults_branch_payment_settings_path(
+                branch_id: @branch.id
+              ),
+            method: :patch,
+            local: true
+          ) do %>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Payment method</th>
+              <th>Type</th>
+              <th>Default money account</th>
+              <th>Enabled</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <% @payment_methods.each do |payment_method| %>
+              <% setting =
+                   @settings_by_method_id[
+                     payment_method.id
+                   ] %>
+
+              <% enabled =
+                   setting.nil? || setting.enabled? %>
+
+              <tr>
+                <td>
+                  <strong><%= payment_method.name %></strong>
+
+                  <% if payment_method.requires_reference? %>
+                    <br>
+                    <small>Payment reference required</small>
+                  <% end %>
+                </td>
+
+                <td>
+                  <%= payment_method.payment_type.titleize %>
+                </td>
+
+                <td>
+                  <% if payment_method.money_account_required? %>
+                    <%= select_tag(
+                          "settings[#{payment_method.id}]" \
+                          "[money_account_id]",
+                          options_from_collection_for_select(
+                            @money_accounts,
+                            :id,
+                            :name,
+                            setting&.money_account_id
+                          ),
+                          include_blank:
+                            "Select a money account"
+                        ) %>
+                  <% else %>
+                    <span>Not required</span>
+
+                    <small class="field-help">
+                      Credit does not receive money immediately.
+                    </small>
+                  <% end %>
+                </td>
+
+                <td>
+                  <%= hidden_field_tag(
+                        "settings[#{payment_method.id}]" \
+                        "[enabled]",
+                        "0"
+                      ) %>
+
+                  <%= check_box_tag(
+                        "settings[#{payment_method.id}]" \
+                        "[enabled]",
+                        "1",
+                        enabled
+                      ) %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+
+        <div class="form-actions">
+          <%= submit_tag(
+                "Save Payment Defaults",
+                class: "button button--primary"
+              ) %>
+        </div>
+      <% end %>
+    <% else %>
+      <p>
+        Create an active payment method before configuring
+        branch payment defaults.
+      </p>
+
+      <%= link_to "Manage Payment Methods",
+                  payment_methods_path,
+                  class: "button button--primary" %>
+    <% end %>
+  </div>
+</section>

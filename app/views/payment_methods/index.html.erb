@@ -1,0 +1,130 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>Payment Methods</h1>
+
+      <p>
+        Configure how customers can pay at checkout.
+      </p>
+    </div>
+
+    <%= link_to "New Payment Method",
+                new_payment_method_path,
+                class:
+                  "button button--primary" %>
+  </header>
+
+  <div class="panel">
+    <%= form_with url: payment_methods_path,
+                  method: :get,
+                  local: true do |form| %>
+      <div class="filter-grid">
+        <div class="field">
+          <%= form.label :q, "Search" %>
+
+          <%= form.search_field :q,
+                                value: @query,
+                                placeholder:
+                                  "Name or code" %>
+        </div>
+
+        <div class="field">
+          <%= form.label :payment_type, "Type" %>
+
+          <%= form.select :payment_type,
+                          [
+                            ["All types", "all"]
+                          ] +
+                          PaymentMethod.payment_types.keys.map {
+                            |type|
+                            [type.titleize, type]
+                          },
+                          selected: @payment_type %>
+        </div>
+
+        <div class="field">
+          <%= form.label :status %>
+
+          <%= form.select :status,
+                          [
+                            ["Active", "active"],
+                            ["Inactive", "inactive"],
+                            ["All", "all"]
+                          ],
+                          selected: @status %>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <%= form.submit "Search" %>
+
+        <%= link_to "Clear",
+                    payment_methods_path,
+                    class:
+                      "button button--secondary" %>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="panel">
+    <% if @payment_methods.any? %>
+      <table>
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th>Code</th>
+            <th>Type</th>
+            <th>Reference</th>
+            <th>Account required</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% @payment_methods.each do |method| %>
+            <tr>
+              <td>
+                <%= link_to method.name,
+                            payment_method_path(method) %>
+              </td>
+
+              <td><%= method.code %></td>
+
+              <td>
+                <%= method.payment_type.titleize %>
+              </td>
+
+              <td>
+                <%= method.requires_reference? ?
+                      "Required" : "Optional" %>
+              </td>
+
+              <td>
+                <%= method.money_account_required? ?
+                      "Yes" : "No" %>
+              </td>
+
+              <td>
+                <%= method.active? ? "Active" : "Inactive" %>
+              </td>
+
+              <td>
+                <%= link_to "Edit",
+                            edit_payment_method_path(method) %>
+
+                <%= button_to(
+                      method.active? ? "Disable" : "Enable",
+                      toggle_status_payment_method_path(method),
+                      method: :patch
+                    ) %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p>No payment methods found.</p>
+    <% end %>
+  </div>
+</section>
