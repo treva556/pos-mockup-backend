@@ -942,12 +942,12 @@ button {
 input[type="submit"] {
   border-color: var(--primary);
   background: var(--primary);
-  color: #ffffff;
+  color: #f0f1f2;
 }
 
 .button--primary:hover,
 input[type="submit"]:hover {
-  background: var(--primary-hover);
+  background: var(--primary-dark);
 }
 
 .button--secondary {

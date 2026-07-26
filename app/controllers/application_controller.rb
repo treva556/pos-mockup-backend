@@ -128,14 +128,22 @@ end
   end
 
   def after_login_path
-   if current_user&.must_change_password?
-     return edit_account_password_path
-   end
+    if current_user&.must_change_password?
+      return edit_account_password_path
+    end
 
-   if current_user.memberships.active.exists?
-     dashboard_path
-   else
-     new_onboarding_organization_path
-   end
+    if current_user.memberships.active.exists?
+      dashboard_path
+    else
+      new_onboarding_organization_path
+    end
+    end
+
+    def require_money_setup_management!
+    return if current_membership&.money_setup_management?
+
+    redirect_to dashboard_path,
+                alert:
+                  "Your role cannot manage payment and money setup."
   end
 end

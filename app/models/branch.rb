@@ -3,6 +3,12 @@ class Branch < ApplicationRecord
 
   has_many :memberships, dependent: :restrict_with_error
 
+  has_many :money_accounts,
+         dependent: :restrict_with_error
+
+  has_many :branch_payment_settings,
+          dependent: :restrict_with_error
+
   validates :name, presence: true
 
   validates :code,

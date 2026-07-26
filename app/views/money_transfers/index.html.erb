@@ -1,0 +1,116 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>Money Transfers</h1>
+
+      <p>
+        Review movements between cash, M-Pesa,
+        bank and other money accounts.
+      </p>
+    </div>
+
+    <%= link_to "New Transfer",
+                new_money_transfer_path,
+                class:
+                  "button button--primary" %>
+  </header>
+
+  <div class="panel">
+    <%= form_with url: money_transfers_path,
+                  method: :get,
+                  local: true do |form| %>
+      <div class="filter-grid">
+        <div class="field">
+          <%= form.label :q, "Search" %>
+
+          <%= form.search_field :q,
+                                value: @query,
+                                placeholder:
+                                  "Reference or notes" %>
+        </div>
+
+        <div class="field">
+          <%= form.label :account_id,
+                         "Money account" %>
+
+          <%= form.collection_select(
+                :account_id,
+                @accounts,
+                :id,
+                :name,
+                {
+                  include_blank: "All accounts",
+                  selected: @account_id
+                }
+              ) %>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <%= form.submit "Search" %>
+
+        <%= link_to "Clear",
+                    money_transfers_path,
+                    class:
+                      "button button--secondary" %>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="panel">
+    <% if @money_transfers.any? %>
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>From</th>
+            <th>To</th>
+            <th>Amount</th>
+            <th>Reference</th>
+            <th>Recorded by</th>
+            <th></th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% @money_transfers.each do |transfer| %>
+            <tr>
+              <td>
+                <%= transfer.transferred_at.to_fs(:short) %>
+              </td>
+
+              <td>
+                <%= transfer.from_money_account.name %>
+              </td>
+
+              <td>
+                <%= transfer.to_money_account.name %>
+              </td>
+
+              <td>
+                <%= number_to_currency(
+                      transfer.amount,
+                      unit: "KSh ",
+                      precision: 2
+                    ) %>
+              </td>
+
+              <td>
+                <%= transfer.reference.presence || "—" %>
+              </td>
+
+              <td><%= transfer.recorded_by.name %></td>
+
+              <td>
+                <%= link_to "View",
+                            money_transfer_path(transfer) %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p>No money transfers found.</p>
+    <% end %>
+  </div>
+</section>

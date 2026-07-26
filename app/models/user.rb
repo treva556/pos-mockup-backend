@@ -3,6 +3,11 @@ class User < ApplicationRecord
 
   has_many :memberships, dependent: :destroy
   has_many :organizations, through: :memberships
+  has_many :recorded_money_transfers,
+            class_name: "MoneyTransfer",
+            foreign_key: :recorded_by_id,
+            inverse_of: :recorded_by,
+            dependent: :restrict_with_error
 
   enum :platform_role, {
     regular: "regular",

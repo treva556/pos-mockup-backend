@@ -1,0 +1,160 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>Money Accounts</h1>
+
+      <p>
+        Manage cash tills, M-Pesa accounts, bank accounts
+        and other business money locations.
+      </p>
+    </div>
+
+    <%= link_to "New Money Account",
+                new_money_account_path,
+                class:
+                  "button button--primary" %>
+  </header>
+
+  <div class="panel">
+    <%= form_with url: money_accounts_path,
+                  method: :get,
+                  local: true do |form| %>
+      <div class="filter-grid">
+        <div class="field">
+          <%= form.label :q, "Search" %>
+
+          <%= form.search_field :q,
+                                value: @query,
+                                placeholder:
+                                  "Name or account number" %>
+        </div>
+
+        <div class="field">
+          <%= form.label :account_type, "Type" %>
+
+          <%= form.select :account_type,
+                          [
+                            ["All types", "all"]
+                          ] +
+                          MoneyAccount.account_types.keys.map {
+                            |type|
+                            [type.titleize, type]
+                          },
+                          selected: @account_type %>
+        </div>
+
+        <div class="field">
+          <%= form.label :status %>
+
+          <%= form.select :status,
+                          [
+                            ["Active", "active"],
+                            ["Inactive", "inactive"],
+                            ["All", "all"]
+                          ],
+                          selected: @status %>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <%= form.submit "Search" %>
+
+        <%= link_to "Clear",
+                    money_accounts_path,
+                    class:
+                      "button button--secondary" %>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="panel">
+    <% if @money_accounts.any? %>
+      <table>
+        <thead>
+          <tr>
+            <th>Account</th>
+            <th>Type</th>
+            <th>Branch</th>
+            <th>Opening balance</th>
+            <th>Current balance</th>
+            <th>Capabilities</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% @money_accounts.each do |account| %>
+            <tr>
+              <td>
+                <%= link_to account.name,
+                            money_account_path(account) %>
+
+                <% if account.account_number.present? %>
+                  <br>
+
+                  <small>
+                    <%= account.account_number %>
+                  </small>
+                <% end %>
+              </td>
+
+              <td>
+                <%= account.account_type.titleize %>
+              </td>
+
+              <td>
+                <%= account.branch&.name ||
+                      "Organization-wide" %>
+              </td>
+
+              <td>
+                <%= number_to_currency(
+                      account.opening_balance,
+                      unit: "KSh ",
+                      precision: 2
+                    ) %>
+              </td>
+              <td>
+                <strong>
+                    <%= number_to_currency(
+                        account.current_balance,
+                        unit: "KSh ",
+                        precision: 2
+                        ) %>
+                </strong>
+                </td>
+
+              <td>
+                <% capabilities = [] %>
+
+                <% capabilities << "Receive" if account.can_receive? %>
+                <% capabilities << "Pay" if account.can_pay? %>
+
+                <%= capabilities.presence&.join(", ") ||
+                      "Neither" %>
+              </td>
+
+              <td>
+                <%= account.active? ? "Active" : "Inactive" %>
+              </td>
+
+              <td>
+                <%= link_to "Edit",
+                            edit_money_account_path(account) %>
+
+                <%= button_to(
+                      account.active? ? "Disable" : "Enable",
+                      toggle_status_money_account_path(account),
+                      method: :patch
+                    ) %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p>No money accounts found.</p>
+    <% end %>
+  </div>
+</section>

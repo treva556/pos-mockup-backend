@@ -1,0 +1,134 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1><%= @money_account.name %></h1>
+
+      <p>
+        <%= @money_account.account_type.titleize %>
+        ·
+        <%= @money_account.active? ? "Active" : "Inactive" %>
+      </p>
+    </div>
+
+    <div class="form-actions">
+      <%= link_to "Edit Account",
+                  edit_money_account_path(@money_account),
+                  class:
+                    "button button--primary" %>
+
+      <%= link_to "Back to Money Accounts",
+                  money_accounts_path,
+                  class:
+                    "button button--secondary" %>
+    </div>
+  </header>
+
+  <div class="panel">
+    <dl class="details-list">
+      <div>
+        <dt>Account type</dt>
+        <dd>
+          <%= @money_account.account_type.titleize %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Branch</dt>
+        <dd>
+          <%= @money_account.branch&.name ||
+                "Organization-wide" %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Account number</dt>
+        <dd>
+          <%= @money_account.account_number.presence ||
+                "Not provided" %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Opening balance</dt>
+        <dd>
+          <%= number_to_currency(
+                @money_account.opening_balance,
+                unit: "KSh ",
+                precision: 2
+              ) %>
+        </dd>
+      </div>
+
+
+      <div>
+        <dt>Opening balance date</dt>
+        <dd>
+          <%= @money_account.opening_balance_date&.to_fs(:long) ||
+                "Not provided" %>
+        </dd>
+      </div>
+      <div>
+  <dt>Current balance</dt>
+        <dd>
+            <strong>
+            <%= number_to_currency(
+                    @money_account.current_balance,
+                    unit: "KSh ",
+                    precision: 2
+                ) %>
+            </strong>
+        </dd>
+        </div>
+
+        <div>
+        <dt>Incoming transfers</dt>
+        <dd>
+            <%= number_to_currency(
+                @money_account.incoming_transfer_total,
+                unit: "KSh ",
+                precision: 2
+                ) %>
+        </dd>
+        </div>
+
+        <div>
+        <dt>Outgoing transfers</dt>
+        <dd>
+            <%= number_to_currency(
+                @money_account.outgoing_transfer_total,
+                unit: "KSh ",
+                precision: 2
+                ) %>
+        </dd>
+        </div>
+
+      <div>
+        <dt>Can receive money</dt>
+        <dd>
+          <%= @money_account.can_receive? ? "Yes" : "No" %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Can make payments</dt>
+        <dd>
+          <%= @money_account.can_pay? ? "Yes" : "No" %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Status</dt>
+        <dd>
+          <%= @money_account.active? ? "Active" : "Inactive" %>
+        </dd>
+      </div>
+    </dl>
+  </div>
+
+  <% if @money_account.notes.present? %>
+    <div class="panel">
+      <h2>Notes</h2>
+      <%= simple_format(@money_account.notes) %>
+    </div>
+  <% end %>
+</section>

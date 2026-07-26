@@ -1,0 +1,70 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1><%= @payment_method.name %></h1>
+
+      <p>
+        <%= @payment_method.payment_type.titleize %>
+        ·
+        <%= @payment_method.active? ? "Active" : "Inactive" %>
+      </p>
+    </div>
+
+    <div class="form-actions">
+      <%= link_to "Edit Payment Method",
+                  edit_payment_method_path(@payment_method),
+                  class:
+                    "button button--primary" %>
+
+      <%= link_to "Back to Payment Methods",
+                  payment_methods_path,
+                  class:
+                    "button button--secondary" %>
+    </div>
+  </header>
+
+  <div class="panel">
+    <dl class="details-list">
+      <div>
+        <dt>Name</dt>
+        <dd><%= @payment_method.name %></dd>
+      </div>
+
+      <div>
+        <dt>Code</dt>
+        <dd><%= @payment_method.code %></dd>
+      </div>
+
+      <div>
+        <dt>Payment type</dt>
+        <dd>
+          <%= @payment_method.payment_type.titleize %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Reference required</dt>
+        <dd>
+          <%= @payment_method.requires_reference? ?
+                "Yes" : "No" %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Money account required</dt>
+        <dd>
+          <%= @payment_method.money_account_required? ?
+                "Yes" : "No" %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Status</dt>
+        <dd>
+          <%= @payment_method.active? ?
+                "Active" : "Inactive" %>
+        </dd>
+      </div>
+    </dl>
+  </div>
+</section>

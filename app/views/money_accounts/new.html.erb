@@ -1,0 +1,22 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>New Money Account</h1>
+
+      <p>
+        Add a cash till, M-Pesa account, bank account
+        or another place where business money is held.
+      </p>
+    </div>
+
+    <%= link_to "Back to Money Accounts",
+                money_accounts_path,
+                class:
+                  "button button--secondary" %>
+  </header>
+
+  <div class="panel">
+    <%= render "form",
+               money_account: @money_account %>
+  </div>
+</section>

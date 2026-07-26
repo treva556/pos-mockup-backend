@@ -62,6 +62,23 @@ Rails.application.routes.draw do
       patch :toggle_status, on: :member
     end
 
+    resources :money_accounts, except: :destroy do
+      patch :toggle_status, on: :member
+    end
+
+    resources :payment_methods, except: :destroy do
+      patch :toggle_status, on: :member
+    end
+
+    resources :branch_payment_settings,
+                only: :index do
+        patch :update_defaults,
+              on: :collection
+    end
+
+    resources :money_transfers,
+          only: %i[index show new create]
+
   get "up" => "rails/health#show",
       as: :rails_health_check
 end

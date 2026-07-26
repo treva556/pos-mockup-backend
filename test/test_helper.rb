@@ -47,14 +47,63 @@ module TestRecordHelpers
   end
 end
 
-module ActiveSupport
-  class TestCase
-    parallelize(workers: :number_of_processors)
+def create_money_account(organization:, overrides: {})
+  token = SecureRandom.hex(4)
 
-    include TestRecordHelpers
-  end
+  defaults = {
+    name: "Money Account #{token}",
+    account_type: "cash",
+    opening_balance: 1_000,
+    opening_balance_date: Date.current,
+    can_receive: true,
+    can_pay: true,
+    active: true
+  }
+
+  organization.money_accounts.create!(
+    defaults.merge(overrides)
+  )
 end
 
+def create_payment_method(organization:, overrides: {})
+  token = SecureRandom.hex(4).upcase
+
+  defaults = {
+    name: "Payment Method #{token}",
+    code: "PM#{token}",
+    payment_type: "cash",
+    requires_reference: false,
+    active: true
+  }
+
+  organization.payment_methods.create!(
+    defaults.merge(overrides)
+  )
+end
+
+def create_money_transfer(
+    organization:,
+    recorded_by:,
+    from_account:,
+    to_account:,
+    overrides: {}
+  )
+    defaults = {
+      amount: 100,
+      transferred_at: Time.current,
+      reference: "TRANSFER-#{SecureRandom.hex(4).upcase}"
+    }
+
+    organization.money_transfers.create!(
+      defaults.merge(
+        from_money_account: from_account,
+        to_money_account: to_account,
+        recorded_by: recorded_by
+      ).merge(overrides)
+    )
+  end
+
+# 1. Define the module first
 module IntegrationTestHelpers
   TEST_PASSWORD = "Password123!".freeze
 
@@ -83,6 +132,15 @@ module IntegrationTestHelpers
   end
 end
 
+# 2. Then include it in ActiveSupport::TestCase
+class ActiveSupport::TestCase
+  parallelize(workers: :number_of_processors)
+
+  include TestRecordHelpers
+  include IntegrationTestHelpers
+end
+
+# 3. And include it in ActionDispatch::IntegrationTest
 module ActionDispatch
   class IntegrationTest
     include IntegrationTestHelpers

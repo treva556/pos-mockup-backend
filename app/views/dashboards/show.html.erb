@@ -112,6 +112,51 @@
   </section>
 <% end %>
 
+  <% if current_membership.money_setup_management? %>
+    <section class="dashboard-panel">
+      <div class="panel-heading">
+        <div>
+          <h2>Money and Payment Setup</h2>
+
+          <p>
+            Configure tills, bank accounts and payment methods.
+          </p>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <%= link_to "Money Accounts",
+                    money_accounts_path,
+                    class:
+                      "button button--primary" %>
+
+        <%= link_to "New Money Account",
+                    new_money_account_path,
+                    class:
+                      "button button--secondary" %>
+        <%= link_to "Payment Methods",
+            payment_methods_path,
+            class:
+              "button button--secondary" %>
+
+        <%= link_to "New Payment Method",
+                    new_payment_method_path,
+                    class:
+                      "button button--secondary" %>
+        <%= link_to "Branch Payment Defaults",
+                branch_payment_settings_path,
+                class: "button button--secondary" %>
+        <%= link_to "Money Transfers",
+            money_transfers_path,
+            class: "button button--secondary" %>
+
+        <%= link_to "New Transfer",
+                    new_money_transfer_path,
+                    class: "button button--secondary" %>
+      </div>
+    </section>
+  <% end %>
+
 
   <section>
     <section class="dashboard-panel">
