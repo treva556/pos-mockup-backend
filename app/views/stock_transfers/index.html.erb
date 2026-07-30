@@ -1,0 +1,52 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>Stock Transfers</h1>
+      <p>Review stock moved between branches.</p>
+    </div>
+
+    <%= link_to "New Transfer",
+                new_stock_transfer_path,
+                class: "button button--primary" %>
+  </header>
+
+  <div class="panel">
+    <% if @stock_transfers.any? %>
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Product</th>
+            <th>From</th>
+            <th>To</th>
+            <th>Quantity</th>
+            <th>Reference</th>
+            <th></th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% @stock_transfers.each do |transfer| %>
+            <tr>
+              <td><%= transfer.transferred_at.to_fs(:short) %></td>
+              <td><%= transfer.item.name %></td>
+              <td><%= transfer.from_branch.name %></td>
+              <td><%= transfer.to_branch.name %></td>
+              <td>
+                <%= transfer.quantity %>
+                <%= transfer.item.unit_of_measure.symbol %>
+              </td>
+              <td><%= transfer.reference.presence || "—" %></td>
+              <td>
+                <%= link_to "View",
+                            stock_transfer_path(transfer) %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p>No stock transfers have been recorded.</p>
+    <% end %>
+  </div>
+</section>

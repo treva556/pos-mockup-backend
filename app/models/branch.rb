@@ -15,6 +15,18 @@ class Branch < ApplicationRecord
   has_many :stock_movements,
          dependent: :restrict_with_error
 
+  has_many :outgoing_stock_transfers,
+         class_name: "StockTransfer",
+         foreign_key: :from_branch_id,
+         inverse_of: :from_branch,
+         dependent: :restrict_with_error
+
+has_many :incoming_stock_transfers,
+         class_name: "StockTransfer",
+         foreign_key: :to_branch_id,
+         inverse_of: :to_branch,
+         dependent: :restrict_with_error
+
   validates :name, presence: true
 
   validates :code,

@@ -39,32 +39,32 @@ Rails.application.routes.draw do
       patch :toggle_status, on: :member
     end
 
-    resources :suppliers, except: :destroy do
+  resources :suppliers, except: :destroy do
       patch :toggle_status, on: :member
-    end
+  end
 
   resources :product_categories,
               except: %i[show destroy] do
       patch :toggle_status, on: :member
-    end
+  end
 
-    resources :unit_of_measures,
+  resources :unit_of_measures,
               except: %i[show destroy] do
       patch :toggle_status, on: :member
-    end
+  end
 
-    resources :tax_rates,
+  resources :tax_rates,
               except: %i[show destroy] do
       patch :toggle_status, on: :member
-    end
+  end
 
-    resources :items, except: :destroy do
+  resources :items, except: :destroy do
       patch :toggle_status, on: :member
-    end
+  end
 
-    resources :money_accounts, except: :destroy do
+  resources :money_accounts, except: :destroy do
       patch :toggle_status, on: :member
-    end
+  end
 
     resources :payment_methods, except: :destroy do
       patch :toggle_status, on: :member
@@ -80,6 +80,9 @@ Rails.application.routes.draw do
           only: %i[new create]
 
     resources :money_transfers,
+          only: %i[index show new create]
+
+    resources :stock_transfers,
           only: %i[index show new create]
 
   get "up" => "rails/health#show",

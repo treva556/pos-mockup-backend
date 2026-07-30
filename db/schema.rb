@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_30_164607) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_30_172150) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -250,6 +250,30 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_30_164607) do
     t.check_constraint "quantity_change <> 0::numeric", name: "stock_movements_nonzero_quantity"
   end
 
+  create_table "stock_transfers", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "from_branch_id", null: false
+    t.bigint "item_id", null: false
+    t.text "notes"
+    t.bigint "organization_id", null: false
+    t.decimal "quantity", precision: 15, scale: 4, null: false
+    t.bigint "recorded_by_id", null: false
+    t.string "reference"
+    t.bigint "to_branch_id", null: false
+    t.datetime "transferred_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["from_branch_id"], name: "index_stock_transfers_on_from_branch_id"
+    t.index ["item_id"], name: "index_stock_transfers_on_item_id"
+    t.index ["organization_id", "item_id"], name: "index_stock_transfers_on_organization_id_and_item_id"
+    t.index ["organization_id", "reference"], name: "index_stock_transfers_on_organization_id_and_reference"
+    t.index ["organization_id", "transferred_at"], name: "index_stock_transfers_on_org_and_time"
+    t.index ["organization_id"], name: "index_stock_transfers_on_organization_id"
+    t.index ["recorded_by_id"], name: "index_stock_transfers_on_recorded_by_id"
+    t.index ["to_branch_id"], name: "index_stock_transfers_on_to_branch_id"
+    t.check_constraint "from_branch_id <> to_branch_id", name: "stock_transfers_different_branches"
+    t.check_constraint "quantity > 0::numeric", name: "stock_transfers_positive_quantity"
+  end
+
   create_table "suppliers", force: :cascade do |t|
     t.boolean "active", default: true, null: false
     t.text "address"
@@ -339,6 +363,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_30_164607) do
   add_foreign_key "stock_movements", "items"
   add_foreign_key "stock_movements", "organizations"
   add_foreign_key "stock_movements", "users", column: "recorded_by_id"
+  add_foreign_key "stock_transfers", "branches", column: "from_branch_id"
+  add_foreign_key "stock_transfers", "branches", column: "to_branch_id"
+  add_foreign_key "stock_transfers", "items"
+  add_foreign_key "stock_transfers", "organizations"
+  add_foreign_key "stock_transfers", "users", column: "recorded_by_id"
   add_foreign_key "suppliers", "organizations"
   add_foreign_key "tax_rates", "organizations"
   add_foreign_key "unit_of_measures", "organizations"
