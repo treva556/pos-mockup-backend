@@ -4,6 +4,9 @@ class TaxRate < ApplicationRecord
   has_many :items,
            dependent: :restrict_with_error
 
+  has_many :sale_lines,
+           dependent: :restrict_with_error
+
   enum :tax_type, {
     standard: "standard",
     zero_rated: "zero_rated",

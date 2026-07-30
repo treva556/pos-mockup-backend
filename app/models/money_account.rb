@@ -17,6 +17,9 @@ class MoneyAccount < ApplicationRecord
             inverse_of: :to_money_account,
             dependent: :restrict_with_error
 
+  has_many :sale_payments,
+            dependent: :restrict_with_error
+
   enum :account_type, {
     cash: "cash",
     petty_cash: "petty_cash",

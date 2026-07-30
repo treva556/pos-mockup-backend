@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_30_172150) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_30_201620) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -38,12 +38,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_30_172150) do
     t.string "email"
     t.boolean "main", default: false, null: false
     t.string "name", null: false
+    t.bigint "next_sale_sequence", default: 1, null: false
     t.bigint "organization_id", null: false
     t.string "phone"
     t.datetime "updated_at", null: false
     t.index ["organization_id", "code"], name: "index_branches_on_organization_id_and_code", unique: true
     t.index ["organization_id"], name: "index_branches_on_one_main_per_organization", unique: true, where: "(main = true)"
     t.index ["organization_id"], name: "index_branches_on_organization_id"
+    t.check_constraint "next_sale_sequence > 0", name: "branches_positive_sale_sequence"
   end
 
   create_table "customers", force: :cascade do |t|
@@ -204,6 +206,127 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_30_172150) do
     t.index ["organization_id"], name: "index_product_categories_on_organization_id"
   end
 
+  create_table "sale_lines", force: :cascade do |t|
+    t.string "barcode"
+    t.datetime "created_at", null: false
+    t.decimal "discount_amount", precision: 15, scale: 2, default: "0.0", null: false
+    t.decimal "gross_amount", precision: 15, scale: 2, null: false
+    t.bigint "item_id", null: false
+    t.string "item_name", null: false
+    t.string "item_type", null: false
+    t.integer "line_number", null: false
+    t.decimal "line_total", precision: 15, scale: 2, null: false
+    t.bigint "organization_id", null: false
+    t.decimal "quantity", precision: 15, scale: 4, null: false
+    t.bigint "sale_id", null: false
+    t.string "sku"
+    t.decimal "tax_amount", precision: 15, scale: 2, default: "0.0", null: false
+    t.bigint "tax_rate_id"
+    t.decimal "tax_rate_percentage", precision: 7, scale: 4, default: "0.0", null: false
+    t.decimal "unit_cost", precision: 15, scale: 2, default: "0.0", null: false
+    t.string "unit_name", null: false
+    t.decimal "unit_price", precision: 15, scale: 2, null: false
+    t.string "unit_symbol", null: false
+    t.datetime "updated_at", null: false
+    t.index ["item_id"], name: "index_sale_lines_on_item_id"
+    t.index ["organization_id", "item_id"], name: "index_sale_lines_on_organization_id_and_item_id"
+    t.index ["organization_id", "sale_id"], name: "index_sale_lines_on_organization_id_and_sale_id"
+    t.index ["organization_id"], name: "index_sale_lines_on_organization_id"
+    t.index ["sale_id", "line_number"], name: "index_sale_lines_on_sale_and_line_number", unique: true
+    t.index ["sale_id"], name: "index_sale_lines_on_sale_id"
+    t.index ["tax_rate_id"], name: "index_sale_lines_on_tax_rate_id"
+    t.check_constraint "discount_amount <= gross_amount", name: "sale_lines_discount_within_gross"
+    t.check_constraint "discount_amount >= 0::numeric", name: "sale_lines_nonnegative_discount"
+    t.check_constraint "gross_amount >= 0::numeric", name: "sale_lines_nonnegative_gross"
+    t.check_constraint "item_type::text = ANY (ARRAY['product'::character varying, 'service'::character varying]::text[])", name: "sale_lines_allowed_item_type"
+    t.check_constraint "line_number > 0", name: "sale_lines_positive_line_number"
+    t.check_constraint "line_total <= gross_amount", name: "sale_lines_total_within_gross"
+    t.check_constraint "line_total >= 0::numeric", name: "sale_lines_nonnegative_total"
+    t.check_constraint "quantity > 0::numeric", name: "sale_lines_positive_quantity"
+    t.check_constraint "tax_amount <= line_total", name: "sale_lines_tax_within_total"
+    t.check_constraint "tax_amount >= 0::numeric", name: "sale_lines_nonnegative_tax"
+    t.check_constraint "tax_rate_percentage <= 100::numeric", name: "sale_lines_tax_rate_within_percentage"
+    t.check_constraint "tax_rate_percentage >= 0::numeric", name: "sale_lines_nonnegative_tax_rate"
+    t.check_constraint "unit_cost >= 0::numeric", name: "sale_lines_nonnegative_unit_cost"
+    t.check_constraint "unit_price >= 0::numeric", name: "sale_lines_nonnegative_unit_price"
+  end
+
+  create_table "sale_payments", force: :cascade do |t|
+    t.decimal "amount", precision: 15, scale: 2, null: false
+    t.decimal "amount_tendered", precision: 15, scale: 2, null: false
+    t.decimal "change_given", precision: 15, scale: 2, default: "0.0", null: false
+    t.datetime "created_at", null: false
+    t.bigint "money_account_id", null: false
+    t.text "notes"
+    t.bigint "organization_id", null: false
+    t.datetime "paid_at", null: false
+    t.bigint "payment_method_id", null: false
+    t.bigint "recorded_by_id", null: false
+    t.string "reference"
+    t.bigint "sale_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["money_account_id"], name: "index_sale_payments_on_money_account_id"
+    t.index ["organization_id", "money_account_id"], name: "index_sale_payments_on_org_and_account"
+    t.index ["organization_id", "paid_at"], name: "index_sale_payments_on_organization_id_and_paid_at"
+    t.index ["organization_id", "payment_method_id"], name: "index_sale_payments_on_org_and_method"
+    t.index ["organization_id", "reference"], name: "index_sale_payments_on_organization_id_and_reference"
+    t.index ["organization_id"], name: "index_sale_payments_on_organization_id"
+    t.index ["payment_method_id"], name: "index_sale_payments_on_payment_method_id"
+    t.index ["recorded_by_id"], name: "index_sale_payments_on_recorded_by_id"
+    t.index ["sale_id", "paid_at"], name: "index_sale_payments_on_sale_id_and_paid_at"
+    t.index ["sale_id"], name: "index_sale_payments_on_sale_id"
+    t.check_constraint "amount > 0::numeric", name: "sale_payments_positive_amount"
+    t.check_constraint "amount_tendered >= amount", name: "sale_payments_tendered_covers_amount"
+    t.check_constraint "change_given = (amount_tendered - amount)", name: "sale_payments_change_matches_tendered"
+    t.check_constraint "change_given >= 0::numeric", name: "sale_payments_nonnegative_change"
+  end
+
+  create_table "sales", force: :cascade do |t|
+    t.decimal "amount_paid", precision: 15, scale: 2, default: "0.0", null: false
+    t.decimal "balance_due", precision: 15, scale: 2, default: "0.0", null: false
+    t.bigint "branch_id", null: false
+    t.datetime "cancelled_at"
+    t.bigint "cashier_id", null: false
+    t.decimal "change_given", precision: 15, scale: 2, default: "0.0", null: false
+    t.datetime "created_at", null: false
+    t.bigint "customer_id"
+    t.decimal "discount_total", precision: 15, scale: 2, default: "0.0", null: false
+    t.text "notes"
+    t.bigint "organization_id", null: false
+    t.string "payment_status", default: "unpaid", null: false
+    t.boolean "prices_include_tax", default: true, null: false
+    t.string "sale_number", null: false
+    t.datetime "sold_at"
+    t.string "status", default: "draft", null: false
+    t.decimal "subtotal", precision: 15, scale: 2, default: "0.0", null: false
+    t.decimal "tax_total", precision: 15, scale: 2, default: "0.0", null: false
+    t.decimal "total", precision: 15, scale: 2, default: "0.0", null: false
+    t.datetime "updated_at", null: false
+    t.index ["branch_id", "sold_at"], name: "index_sales_on_branch_and_sold_at"
+    t.index ["branch_id"], name: "index_sales_on_branch_id"
+    t.index ["cashier_id"], name: "index_sales_on_cashier_id"
+    t.index ["customer_id", "sold_at"], name: "index_sales_on_customer_and_sold_at"
+    t.index ["customer_id"], name: "index_sales_on_customer_id"
+    t.index ["organization_id", "payment_status"], name: "index_sales_on_organization_id_and_payment_status"
+    t.index ["organization_id", "sale_number"], name: "index_sales_on_org_and_sale_number", unique: true
+    t.index ["organization_id", "sold_at"], name: "index_sales_on_org_and_sold_at"
+    t.index ["organization_id", "status"], name: "index_sales_on_organization_id_and_status"
+    t.index ["organization_id"], name: "index_sales_on_organization_id"
+    t.check_constraint "(amount_paid + balance_due) = total", name: "sales_payment_balance_matches_total"
+    t.check_constraint "amount_paid <= total", name: "sales_payment_within_total"
+    t.check_constraint "amount_paid >= 0::numeric", name: "sales_nonnegative_amount_paid"
+    t.check_constraint "balance_due >= 0::numeric", name: "sales_nonnegative_balance_due"
+    t.check_constraint "change_given >= 0::numeric", name: "sales_nonnegative_change"
+    t.check_constraint "discount_total <= subtotal", name: "sales_discount_within_subtotal"
+    t.check_constraint "discount_total >= 0::numeric", name: "sales_nonnegative_discount"
+    t.check_constraint "payment_status::text = ANY (ARRAY['unpaid'::character varying, 'partially_paid'::character varying, 'paid'::character varying]::text[])", name: "sales_allowed_payment_status"
+    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying, 'completed'::character varying, 'cancelled'::character varying]::text[])", name: "sales_allowed_status"
+    t.check_constraint "subtotal >= 0::numeric", name: "sales_nonnegative_subtotal"
+    t.check_constraint "tax_total <= total", name: "sales_tax_within_total"
+    t.check_constraint "tax_total >= 0::numeric", name: "sales_nonnegative_tax"
+    t.check_constraint "total >= 0::numeric", name: "sales_nonnegative_total"
+  end
+
   create_table "stock_levels", force: :cascade do |t|
     t.bigint "branch_id", null: false
     t.datetime "created_at", null: false
@@ -356,6 +479,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_30_172150) do
   add_foreign_key "money_transfers", "users", column: "recorded_by_id"
   add_foreign_key "payment_methods", "organizations"
   add_foreign_key "product_categories", "organizations"
+  add_foreign_key "sale_lines", "items"
+  add_foreign_key "sale_lines", "organizations"
+  add_foreign_key "sale_lines", "sales"
+  add_foreign_key "sale_lines", "tax_rates"
+  add_foreign_key "sale_payments", "money_accounts"
+  add_foreign_key "sale_payments", "organizations"
+  add_foreign_key "sale_payments", "payment_methods"
+  add_foreign_key "sale_payments", "sales"
+  add_foreign_key "sale_payments", "users", column: "recorded_by_id"
+  add_foreign_key "sales", "branches"
+  add_foreign_key "sales", "customers"
+  add_foreign_key "sales", "organizations"
+  add_foreign_key "sales", "users", column: "cashier_id"
   add_foreign_key "stock_levels", "branches"
   add_foreign_key "stock_levels", "items"
   add_foreign_key "stock_levels", "organizations"

@@ -20,6 +20,18 @@ class User < ApplicationRecord
             inverse_of: :recorded_by,
             dependent: :restrict_with_error
 
+  has_many :cashier_sales,
+            class_name: "Sale",
+            foreign_key: :cashier_id,
+            inverse_of: :cashier,
+            dependent: :restrict_with_error
+
+  has_many :recorded_sale_payments,
+            class_name: "SalePayment",
+            foreign_key: :recorded_by_id,
+            inverse_of: :recorded_by,
+            dependent: :restrict_with_error
+
   enum :platform_role, {
     regular: "regular",
     support: "support",

@@ -1,6 +1,9 @@
 class Customer < ApplicationRecord
   belongs_to :organization
 
+  has_many :sales,
+           dependent: :restrict_with_error
+
   before_validation :normalize_details
 
   validates :name,

@@ -4,6 +4,9 @@ class PaymentMethod < ApplicationRecord
   has_many :branch_payment_settings,
            dependent: :restrict_with_error
 
+  has_many :sale_payments,
+            dependent: :restrict_with_error
+
   enum :payment_type, {
     cash: "cash",
     mobile_money: "mobile_money",
