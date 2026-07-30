@@ -71,6 +71,15 @@ class Membership < ApplicationRecord
       stock_clerk?
   end
 
+  def inventory_view?
+    owner? ||
+      admin? ||
+      manager? ||
+      accountant? ||
+      stock_clerk? ||
+      cashier?
+  end
+
   private
 
   def branch_belongs_to_organization

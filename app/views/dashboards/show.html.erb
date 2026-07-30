@@ -212,6 +212,21 @@
            <%= link_to "New Stock Transfer",
                 new_stock_transfer_path,
                 class: "button button--secondary" %>
+            <%= link_to "Stock Balances",
+                stock_levels_path,
+                class: "button button--primary" %>
+
+            <%= link_to "Low Stock",
+                        stock_levels_path(status: "low_stock"),
+                        class: "button button--secondary" %>
+
+            <%= link_to "Out of Stock",
+                        stock_levels_path(status: "out_of_stock"),
+                        class: "button button--secondary" %>
+
+            <%= link_to "Movement History",
+                        stock_movements_path,
+                        class: "button button--secondary" %>
         </div>
       </div>
 

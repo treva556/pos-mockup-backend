@@ -6,7 +6,8 @@ application up and running.
 Things you may want to cover:
 
 * Ruby version
-
+ruby "3.4.10"
+gem "rails", "~> 8.1.3"
 * System dependencies
 
 * Configuration

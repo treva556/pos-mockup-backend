@@ -1,0 +1,84 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>Stock Movement</h1>
+
+      <p>
+        <%= @stock_movement.movement_type.titleize %>
+        ·
+        <%= @stock_movement.occurred_at.to_fs(:long) %>
+      </p>
+    </div>
+
+    <%= link_to "Back to Movement History",
+                stock_movements_path,
+                class: "button button--secondary" %>
+  </header>
+
+  <div class="panel">
+    <dl class="details-list">
+      <div>
+        <dt>Product</dt>
+        <dd><%= @stock_movement.item.name %></dd>
+      </div>
+
+      <div>
+        <dt>Branch</dt>
+        <dd><%= @stock_movement.branch.name %></dd>
+      </div>
+
+      <div>
+        <dt>Movement type</dt>
+        <dd>
+          <%= @stock_movement.movement_type.titleize %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Quantity change</dt>
+        <dd>
+          <%= "+" if @stock_movement.inbound? %>
+
+          <%= number_with_precision(
+                @stock_movement.quantity_change,
+                precision: 4,
+                strip_insignificant_zeros: true
+              ) %>
+
+          <%= @stock_movement
+                .item
+                .unit_of_measure
+                .symbol %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Reference</dt>
+        <dd>
+          <%= @stock_movement.reference.presence ||
+                "Not provided" %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Recorded by</dt>
+        <dd><%= @stock_movement.recorded_by.name %></dd>
+      </div>
+
+      <div>
+        <dt>Source</dt>
+        <dd>
+          <%= @stock_movement.source_type&.titleize ||
+                "Manual inventory entry" %>
+        </dd>
+      </div>
+    </dl>
+  </div>
+
+  <% if @stock_movement.notes.present? %>
+    <div class="panel">
+      <h2>Notes</h2>
+      <%= simple_format(@stock_movement.notes) %>
+    </div>
+  <% end %>
+</section>

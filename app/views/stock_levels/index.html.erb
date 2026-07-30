@@ -1,0 +1,194 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>Stock Balances</h1>
+
+      <p>
+        View current product quantities for each branch.
+      </p>
+    </div>
+
+    <% if current_membership.inventory_adjustment_management? %>
+      <div class="form-actions">
+        <%= link_to "Opening Stock / Adjustment",
+                    new_inventory_adjustment_path(
+                      branch_id: @branch.id
+                    ),
+                    class: "button button--primary" %>
+
+        <%= link_to "New Stock Transfer",
+                    new_stock_transfer_path,
+                    class: "button button--secondary" %>
+      </div>
+    <% end %>
+  </header>
+
+  <div class="panel">
+    <%= form_with url: stock_levels_path,
+                  method: :get,
+                  local: true do |form| %>
+      <div class="filter-grid">
+        <div class="field">
+          <%= form.label :branch_id, "Branch" %>
+
+          <%= form.collection_select(
+                :branch_id,
+                @branches,
+                :id,
+                :name,
+                {
+                  selected: @branch.id
+                }
+              ) %>
+        </div>
+
+        <div class="field">
+          <%= form.label :q, "Search" %>
+
+          <%= form.search_field :q,
+                                value: @query,
+                                placeholder:
+                                  "Name, SKU or barcode" %>
+        </div>
+
+        <div class="field">
+          <%= form.label :status %>
+
+          <%= form.select :status,
+                          [
+                            ["All stock", "all"],
+                            ["In stock", "in_stock"],
+                            ["Low stock", "low_stock"],
+                            ["Out of stock", "out_of_stock"]
+                          ],
+                          selected: @status %>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <%= form.submit "Filter",
+                        class: "button button--primary" %>
+
+        <%= link_to "Clear",
+                    stock_levels_path(
+                      branch_id: @branch.id
+                    ),
+                    class: "button button--secondary" %>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="panel">
+    <h2><%= @branch.name %></h2>
+
+    <% if @inventory_rows.any? %>
+      <table>
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>Unit</th>
+            <th>Quantity on hand</th>
+            <th>Reorder level</th>
+            <th>Stock status</th>
+            <th>History</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% @inventory_rows.each do |row| %>
+            <% item = row[:item] %>
+
+            <tr>
+              <td>
+                <strong><%= item.name %></strong>
+
+                <% if item.sku.present? %>
+                  <br>
+                  <small>SKU: <%= item.sku %></small>
+                <% end %>
+
+                <% unless item.active? %>
+                  <br>
+                  <small>Item disabled</small>
+                <% end %>
+              </td>
+
+              <td>
+                <%= item.unit_of_measure.symbol %>
+              </td>
+
+              <td>
+                <strong>
+                  <%= number_with_precision(
+                        row[:quantity],
+                        precision: 4,
+                        strip_insignificant_zeros: true
+                      ) %>
+                </strong>
+              </td>
+
+              <td>
+                <% if current_membership
+                      .inventory_adjustment_management? %>
+                  <%= form_with(
+                        url:
+                          update_reorder_level_stock_levels_path,
+                        method: :patch,
+                        local: true,
+                        class: "inline-form"
+                      ) do |form| %>
+
+                    <%= form.hidden_field :branch_id,
+                                          value: @branch.id %>
+
+                    <%= form.hidden_field :item_id,
+                                          value: item.id %>
+
+                    <%= form.number_field(
+                          :reorder_level,
+                          value: row[:reorder_level],
+                          min: 0,
+                          step:
+                            item.unit_of_measure
+                              .decimal_allowed? ? 0.0001 : 1
+                        ) %>
+
+                    <%= form.submit "Save",
+                                    class:
+                                      "button button--secondary" %>
+                  <% end %>
+                <% else %>
+                  <%= number_with_precision(
+                        row[:reorder_level],
+                        precision: 4,
+                        strip_insignificant_zeros: true
+                      ) %>
+                <% end %>
+              </td>
+
+              <td>
+                <% if row[:out_of_stock] %>
+                  <strong>Out of stock</strong>
+                <% elsif row[:low_stock] %>
+                  <strong>Low stock</strong>
+                <% else %>
+                  <span>In stock</span>
+                <% end %>
+              </td>
+
+              <td>
+                <%= link_to "View movements",
+                            stock_movements_path(
+                              branch_id: @branch.id,
+                              item_id: item.id
+                            ) %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p>No products match the selected filters.</p>
+    <% end %>
+  </div>
+</section>

@@ -1,0 +1,152 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>Stock Movement History</h1>
+
+      <p>
+        Review every recorded increase and decrease in stock.
+      </p>
+    </div>
+
+    <%= link_to "Stock Balances",
+                stock_levels_path,
+                class: "button button--secondary" %>
+  </header>
+
+  <div class="panel">
+    <%= form_with url: stock_movements_path,
+                  method: :get,
+                  local: true do |form| %>
+      <div class="filter-grid">
+        <div class="field">
+          <%= form.label :q, "Search" %>
+
+          <%= form.search_field :q,
+                                value: @query,
+                                placeholder:
+                                  "Reference or notes" %>
+        </div>
+
+        <div class="field">
+          <%= form.label :branch_id, "Branch" %>
+
+          <%= form.collection_select(
+                :branch_id,
+                @branches,
+                :id,
+                :name,
+                {
+                  include_blank: "All branches",
+                  selected: @branch_id
+                }
+              ) %>
+        </div>
+
+        <div class="field">
+          <%= form.label :item_id, "Product" %>
+
+          <%= form.collection_select(
+                :item_id,
+                @items,
+                :id,
+                :name,
+                {
+                  include_blank: "All products",
+                  selected: @item_id
+                }
+              ) %>
+        </div>
+
+        <div class="field">
+          <%= form.label :movement_type, "Movement" %>
+
+          <%= form.select :movement_type,
+                          [
+                            ["All movements", "all"]
+                          ] +
+                          StockMovement
+                            .movement_types
+                            .keys
+                            .map {
+                              |type|
+                              [type.titleize, type]
+                            },
+                          selected: @movement_type %>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <%= form.submit "Filter",
+                        class: "button button--primary" %>
+
+        <%= link_to "Clear",
+                    stock_movements_path,
+                    class: "button button--secondary" %>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="panel">
+    <% if @stock_movements.any? %>
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Product</th>
+            <th>Branch</th>
+            <th>Movement</th>
+            <th>Quantity</th>
+            <th>Reference</th>
+            <th>Recorded by</th>
+            <th></th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% @stock_movements.each do |movement| %>
+            <tr>
+              <td>
+                <%= movement.occurred_at.to_fs(:short) %>
+              </td>
+
+              <td><%= movement.item.name %></td>
+
+              <td><%= movement.branch.name %></td>
+
+              <td>
+                <%= movement.movement_type.titleize %>
+              </td>
+
+              <td>
+                <strong>
+                  <%= "+" if movement.inbound? %>
+
+                  <%= number_with_precision(
+                        movement.quantity_change,
+                        precision: 4,
+                        strip_insignificant_zeros: true
+                      ) %>
+
+                  <%= movement.item.unit_of_measure.symbol %>
+                </strong>
+              </td>
+
+              <td>
+                <%= movement.reference.presence || "—" %>
+              </td>
+
+              <td><%= movement.recorded_by.name %></td>
+
+              <td>
+                <%= link_to "View",
+                            stock_movement_path(movement) %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p>No stock movements match the filters.</p>
+    <% end %>
+  </div>
+</section>

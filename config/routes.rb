@@ -85,6 +85,14 @@ Rails.application.routes.draw do
     resources :stock_transfers,
           only: %i[index show new create]
 
+  resources :stock_levels, only: :index do
+    patch :update_reorder_level,
+          on: :collection
+  end
+
+resources :stock_movements,
+          only: %i[index show]
+
   get "up" => "rails/health#show",
       as: :rails_health_check
 end
