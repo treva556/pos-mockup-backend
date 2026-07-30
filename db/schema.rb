@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_26_151222) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_30_164607) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -204,6 +204,52 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_26_151222) do
     t.index ["organization_id"], name: "index_product_categories_on_organization_id"
   end
 
+  create_table "stock_levels", force: :cascade do |t|
+    t.bigint "branch_id", null: false
+    t.datetime "created_at", null: false
+    t.bigint "item_id", null: false
+    t.datetime "last_movement_at"
+    t.bigint "organization_id", null: false
+    t.decimal "quantity_on_hand", precision: 15, scale: 4, default: "0.0", null: false
+    t.decimal "reorder_level", precision: 15, scale: 4, default: "0.0", null: false
+    t.datetime "updated_at", null: false
+    t.index ["branch_id"], name: "index_stock_levels_on_branch_id"
+    t.index ["item_id"], name: "index_stock_levels_on_item_id"
+    t.index ["organization_id", "branch_id", "item_id"], name: "index_stock_levels_on_org_branch_and_item", unique: true
+    t.index ["organization_id", "branch_id"], name: "index_stock_levels_on_organization_id_and_branch_id"
+    t.index ["organization_id", "item_id"], name: "index_stock_levels_on_organization_id_and_item_id"
+    t.index ["organization_id"], name: "index_stock_levels_on_organization_id"
+    t.check_constraint "quantity_on_hand >= 0::numeric", name: "stock_levels_nonnegative_quantity"
+    t.check_constraint "reorder_level >= 0::numeric", name: "stock_levels_nonnegative_reorder_level"
+  end
+
+  create_table "stock_movements", force: :cascade do |t|
+    t.bigint "branch_id", null: false
+    t.datetime "created_at", null: false
+    t.bigint "item_id", null: false
+    t.string "movement_type", null: false
+    t.text "notes"
+    t.datetime "occurred_at", null: false
+    t.bigint "organization_id", null: false
+    t.decimal "quantity_change", precision: 15, scale: 4, null: false
+    t.bigint "recorded_by_id", null: false
+    t.string "reference"
+    t.bigint "source_id"
+    t.string "source_type"
+    t.datetime "updated_at", null: false
+    t.index ["branch_id", "item_id", "occurred_at"], name: "index_stock_movements_on_branch_item_and_time"
+    t.index ["branch_id"], name: "index_stock_movements_on_branch_id"
+    t.index ["item_id"], name: "index_stock_movements_on_item_id"
+    t.index ["organization_id", "occurred_at"], name: "index_stock_movements_on_org_and_time"
+    t.index ["organization_id", "reference"], name: "index_stock_movements_on_organization_id_and_reference"
+    t.index ["organization_id"], name: "index_stock_movements_on_organization_id"
+    t.index ["recorded_by_id"], name: "index_stock_movements_on_recorded_by_id"
+    t.index ["source_type", "source_id"], name: "index_stock_movements_on_source_type_and_source_id"
+    t.check_constraint "(movement_type::text = ANY (ARRAY['opening'::character varying, 'adjustment_in'::character varying, 'purchase'::character varying, 'sale_return'::character varying, 'transfer_in'::character varying]::text[])) AND quantity_change > 0::numeric OR (movement_type::text = ANY (ARRAY['adjustment_out'::character varying, 'sale'::character varying, 'purchase_return'::character varying, 'transfer_out'::character varying]::text[])) AND quantity_change < 0::numeric", name: "stock_movements_direction_matches_type"
+    t.check_constraint "movement_type::text = ANY (ARRAY['opening'::character varying, 'adjustment_in'::character varying, 'adjustment_out'::character varying, 'purchase'::character varying, 'sale'::character varying, 'sale_return'::character varying, 'purchase_return'::character varying, 'transfer_in'::character varying, 'transfer_out'::character varying]::text[])", name: "stock_movements_valid_type"
+    t.check_constraint "quantity_change <> 0::numeric", name: "stock_movements_nonzero_quantity"
+  end
+
   create_table "suppliers", force: :cascade do |t|
     t.boolean "active", default: true, null: false
     t.text "address"
@@ -286,6 +332,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_26_151222) do
   add_foreign_key "money_transfers", "users", column: "recorded_by_id"
   add_foreign_key "payment_methods", "organizations"
   add_foreign_key "product_categories", "organizations"
+  add_foreign_key "stock_levels", "branches"
+  add_foreign_key "stock_levels", "items"
+  add_foreign_key "stock_levels", "organizations"
+  add_foreign_key "stock_movements", "branches"
+  add_foreign_key "stock_movements", "items"
+  add_foreign_key "stock_movements", "organizations"
+  add_foreign_key "stock_movements", "users", column: "recorded_by_id"
   add_foreign_key "suppliers", "organizations"
   add_foreign_key "tax_rates", "organizations"
   add_foreign_key "unit_of_measures", "organizations"

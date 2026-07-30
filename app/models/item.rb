@@ -4,6 +4,12 @@ class Item < ApplicationRecord
   belongs_to :unit_of_measure
   belongs_to :tax_rate, optional: true
 
+  has_many :stock_levels,
+         dependent: :restrict_with_error
+
+  has_many :stock_movements,
+         dependent: :restrict_with_error
+
   enum :item_type, {
     product: "product",
     service: "service"

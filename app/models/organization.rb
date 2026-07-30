@@ -31,6 +31,12 @@ class Organization < ApplicationRecord
   has_many :money_transfers,
          dependent: :restrict_with_error
 
+  has_many :stock_levels,
+         dependent: :restrict_with_error
+
+  has_many :stock_movements,
+         dependent: :restrict_with_error
+
   before_validation :normalize_business_details
 
   validates :name, presence: true
