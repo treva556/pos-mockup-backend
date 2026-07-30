@@ -62,12 +62,28 @@ module Inventory
       end
     end
 
-    def post_locked_movement(stock_level)
-      new_quantity =
-        stock_level.quantity_on_hand.to_d +
-        quantity_change
+    def ensure_opening_is_first!(stock_level)
+        return unless movement_type.to_s == "opening"
 
-      raise_insufficient_stock! if new_quantity.negative?
+        no_previous_activity =
+            stock_level.last_movement_at.blank? &&
+            stock_level.quantity_on_hand.to_d.zero?
+
+        return if no_previous_activity
+
+        raise Inventory::InvalidOpeningStockError,
+                "Opening stock can only be recorded before other stock movements"
+    end
+
+    def post_locked_movement(stock_level)
+        ensure_opening_is_first!(stock_level)
+
+        new_quantity =
+            stock_level.quantity_on_hand.to_d +
+            quantity_change
+
+        raise_insufficient_stock! if new_quantity.negative?
+
 
       movement =
         organization.stock_movements.create!(

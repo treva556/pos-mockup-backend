@@ -196,6 +196,26 @@
       </div>
     </section>
 
+    <% if current_membership.inventory_adjustment_management? %>
+    <section class="dashboard-panel">
+      <div class="panel-heading">
+        <div>
+          <h2>Inventory</h2>
+
+          <p>
+            Record opening quantities and stock adjustments.
+          </p>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <%= link_to "Opening Stock / Adjustment",
+                    new_inventory_adjustment_path,
+                    class: "button button--primary" %>
+      </div>
+    </section>
+  <% end %>
+
   <section class="dashboard-panel">
     <h2>Setup progress</h2>
 

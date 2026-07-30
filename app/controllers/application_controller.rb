@@ -146,4 +146,11 @@ end
                 alert:
                   "Your role cannot manage payment and money setup."
   end
+
+  def require_inventory_adjustment_management!
+    return if current_membership&.inventory_adjustment_management?
+
+    redirect_to dashboard_path,
+                alert: "Your role cannot adjust inventory."
+  end
 end

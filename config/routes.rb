@@ -76,6 +76,9 @@ Rails.application.routes.draw do
               on: :collection
     end
 
+    resources :inventory_adjustments,
+          only: %i[new create]
+
     resources :money_transfers,
           only: %i[index show new create]
 
