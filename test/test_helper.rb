@@ -103,6 +103,64 @@ def create_money_transfer(
     )
   end
 
+def create_unit_of_measure(organization:, overrides: {})
+  token = SecureRandom.hex(4)
+  attributes = overrides.dup
+
+  defaults = {
+    name: "Piece #{token}",
+    symbol: "pc#{token}",
+    decimal_allowed: false,
+    active: true
+  }
+
+  organization.unit_of_measures.create!(
+    defaults.merge(attributes)
+  )
+end
+
+def create_inventory_item(organization:, overrides: {})
+  token = SecureRandom.hex(4)
+  attributes = overrides.dup
+
+  unit =
+    attributes.delete(:unit_of_measure) ||
+    create_unit_of_measure(organization: organization)
+
+  defaults = {
+    name: "Inventory Item #{token}",
+    unit_of_measure: unit,
+    item_type: "product",
+    selling_price: 100,
+    purchase_cost: 60,
+    track_inventory: true,
+    active: true
+  }
+
+  organization.items.create!(
+    defaults.merge(attributes)
+  )
+end
+
+def create_stock_level(
+  organization:,
+  branch:,
+  item:,
+  overrides: {}
+)
+  defaults = {
+    quantity_on_hand: 0,
+    reorder_level: 0
+  }
+
+  organization.stock_levels.create!(
+    defaults.merge(
+      branch: branch,
+      item: item
+    ).merge(overrides)
+  )
+end
+
 # 1. Define the module first
 module IntegrationTestHelpers
   TEST_PASSWORD = "Password123!".freeze

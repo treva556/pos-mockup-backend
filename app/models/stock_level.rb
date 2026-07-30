@@ -23,19 +23,21 @@ class StockLevel < ApplicationRecord
         ->(branch) { where(branch: branch) }
 
   scope :low_stock,
-        lambda {
-          where(
-            "reorder_level > 0 AND " \
-            "quantity_on_hand <= reorder_level"
-          )
-        }
+      lambda {
+        where(
+          "reorder_level > 0 AND " \
+          "quantity_on_hand > 0 AND " \
+          "quantity_on_hand <= reorder_level"
+        )
+      }
 
   scope :out_of_stock,
         -> { where(quantity_on_hand: 0) }
 
   def low_stock?
     reorder_level.positive? &&
-      quantity_on_hand <= reorder_level
+        quantity_on_hand.positive? &&
+        quantity_on_hand <= reorder_level
   end
 
   def out_of_stock?

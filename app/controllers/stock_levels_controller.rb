@@ -143,7 +143,8 @@ class StockLevelsController < ApplicationController
       reorder_level: reorder_level,
       low_stock:
         reorder_level.positive? &&
-          quantity <= reorder_level,
+            quantity.positive? &&
+            quantity <= reorder_level,
       out_of_stock: quantity.zero?
     }
   end
