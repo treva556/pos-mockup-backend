@@ -62,7 +62,23 @@ class Membership < ApplicationRecord
         admin? ||
         manager? ||
         accountant?
-    end
+  end
+
+  def inventory_adjustment_management?
+    owner? ||
+      admin? ||
+      manager? ||
+      stock_clerk?
+  end
+
+  def inventory_view?
+    owner? ||
+      admin? ||
+      manager? ||
+      accountant? ||
+      stock_clerk? ||
+      cashier?
+  end
 
   private
 

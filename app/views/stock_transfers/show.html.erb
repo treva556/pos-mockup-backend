@@ -1,0 +1,58 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>Stock Transfer</h1>
+      <p><%= @stock_transfer.transferred_at.to_fs(:long) %></p>
+    </div>
+
+    <%= link_to "Back to Transfers",
+                stock_transfers_path,
+                class: "button button--secondary" %>
+  </header>
+
+  <div class="panel">
+    <dl class="details-list">
+      <div>
+        <dt>Product</dt>
+        <dd><%= @stock_transfer.item.name %></dd>
+      </div>
+
+      <div>
+        <dt>Quantity</dt>
+        <dd>
+          <%= @stock_transfer.quantity %>
+          <%= @stock_transfer.item.unit_of_measure.symbol %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>From</dt>
+        <dd><%= @stock_transfer.from_branch.name %></dd>
+      </div>
+
+      <div>
+        <dt>To</dt>
+        <dd><%= @stock_transfer.to_branch.name %></dd>
+      </div>
+
+      <div>
+        <dt>Reference</dt>
+        <dd>
+          <%= @stock_transfer.reference.presence || "Not provided" %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Recorded by</dt>
+        <dd><%= @stock_transfer.recorded_by.name %></dd>
+      </div>
+    </dl>
+  </div>
+
+  <% if @stock_transfer.notes.present? %>
+    <div class="panel">
+      <h2>Notes</h2>
+      <%= simple_format(@stock_transfer.notes) %>
+    </div>
+  <% end %>
+</section>

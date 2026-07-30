@@ -41,7 +41,7 @@
     <article class="summary-card">
       <span>System status</span>
       <strong class="summary-word">Setup</strong>
-      <small>Phase 2 in progress</small>
+      <small>Phase 4 in progress</small>
     </article>
   </section>
 
@@ -195,6 +195,48 @@
         <% end %>
       </div>
     </section>
+
+    <% if current_membership.inventory_adjustment_management? %>
+    <section class="dashboard-panel">
+      <div class="panel-heading">
+        <div>
+          <h2>Inventory</h2>
+
+          <p>
+            Record opening quantities and stock adjustments.
+          </p>
+          <%= link_to "Stock Transfers",
+                stock_transfers_path,
+                class: "button button--secondary" %>
+
+           <%= link_to "New Stock Transfer",
+                new_stock_transfer_path,
+                class: "button button--secondary" %>
+            <%= link_to "Stock Balances",
+                stock_levels_path,
+                class: "button button--primary" %>
+
+            <%= link_to "Low Stock",
+                        stock_levels_path(status: "low_stock"),
+                        class: "button button--secondary" %>
+
+            <%= link_to "Out of Stock",
+                        stock_levels_path(status: "out_of_stock"),
+                        class: "button button--secondary" %>
+
+            <%= link_to "Movement History",
+                        stock_movements_path,
+                        class: "button button--secondary" %>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <%= link_to "Opening Stock / Adjustment",
+                    new_inventory_adjustment_path,
+                    class: "button button--primary" %>
+      </div>
+    </section>
+  <% end %>
 
   <section class="dashboard-panel">
     <h2>Setup progress</h2>

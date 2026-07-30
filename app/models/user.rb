@@ -8,6 +8,17 @@ class User < ApplicationRecord
             foreign_key: :recorded_by_id,
             inverse_of: :recorded_by,
             dependent: :restrict_with_error
+  has_many :recorded_stock_movements,
+            class_name: "StockMovement",
+            foreign_key: :recorded_by_id,
+            inverse_of: :recorded_by,
+            dependent: :restrict_with_error
+
+  has_many :recorded_stock_transfers,
+            class_name: "StockTransfer",
+            foreign_key: :recorded_by_id,
+            inverse_of: :recorded_by,
+            dependent: :restrict_with_error
 
   enum :platform_role, {
     regular: "regular",

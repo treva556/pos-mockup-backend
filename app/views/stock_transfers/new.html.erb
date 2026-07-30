@@ -1,0 +1,108 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>New Stock Transfer</h1>
+      <p>Move stock safely between business branches.</p>
+    </div>
+
+    <%= link_to "Transfer History",
+                stock_transfers_path,
+                class: "button button--secondary" %>
+  </header>
+
+  <div class="panel">
+    <%= form_with model: @stock_transfer,
+                  class: "record-form" do |form| %>
+      <% if @stock_transfer.errors.any? %>
+        <section class="form-errors">
+          <ul>
+            <% @stock_transfer.errors.full_messages.each do |message| %>
+              <li><%= message %></li>
+            <% end %>
+          </ul>
+        </section>
+      <% end %>
+
+      <div class="form-grid">
+        <div class="field">
+          <%= form.label :from_branch_id, "Transfer from" %>
+
+          <%= form.collection_select(
+                :from_branch_id,
+                @branches,
+                :id,
+                :name,
+                { prompt: "Select source branch" },
+                { required: true }
+              ) %>
+        </div>
+
+        <div class="field">
+          <%= form.label :to_branch_id, "Transfer to" %>
+
+          <%= form.collection_select(
+                :to_branch_id,
+                @branches,
+                :id,
+                :name,
+                { prompt: "Select destination branch" },
+                { required: true }
+              ) %>
+        </div>
+
+        <div class="field">
+          <%= form.label :item_id, "Product" %>
+
+          <%= form.collection_select(
+                :item_id,
+                @items,
+                :id,
+                ->(item) {
+                  "#{item.name} (#{item.unit_of_measure.symbol})"
+                },
+                { prompt: "Select a product" },
+                { required: true }
+              ) %>
+        </div>
+
+        <div class="field">
+          <%= form.label :quantity %>
+
+          <%= form.number_field :quantity,
+                                min: 0.0001,
+                                step: 0.0001,
+                                required: true %>
+        </div>
+
+        <div class="field">
+          <%= form.label :transferred_at,
+                         "Transfer date and time" %>
+
+          <%= form.datetime_local_field(
+                :transferred_at,
+                required: true
+              ) %>
+        </div>
+
+        <div class="field">
+          <%= form.label :reference %>
+          <%= form.text_field :reference %>
+        </div>
+
+        <div class="field field--full">
+          <%= form.label :notes %>
+          <%= form.text_area :notes, rows: 4 %>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <%= form.submit "Complete Transfer",
+                        class: "button button--primary" %>
+
+        <%= link_to "Cancel",
+                    stock_transfers_path,
+                    class: "button button--secondary" %>
+      </div>
+    <% end %>
+  </div>
+</section>
