@@ -67,7 +67,7 @@ module Sales
         assert_equal 1_800.to_d,
                     result.total
         end
-     
+
 
     test "uses item selling price by default" do
       result =

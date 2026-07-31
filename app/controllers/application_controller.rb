@@ -160,4 +160,11 @@ end
     redirect_to dashboard_path,
                 alert: "Your role cannot view inventory."
   end
+
+  def require_pos_access!
+    return if current_membership&.pos_access?
+
+    redirect_to dashboard_path,
+                alert: "Your role cannot operate the POS."
+  end
 end

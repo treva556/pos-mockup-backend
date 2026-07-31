@@ -76,6 +76,26 @@ Rails.application.routes.draw do
               on: :collection
     end
 
+  namespace :pos do
+    resource :sale,
+            only: :new
+
+    resource :cart,
+            only: %i[update destroy]
+
+    resources :cart_items,
+              only: %i[create update destroy],
+              param: :item_id
+
+
+    resource :checkout,
+         only: :show
+
+    resources :checkout_payments,
+              only: %i[create update destroy],
+              param: :entry_id
+   end
+
     resources :inventory_adjustments,
           only: %i[new create]
 
@@ -90,7 +110,7 @@ Rails.application.routes.draw do
           on: :collection
   end
 
-resources :stock_movements,
+  resources :stock_movements,
           only: %i[index show]
 
   get "up" => "rails/health#show",

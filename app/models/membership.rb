@@ -80,6 +80,13 @@ class Membership < ApplicationRecord
       cashier?
   end
 
+  def pos_access?
+    owner? ||
+      admin? ||
+      manager? ||
+      cashier?
+  end
+
   private
 
   def branch_belongs_to_organization
