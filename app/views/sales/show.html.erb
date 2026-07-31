@@ -1,27 +1,53 @@
 <section class="page-section">
-  <header class="page-header">
-    <div>
-      <h1>Sale Completed</h1>
+<header class="page-header">
+  <div>
+    <h1>Sale Completed</h1>
 
-      <p>
-        Receipt <strong><%= @sale.sale_number %></strong>
-        ·
-        <%= @sale.sold_at.to_fs(:long) %>
-      </p>
-    </div>
+    <p>
+      Receipt <strong><%= @sale.sale_number %></strong>
+      ·
+      <%= @sale.sold_at.to_fs(:long) %>
+    </p>
+  </div>
 
-    <div class="form-actions">
-      <%= link_to "New Sale",
-                  new_pos_sale_path(
-                    branch_id: @sale.branch_id
+  <div class="form-actions">
+    <%= link_to "New Sale",
+                new_pos_sale_path(
+                  branch_id: @sale.branch_id
+                ),
+                class: "button button--primary" %>
+
+    <%= link_to "Printable Receipt",
+                receipt_sale_path(@sale),
+                target: "_blank",
+                rel: "noopener",
+                class: "button button--secondary" %>
+
+    <%= link_to "Sales History",
+                sales_path,
+                class: "button button--secondary" %>
+
+    <% if @sale.customer.present? %>
+      <%= link_to "Customer Account",
+                  customer_account_path(
+                    @sale.customer
                   ),
-                  class: "button button--primary" %>
-
-      <%= link_to "Dashboard",
-                  dashboard_path,
                   class: "button button--secondary" %>
-    </div>
-  </header>
+    <% end %>
+
+    <% if @sale.balance_due.positive? &&
+          current_membership
+            .customer_payment_management? %>
+      <%= link_to "Receive Payment",
+                  new_sale_payment_path(@sale),
+                  class: "button button--primary" %>
+    <% end %>
+
+    <%= link_to "Dashboard",
+                dashboard_path,
+                class: "button button--secondary" %>
+  </div>
+</header>
 
   <% if @sale.customer.present? %>
     <%= link_to "Customer Account",

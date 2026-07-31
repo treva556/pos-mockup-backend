@@ -105,7 +105,7 @@ class SalesController < ApplicationController
 
     @payment_status =
       params[:payment_status].presence_in(
-        Sale.payment_statuses.keys + ["all"]
+        Sale.payment_statuses.keys + [ "all" ]
       ) || "all"
 
     date_type =

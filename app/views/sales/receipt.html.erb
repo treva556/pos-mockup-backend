@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1">
+
+    <title>
+      Receipt <%= @sale.sale_number %>
+    </title>
+
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 24px;
+        background: #f4f4f4;
+        color: #111;
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+      }
+
+      .receipt {
+        width: 80mm;
+        max-width: 100%;
+        margin: 0 auto;
+        padding: 16px;
+        background: white;
+      }
+
+      .receipt-header {
+        text-align: center;
+      }
+
+      .receipt-header h1 {
+        margin: 0 0 8px;
+        font-size: 20px;
+      }
+
+      .receipt-header p {
+        margin: 3px 0;
+      }
+
+      .divider {
+        margin: 12px 0;
+        border-top: 1px dashed #222;
+      }
+
+      .receipt-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin: 5px 0;
+      }
+
+      .receipt-item {
+        margin: 10px 0;
+      }
+
+      .receipt-item-name {
+        font-weight: bold;
+      }
+
+      .receipt-item-details {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        margin-top: 3px;
+      }
+
+      .receipt-total {
+        font-size: 17px;
+        font-weight: bold;
+      }
+
+      .receipt-footer {
+        margin-top: 16px;
+        text-align: center;
+      }
+
+      .screen-instructions {
+        width: 80mm;
+        max-width: 100%;
+        margin: 0 auto 16px;
+        padding: 12px;
+        background: white;
+        text-align: center;
+      }
+
+      @media print {
+        body {
+          padding: 0;
+          background: white;
+        }
+
+        .screen-instructions {
+          display: none;
+        }
+
+        .receipt {
+          width: 80mm;
+          margin: 0;
+          padding: 5mm;
+        }
+
+        @page {
+          size: 80mm auto;
+          margin: 0;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="screen-instructions">
+      Press <strong>Ctrl + P</strong> to print this receipt.
+    </div>
+
+    <main class="receipt">
+      <header class="receipt-header">
+        <h1><%= current_organization.name %></h1>
+
+        <% if @sale.branch.address.present? %>
+          <p><%= @sale.branch.address %></p>
+        <% end %>
+
+        <% if @sale.branch.phone.present? %>
+          <p>Tel: <%= @sale.branch.phone %></p>
+        <% end %>
+
+        <% if current_organization.kra_pin.present? %>
+          <p>
+            KRA PIN:
+            <%= current_organization.kra_pin %>
+          </p>
+        <% end %>
+      </header>
+
+      <div class="divider"></div>
+
+      <div class="receipt-row">
+        <span>Receipt</span>
+        <strong><%= @sale.sale_number %></strong>
+      </div>
+
+      <div class="receipt-row">
+        <span>Date</span>
+        <span><%= @sale.sold_at.to_fs(:short) %></span>
+      </div>
+
+      <div class="receipt-row">
+        <span>Branch</span>
+        <span><%= @sale.branch.name %></span>
+      </div>
+
+      <div class="receipt-row">
+        <span>Cashier</span>
+        <span><%= @sale.cashier.name %></span>
+      </div>
+
+      <div class="receipt-row">
+        <span>Customer</span>
+        <span>
+          <%= @sale.customer&.name ||
+                "Walk-in Customer" %>
+        </span>
+      </div>
+
+      <div class="divider"></div>
+
+      <% @sale.sale_lines.ordered.each do |line| %>
+        <div class="receipt-item">
+          <div class="receipt-item-name">
+            <%= line.item_name %>
+          </div>
+
+          <div class="receipt-item-details">
+            <span>
+              <%= number_with_precision(
+                    line.quantity,
+                    precision: 4,
+                    strip_insignificant_zeros: true
+                  ) %>
+              <%= line.unit_symbol %>
+              ×
+              <%= number_with_precision(
+                    line.unit_price,
+                    precision: 2
+                  ) %>
+            </span>
+
+            <strong>
+              <%= number_with_precision(
+                    line.line_total,
+                    precision: 2
+                  ) %>
+            </strong>
+          </div>
+
+          <% if line.discount_amount.positive? %>
+            <div class="receipt-row">
+              <small>Discount</small>
+
+              <small>
+                -
+                <%= number_with_precision(
+                      line.discount_amount,
+                      precision: 2
+                    ) %>
+              </small>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+
+      <div class="divider"></div>
+
+      <div class="receipt-row">
+        <span>Subtotal</span>
+        <span>
+          KSh
+          <%= number_with_precision(
+                @sale.subtotal,
+                precision: 2
+              ) %>
+        </span>
+      </div>
+
+      <% if @sale.discount_total.positive? %>
+        <div class="receipt-row">
+          <span>Discount</span>
+          <span>
+            - KSh
+            <%= number_with_precision(
+                  @sale.discount_total,
+                  precision: 2
+                ) %>
+          </span>
+        </div>
+      <% end %>
+
+      <div class="receipt-row">
+        <span>Tax included</span>
+        <span>
+          KSh
+          <%= number_with_precision(
+                @sale.tax_total,
+                precision: 2
+              ) %>
+        </span>
+      </div>
+
+      <div class="receipt-row receipt-total">
+        <span>Total</span>
+        <span>
+          KSh
+          <%= number_with_precision(
+                @sale.total,
+                precision: 2
+              ) %>
+        </span>
+      </div>
+
+      <div class="receipt-row">
+        <span>Paid</span>
+        <span>
+          KSh
+          <%= number_with_precision(
+                @sale.amount_paid,
+                precision: 2
+              ) %>
+        </span>
+      </div>
+
+      <% if @sale.balance_due.positive? %>
+        <div class="receipt-row">
+          <strong>Balance due</strong>
+          <strong>
+            KSh
+            <%= number_with_precision(
+                  @sale.balance_due,
+                  precision: 2
+                ) %>
+          </strong>
+        </div>
+
+        <% if @sale.due_on.present? %>
+          <div class="receipt-row">
+            <span>Due date</span>
+            <span><%= @sale.due_on.to_fs(:long) %></span>
+          </div>
+        <% end %>
+      <% end %>
+
+      <% if @sale.change_given.positive? %>
+        <div class="receipt-row">
+          <span>Change</span>
+          <span>
+            KSh
+            <%= number_with_precision(
+                  @sale.change_given,
+                  precision: 2
+                ) %>
+          </span>
+        </div>
+      <% end %>
+
+      <% if @sale.sale_payments.any? %>
+        <div class="divider"></div>
+
+        <strong>Payments</strong>
+
+        <% @sale.sale_payments.oldest_first.each do |payment| %>
+          <div class="receipt-row">
+            <span>
+              <%= payment.payment_method.name %>
+
+              <% if payment.reference.present? %>
+                —
+                <%= payment.reference %>
+              <% end %>
+            </span>
+
+            <span>
+              KSh
+              <%= number_with_precision(
+                    payment.amount,
+                    precision: 2
+                  ) %>
+            </span>
+          </div>
+        <% end %>
+      <% end %>
+
+      <footer class="receipt-footer">
+        <div class="divider"></div>
+
+        <% if current_organization.receipt_footer.present? %>
+          <%= simple_format(
+                current_organization.receipt_footer
+              ) %>
+        <% else %>
+          <p>Thank you for your business.</p>
+        <% end %>
+      </footer>
+    </main>
+  </body>
+</html>

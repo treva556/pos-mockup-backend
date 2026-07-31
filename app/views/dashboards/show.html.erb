@@ -254,6 +254,27 @@
         <%= link_to "Open Point of Sale",
                     new_pos_sale_path,
                     class: "button button--primary" %>
+         <div class="form-actions">
+        <%= link_to "Open Point of Sale",
+                    new_pos_sale_path,
+                    class: "button button--primary" %>
+
+        <%= link_to "Sales History",
+                    sales_path,
+                    class: "button button--secondary" %>
+
+        <%= link_to "Outstanding Sales",
+                    sales_path(
+                      payment_status: "partially_paid"
+                    ),
+                    class: "button button--secondary" %>
+
+        <%= link_to "Unpaid Sales",
+                    sales_path(
+                      payment_status: "unpaid"
+                    ),
+                    class: "button button--secondary" %>
+      </div>
       </div>
     </section>
   <% end %>

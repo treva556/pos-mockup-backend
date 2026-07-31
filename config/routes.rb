@@ -36,10 +36,14 @@ Rails.application.routes.draw do
   end
 
   resources :customers do
-    resource :account,
-            only: :show,
-            controller: "customer_accounts"
-  end
+        member do
+        patch :toggle_status
+        end
+
+     resource :account,
+                only: :show,
+                controller: "customer_accounts"
+   end
 
   resources :suppliers, except: :destroy do
       patch :toggle_status, on: :member
