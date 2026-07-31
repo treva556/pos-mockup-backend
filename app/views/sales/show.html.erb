@@ -23,6 +23,22 @@
     </div>
   </header>
 
+  <% if @sale.customer.present? %>
+    <%= link_to "Customer Account",
+                customer_account_path(
+                    @sale.customer
+                ),
+                class: "button button--secondary" %>
+    <% end %>
+
+    <% if @sale.balance_due.positive? &&
+        current_membership
+            .customer_payment_management? %>
+    <%= link_to "Receive Payment",
+                new_sale_payment_path(@sale),
+                class: "button button--primary" %>
+    <% end %>
+
   <div class="panel">
     <h2>Sale Information</h2>
 

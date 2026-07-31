@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_30_201620) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_31_155848) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -291,6 +291,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_30_201620) do
     t.datetime "created_at", null: false
     t.bigint "customer_id"
     t.decimal "discount_total", precision: 15, scale: 2, default: "0.0", null: false
+    t.date "due_on"
     t.text "notes"
     t.bigint "organization_id", null: false
     t.string "payment_status", default: "unpaid", null: false
@@ -307,6 +308,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_30_201620) do
     t.index ["cashier_id"], name: "index_sales_on_cashier_id"
     t.index ["customer_id", "sold_at"], name: "index_sales_on_customer_and_sold_at"
     t.index ["customer_id"], name: "index_sales_on_customer_id"
+    t.index ["organization_id", "due_on"], name: "index_sales_on_organization_id_and_due_on"
     t.index ["organization_id", "payment_status"], name: "index_sales_on_organization_id_and_payment_status"
     t.index ["organization_id", "sale_number"], name: "index_sales_on_org_and_sale_number", unique: true
     t.index ["organization_id", "sold_at"], name: "index_sales_on_org_and_sold_at"
@@ -319,6 +321,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_30_201620) do
     t.check_constraint "change_given >= 0::numeric", name: "sales_nonnegative_change"
     t.check_constraint "discount_total <= subtotal", name: "sales_discount_within_subtotal"
     t.check_constraint "discount_total >= 0::numeric", name: "sales_nonnegative_discount"
+    t.check_constraint "due_on IS NULL OR sold_at IS NULL OR due_on >= sold_at::date", name: "sales_due_date_not_before_sale"
     t.check_constraint "payment_status::text = ANY (ARRAY['unpaid'::character varying, 'partially_paid'::character varying, 'paid'::character varying]::text[])", name: "sales_allowed_payment_status"
     t.check_constraint "status::text = ANY (ARRAY['draft'::character varying, 'completed'::character varying, 'cancelled'::character varying]::text[])", name: "sales_allowed_status"
     t.check_constraint "subtotal >= 0::numeric", name: "sales_nonnegative_subtotal"

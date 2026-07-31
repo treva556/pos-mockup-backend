@@ -1,0 +1,16 @@
+ "ales database foundations\""             |  25 [31m---[m
+ app/controllers/pos/sales_controller.rb   |  35 [32m+++[m
+ app/controllers/sales_controller.rb       |  36 [32m+++[m
+ app/models/money_account.rb               |  21 [32m+[m[31m-[m
+ app/models/sale.rb                        |   4 [32m+[m
+ app/models/sale_payment.rb                |  11 [32m+[m
+ app/services/sales/complete_sale.rb       | 334 [32m++++++++++++++++++++++++++++[m
+ app/services/sales/completion_error.rb    |   4 [32m+[m
+ app/views/pos/checkouts/show.html.erb     |  24 [32m+[m[31m-[m
+ app/views/sales/show.html.erb             | 287 [32m++++++++++++++++++++++++[m
+ config/routes.rb                          |   5 [32m+[m[31m-[m
+ h                                         |  19 [31m--[m
+ test/services/sales/complete_sale_test.rb | 353 [32m++++++++++++++++++++++++++++++[m
+ test/test_helper.rb                       |  13 [32m++[m
+ "tock transfers\""                        | 248 [31m---------------------[m
+ 15 files changed, 1113 insertions(+), 306 deletions(-)

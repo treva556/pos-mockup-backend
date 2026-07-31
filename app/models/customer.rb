@@ -47,4 +47,20 @@ class Customer < ApplicationRecord
     self.address = address.to_s.strip.presence
     self.notes = notes.to_s.strip.presence
   end
+
+  def outstanding_sales
+    sales
+      .completed
+      .where("balance_due > 0")
+  end
+
+  def outstanding_balance
+    outstanding_sales.sum(:balance_due)
+  end
+
+  def overdue_balance
+    outstanding_sales
+      .where("due_on < ?", Date.current)
+      .sum(:balance_due)
+  end
 end

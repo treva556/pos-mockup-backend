@@ -11,6 +11,7 @@ module Sales
       cart:,
       payment_plan:,
       sold_at: Time.current,
+      due_on: nil,
       notes: nil
     )
       @organization = organization
@@ -18,7 +19,13 @@ module Sales
       @cashier = cashier
       @cart = cart
       @payment_plan = payment_plan
-      @sold_at = sold_at
+      @sold_at = sold_at || Time.current
+
+      @due_on =
+        ActiveModel::Type::Date
+          .new
+          .cast(due_on)
+
       @notes = notes
     end
 
@@ -35,6 +42,10 @@ module Sales
 
       validate_payment_plan!(
         calculation: calculation
+      )
+
+      validate_credit_terms!(
+        balance_due: payment_plan.balance_due
       )
 
       Sale.transaction do
@@ -68,6 +79,7 @@ module Sales
                 :cart,
                 :payment_plan,
                 :sold_at,
+                :due_on,
                 :notes
 
     def validate_context!
@@ -81,10 +93,10 @@ module Sales
       validate_cart_context!
       validate_payment_context!
 
-      if cart.empty?
-        raise Sales::CompletionError,
-              "The cart is empty"
-      end
+      return unless cart.empty?
+
+      raise Sales::CompletionError,
+            "The cart is empty"
     end
 
     def validate_branch!
@@ -156,10 +168,9 @@ module Sales
     end
 
     def validate_customer!(customer, balance_due:)
-      return if customer.blank? &&
-                balance_due.zero?
-
       if customer.blank?
+        return if balance_due.to_d.zero?
+
         raise Sales::CompletionError,
               "Select a customer before recording a credit sale"
       end
@@ -215,6 +226,20 @@ module Sales
             "two decimal places"
     end
 
+    def validate_credit_terms!(balance_due:)
+      return if balance_due.to_d.zero?
+
+      if due_on.blank?
+        raise Sales::CompletionError,
+              "Select a due date for the credit balance"
+      end
+
+      return if due_on >= sold_at.to_date
+
+      raise Sales::CompletionError,
+            "Credit due date cannot be before the sale date"
+    end
+
     def create_sale!(calculation:, customer:)
       amount_paid =
         money(payment_plan.applied_total)
@@ -239,6 +264,8 @@ module Sales
             balance_due: balance_due
           ),
         sold_at: sold_at,
+        due_on:
+          balance_due.positive? ? due_on : nil,
         prices_include_tax: true,
         subtotal:
           money(calculation.subtotal),

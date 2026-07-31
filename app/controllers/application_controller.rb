@@ -161,6 +161,22 @@ end
                 alert: "Your role cannot view inventory."
   end
 
+  def require_customer_account_view!
+    return if current_membership&.customer_account_view?
+
+    redirect_to dashboard_path,
+                alert:
+                  "Your role cannot view customer accounts."
+  end
+
+  def require_customer_payment_management!
+    return if current_membership&.customer_payment_management?
+
+    redirect_to dashboard_path,
+                alert:
+                  "Your role cannot record customer payments."
+  end
+
   def require_pos_access!
     return if current_membership&.pos_access?
 

@@ -35,9 +35,11 @@ Rails.application.routes.draw do
            only: %i[edit update]
   end
 
-  resources :customers, except: :destroy do
-      patch :toggle_status, on: :member
-    end
+  resources :customers do
+    resource :account,
+            only: :show,
+            controller: "customer_accounts"
+  end
 
   resources :suppliers, except: :destroy do
       patch :toggle_status, on: :member
@@ -66,15 +68,15 @@ Rails.application.routes.draw do
       patch :toggle_status, on: :member
   end
 
-    resources :payment_methods, except: :destroy do
+  resources :payment_methods, except: :destroy do
       patch :toggle_status, on: :member
-    end
+  end
 
-    resources :branch_payment_settings,
+  resources :branch_payment_settings,
                 only: :index do
         patch :update_defaults,
               on: :collection
-    end
+  end
 
   namespace :pos do
     resource :sale,
@@ -97,7 +99,11 @@ Rails.application.routes.draw do
    end
 
     resources :sales,
-          only: :show
+              only: :show do
+      resources :payments,
+                only: %i[new create],
+                controller: "sale_payments"
+    end
 
     resources :inventory_adjustments,
           only: %i[new create]

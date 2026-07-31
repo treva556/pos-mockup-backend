@@ -339,15 +339,21 @@ module Sales
       )
     end
 
-    def complete_sale(cart:, payment_plan:)
-      Sales::CompleteSale.call(
-        organization: @organization,
-        branch: @branch,
-        cashier: @owner,
-        cart: cart,
-        payment_plan: payment_plan,
-        sold_at: Time.current
-      )
+   def complete_sale(cart:, payment_plan:)
+        due_on =
+            if payment_plan.balance_due.positive?
+            30.days.from_now.to_date
+            end
+
+        Sales::CompleteSale.call(
+            organization: @organization,
+            branch: @branch,
+            cashier: @owner,
+            cart: cart,
+            payment_plan: payment_plan,
+            sold_at: Time.current,
+            due_on: due_on
+        )
     end
   end
 end

@@ -66,6 +66,9 @@ class Sale < ApplicationRecord
   validate :payment_does_not_exceed_total
   validate :payment_and_balance_match_total
   validate :completed_sale_has_sold_at
+  validate :completed_credit_sale_has_customer
+  validate :completed_credit_sale_has_due_date
+  validate :due_date_is_not_before_sale
 
   scope :recent_first,
         lambda {
@@ -81,6 +84,16 @@ class Sale < ApplicationRecord
   scope :outstanding,
         -> { where.not(payment_status: "paid") }
 
+  scope :with_outstanding_balance,
+      -> { where("balance_due > 0") }
+
+  scope :overdue,
+        lambda {
+            completed
+            .with_outstanding_balance
+            .where("due_on < ?", Date.current)
+        }
+
   def walk_in?
     customer_id.blank?
   end
@@ -91,6 +104,13 @@ class Sale < ApplicationRecord
 
   def editable?
     draft?
+  end
+
+  def overdue?
+    completed? &&
+        outstanding? &&
+        due_on.present? &&
+        due_on < Date.current
   end
 
   private
@@ -193,6 +213,39 @@ class Sale < ApplicationRecord
     errors.add(
       :sold_at,
       "must be present for a completed sale"
+    )
+  end
+
+  def completed_credit_sale_has_customer
+    return unless completed?
+    return unless balance_due.to_d.positive?
+    return if customer.present?
+
+    errors.add(
+        :customer,
+        "must be selected for a credit sale"
+    )
+    end
+
+    def completed_credit_sale_has_due_date
+    return unless completed?
+    return unless balance_due.to_d.positive?
+    return if due_on.present?
+
+    errors.add(
+        :due_on,
+        "must be provided for a credit sale"
+    )
+    end
+
+    def due_date_is_not_before_sale
+    return if due_on.blank?
+    return if sold_at.blank?
+    return if due_on >= sold_at.to_date
+
+    errors.add(
+        :due_on,
+        "cannot be before the sale date"
     )
   end
 end

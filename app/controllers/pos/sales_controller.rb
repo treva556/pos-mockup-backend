@@ -34,7 +34,7 @@ module Pos
                     "#{error.message}. The cart was cleared."
     end
 
-    def create
+   def create
         sale =
             Sales::CompleteSale.call(
             organization: current_organization,
@@ -42,7 +42,9 @@ module Pos
             cashier: current_user,
             cart: pos_cart,
             payment_plan: pos_payment_plan,
-            sold_at: Time.current
+            sold_at: Time.current,
+            due_on: completion_params[:due_on],
+            notes: completion_params[:notes]
             )
 
         clear_pos_cart!
@@ -91,6 +93,15 @@ module Pos
 
     def limit_items
       @items = @items.limit(50)
+    end
+
+    def completion_params
+        params
+            .require(:sale)
+            .permit(
+            :due_on,
+            :notes
+            )
     end
 
     def load_stock_quantities

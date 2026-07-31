@@ -405,20 +405,75 @@
         customer: @cart.customer
         ) %>
 
-    <%= button_to "Complete Sale",
-                pos_sale_path(
-                    branch_id: @pos_branch.id
-                ),
-                method: :post,
-                class: "button button--primary",
-                disabled: !ready_for_completion,
-                form: {
-                    data: {
-                    turbo_confirm:
-                        "Complete this sale? It will deduct stock " \
-                        "and record the payments."
-                    }
-                } %>
+   <% ready_for_completion =
+     @payment_plan.ready_for_completion?(
+       customer: @cart.customer
+     ) %>
+
+<%= form_with(
+      url: pos_sale_path(
+        branch_id: @pos_branch.id
+      ),
+      scope: :sale,
+      method: :post,
+      local: true,
+      class: "record-form"
+    ) do |form| %>
+
+  <% if @payment_plan.credit_sale? %>
+    <div class="form-grid">
+      <div class="field">
+        <%= form.label :due_on,
+                       "Credit due date" %>
+
+        <%= form.date_field(
+              :due_on,
+              value: 30.days.from_now.to_date,
+              min: Date.current,
+              required: true
+            ) %>
+      </div>
+
+      <div class="field field--full">
+        <%= form.label :notes,
+                       "Sale notes" %>
+
+        <%= form.text_area(
+              :notes,
+              rows: 3,
+              placeholder:
+                "Credit terms or other sale notes"
+            ) %>
+      </div>
+    </div>
+  <% else %>
+        <%= form.hidden_field :due_on,
+                            value: "" %>
+
+        <div class="field">
+        <%= form.label :notes,
+                        "Sale notes" %>
+
+        <%= form.text_area(
+                :notes,
+                rows: 3
+            ) %>
+        </div>
+    <% end %>
+
+    <div class="form-actions">
+        <%= form.submit "Complete Sale",
+                        class:
+                        "button button--primary",
+                        disabled:
+                        !ready_for_completion,
+                        data: {
+                        turbo_confirm:
+                            "Complete this sale? It will deduct stock " \
+                            "and record the payments."
+                        } %>
+    </div>
+    <% end %>
     </div>
   </div>
 </section>
