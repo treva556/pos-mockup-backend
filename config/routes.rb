@@ -99,7 +99,11 @@ Rails.application.routes.draw do
    end
 
     resources :sales,
-              only: :show do
+              only: %i[index show] do
+      member do
+        get :receipt
+      end
+
       resources :payments,
                 only: %i[new create],
                 controller: "sale_payments"
