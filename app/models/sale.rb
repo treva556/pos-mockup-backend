@@ -25,6 +25,10 @@ class Sale < ApplicationRecord
   has_many :sale_payments,
            dependent: :restrict_with_error
 
+  has_many :stock_movements,
+         as: :source,
+         dependent: :restrict_with_error
+
   enum :status,
        STATUSES,
        validate: true

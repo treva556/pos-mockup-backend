@@ -64,17 +64,22 @@ class MoneyAccount < ApplicationRecord
 
   def incoming_transfer_total
       incoming_money_transfers.sum(:amount)
-    end
+  end
 
-    def outgoing_transfer_total
+  def outgoing_transfer_total
       outgoing_money_transfers.sum(:amount)
-    end
+  end
 
-    def current_balance
-      opening_balance.to_d +
-        incoming_transfer_total -
-        outgoing_transfer_total
-    end
+  def current_balance
+    opening_balance.to_d +
+      incoming_transfer_total -
+      outgoing_transfer_total +
+      sale_receipts_total
+  end
+
+  def sale_receipts_total
+    sale_payments.sum(:amount)
+  end
 
   private
 

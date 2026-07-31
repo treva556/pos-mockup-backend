@@ -35,6 +35,7 @@ class SalePayment < ApplicationRecord
   validate :recorded_by_is_active_member
   validate :amount_tendered_covers_payment
   validate :change_matches_tendered_amount
+  validate :sale_is_completed
 
   scope :oldest_first,
         -> { order(:paid_at, :created_at) }
@@ -136,4 +137,14 @@ class SalePayment < ApplicationRecord
       "must equal the tendered amount minus the payment"
     )
   end
+
+  def sale_is_completed
+    return if sale.blank?
+    return if sale.completed?
+
+    errors.add(
+        :sale,
+        "must be completed before receiving payments"
+    )
+    end
 end

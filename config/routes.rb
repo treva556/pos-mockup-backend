@@ -78,7 +78,7 @@ Rails.application.routes.draw do
 
   namespace :pos do
     resource :sale,
-            only: :new
+            only: %i[new create]
 
     resource :cart,
             only: %i[update destroy]
@@ -95,6 +95,9 @@ Rails.application.routes.draw do
               only: %i[create update destroy],
               param: :entry_id
    end
+
+    resources :sales,
+          only: :show
 
     resources :inventory_adjustments,
           only: %i[new create]

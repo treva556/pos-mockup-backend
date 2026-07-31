@@ -34,6 +34,41 @@ module Pos
                     "#{error.message}. The cart was cleared."
     end
 
+    def create
+        sale =
+            Sales::CompleteSale.call(
+            organization: current_organization,
+            branch: @pos_branch,
+            cashier: current_user,
+            cart: pos_cart,
+            payment_plan: pos_payment_plan,
+            sold_at: Time.current
+            )
+
+        clear_pos_cart!
+
+        redirect_to sale_path(sale),
+                    notice:
+                        "Sale #{sale.sale_number} was completed."
+        rescue Sales::CompletionError,
+            Sales::InvalidLineError,
+            Sales::InvalidPaymentError,
+            Inventory::InsufficientStockError => error
+        redirect_to pos_checkout_path(
+            branch_id: @pos_branch.id
+        ),
+                    alert: error.message
+        rescue ActiveRecord::RecordInvalid => error
+        redirect_to pos_checkout_path(
+            branch_id: @pos_branch.id
+        ),
+                    alert:
+                        error.record
+                        .errors
+                        .full_messages
+                        .to_sentence
+    end
+
     private
 
     def filter_items_by_query
