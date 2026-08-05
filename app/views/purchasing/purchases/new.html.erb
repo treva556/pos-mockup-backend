@@ -126,10 +126,15 @@
                 <strong><%= item.name %></strong>
 
                 <% if item.sku.present? %>
-                  <br>
-                  <small>SKU: <%= item.sku %></small>
+                    <br>
+                    <small>SKU: <%= item.sku %></small>
                 <% end %>
-              </td>
+
+                <% if item.tracks_expiry? %>
+                    <br>
+                    <small>Batch and expiry required</small>
+                <% end %>
+                </td>
 
               <td>
                 KSh
@@ -199,6 +204,9 @@
             <th>Quantity</th>
             <th>Unit cost</th>
             <th>Discount</th>
+            <th>Batch</th>
+            <th>Manufactured</th>
+            <th>Expiry</th>
             <th>Total</th>
             <th></th>
           </tr>
@@ -306,6 +314,37 @@
                 ) %>
           </dd>
         </div>
+
+
+        <% if line.item.tracks_expiry? %>
+            <td>
+                <%= form.text_field(
+                    :batch_number,
+                    value: line.batch_number,
+                    placeholder: "Optional batch number"
+                    ) %>
+            </td>
+
+            <td>
+                <%= form.date_field(
+                    :manufactured_on,
+                    value: line.manufactured_on
+                    ) %>
+            </td>
+
+            <td>
+                <%= form.date_field(
+                    :expires_on,
+                    value: line.expires_on,
+                    min: Date.current,
+                    required: true
+                    ) %>
+            </td>
+            <% else %>
+            <td>Not tracked</td>
+            <td>—</td>
+            <td>—</td>
+         <% end %>
 
         <div>
           <dt>Tax included</dt>

@@ -30,14 +30,18 @@ module Purchasing
       purchase_cart.update_item(
         item_id: params[:item_id],
         quantity:
-          cart_item_params[:quantity],
+            cart_item_params[:quantity],
         unit_cost:
-          cart_item_params[:unit_cost],
+            cart_item_params[:unit_cost],
         discount_amount:
-          cart_item_params[
-            :discount_amount
-          ]
-      )
+            cart_item_params[:discount_amount],
+        batch_number:
+            cart_item_params[:batch_number],
+        manufactured_on:
+            cart_item_params[:manufactured_on],
+        expires_on:
+            cart_item_params[:expires_on]
+    )
 
       persist_purchase_cart!
 
@@ -70,13 +74,16 @@ module Purchasing
     end
 
     def cart_item_params
-      params
+    params
         .require(:purchase_cart_item)
         .permit(
-          :item_id,
-          :quantity,
-          :unit_cost,
-          :discount_amount
+        :item_id,
+        :quantity,
+        :unit_cost,
+        :discount_amount,
+        :batch_number,
+        :manufactured_on,
+        :expires_on
         )
     end
   end

@@ -31,16 +31,18 @@ module Purchases
             calculation: calculation
           )
 
+        purchase_lines =
         create_lines!(
-          purchase: purchase,
-          calculated_lines:
+            purchase: purchase,
+            calculated_lines:
             calculation.lines
         )
 
         receive_stock!(
-          purchase: purchase,
-          calculated_lines:
-            calculation.lines
+        purchase: purchase,
+        calculated_lines:
+            calculation.lines,
+        purchase_lines: purchase_lines
         )
 
         purchase
@@ -168,67 +170,77 @@ module Purchases
     end
 
     def create_lines!(
-      purchase:,
-      calculated_lines:
-    )
-      calculated_lines.each do |line|
-        purchase.purchase_lines.create!(
-          organization: organization,
-          item: line[:item],
-          tax_rate: line[:tax_rate],
-          line_number: line[:line_number],
-          item_name: line[:item_name],
-          sku: line[:sku],
-          barcode: line[:barcode],
-          item_type: line[:item_type],
-          unit_name: line[:unit_name],
-          unit_symbol: line[:unit_symbol],
-          quantity: line[:quantity],
-          unit_cost: line[:unit_cost],
-          gross_amount:
-            line[:gross_amount],
-          discount_amount:
-            line[:discount_amount],
-          tax_percentage:
-            line[:tax_percentage],
-          tax_amount:
-            line[:tax_amount],
-          line_total:
-            line[:line_total]
+        purchase:,
+        calculated_lines:
         )
-      end
+        calculated_lines.map do |line|
+            purchase.purchase_lines.create!(
+            organization: organization,
+            item: line[:item],
+            tax_rate: line[:tax_rate],
+            line_number: line[:line_number],
+            item_name: line[:item_name],
+            sku: line[:sku],
+            barcode: line[:barcode],
+            item_type: line[:item_type],
+            unit_name: line[:unit_name],
+            unit_symbol: line[:unit_symbol],
+            quantity: line[:quantity],
+            unit_cost: line[:unit_cost],
+            gross_amount:
+                line[:gross_amount],
+            discount_amount:
+                line[:discount_amount],
+            tax_percentage:
+                line[:tax_percentage],
+            tax_amount:
+                line[:tax_amount],
+            line_total:
+                line[:line_total]
+            )
+        end
     end
 
     def receive_stock!(
-      purchase:,
-      calculated_lines:
-    )
-      calculated_lines.each do |line|
-        item = line[:item]
-
-        Inventory::PostMovement.call(
-          organization: organization,
-          branch: branch,
-          item: item,
-          recorded_by: recorded_by,
-          movement_type: "purchase",
-          quantity_change:
-            line[:quantity],
-          occurred_at: received_at,
-          reference:
-            cart.supplier_invoice_number.presence ||
-              purchase.purchase_number,
-          notes:
-            "Stock received from #{purchase.supplier.name}",
-          source: purchase
+        purchase:,
+        calculated_lines:,
+        purchase_lines:
         )
+        calculated_lines
+            .zip(purchase_lines)
+            .each do |line, purchase_line|
+            item = line[:item]
 
-        update_latest_purchase_cost!(
-          item: item,
-          unit_cost: line[:unit_cost]
-        )
-      end
-    end
+            batch =
+                create_inventory_batch!(
+                purchase_line: purchase_line,
+                line: line
+                )
+
+            Inventory::PostMovement.call(
+                organization: organization,
+                branch: branch,
+                item: item,
+                recorded_by: recorded_by,
+                movement_type: "purchase",
+                quantity_change:
+                line[:quantity],
+                occurred_at: received_at,
+                reference:
+                cart.supplier_invoice_number.presence ||
+                    purchase.purchase_number,
+                notes:
+                "Stock received from #{purchase.supplier.name}",
+                source: purchase,
+                inventory_batch: batch
+            )
+
+            update_latest_purchase_cost!(
+                item: item,
+                unit_cost: line[:unit_cost]
+            )
+         end
+     end
 
     def update_latest_purchase_cost!(
       item:,
@@ -241,6 +253,69 @@ module Purchases
         )
       end
     end
+
+    def create_inventory_batch!(
+        purchase_line:,
+        line:
+        )
+        item = line[:item]
+
+        return unless item.tracks_expiry?
+
+        cart_line =
+            cart.lines.find do |candidate|
+            candidate.item.id == item.id
+            end
+
+        validate_expiry_information!(
+            item: item,
+            cart_line: cart_line
+        )
+
+        organization.inventory_batches.create!(
+            branch: branch,
+            item: item,
+            purchase_line: purchase_line,
+            batch_number:
+            cart_line.batch_number,
+            manufactured_on:
+            cart_line.manufactured_on,
+            expires_on:
+            cart_line.expires_on,
+            quantity_received:
+            line[:quantity],
+            quantity_remaining:
+            line[:quantity],
+            unit_cost:
+            money(line[:unit_cost]),
+            received_at: received_at,
+            status: "active"
+        )
+    end
+
+        def validate_expiry_information!(
+        item:,
+        cart_line:
+        )
+        if cart_line.blank? ||
+            cart_line.expires_on.blank?
+            raise Purchases::ReceivingError,
+                "Enter an expiry date for #{item.name}"
+        end
+
+        if cart_line.expires_on <
+            received_at.to_date
+            raise Purchases::ReceivingError,
+                "#{item.name} expiry date cannot be in the past"
+        end
+
+        return if cart_line.manufactured_on.blank?
+        return if cart_line.manufactured_on <=
+                    cart_line.expires_on
+
+        raise Purchases::ReceivingError,
+                "#{item.name} manufacture date cannot be after its expiry date"
+        end
 
     def money(value)
       value.to_d.round(2)

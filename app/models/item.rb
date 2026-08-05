@@ -16,6 +16,9 @@ class Item < ApplicationRecord
   has_many :sale_lines,
          dependent: :restrict_with_error
 
+  has_many :inventory_batches,
+         dependent: :restrict_with_error
+
   enum :item_type, {
     product: "product",
     service: "service"

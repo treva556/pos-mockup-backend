@@ -58,6 +58,9 @@ class Organization < ApplicationRecord
   has_many :purchase_payments,
           dependent: :restrict_with_error
 
+  has_many :inventory_batches,
+          dependent: :restrict_with_error
+
   before_validation :normalize_business_details
 
   validates :name, presence: true

@@ -121,6 +121,20 @@
                             required: true %>
     </div>
 
+    <div class="field">
+      <%= form.check_box :tracks_expiry %>
+
+      <%= form.label(
+            :tracks_expiry,
+            "Track batches and expiry dates"
+          ) %>
+
+      <small>
+        Enable this for food, medicine or other products
+        whose expiry date must be tracked per delivery.
+      </small>
+    </div>
+
     <div class="field field--full">
       <label class="checkbox-field">
         <%= form.check_box :track_inventory %>

@@ -6,6 +6,9 @@ module Purchases
         :quantity,
         :unit_cost,
         :discount_amount,
+        :batch_number,
+        :manufactured_on,
+        :expires_on,
         keyword_init: true
       )
 
@@ -70,9 +73,10 @@ module Purchases
         data["purchased_on"].presence ||
         Date.current.to_s
 
-      ActiveModel::Type::Date
-        .new
-        .cast(value)
+      date_value(
+        value,
+        label: "purchase date"
+      )
     end
 
     def purchased_on=(value)
@@ -118,7 +122,13 @@ module Purchases
         "unit_cost" =>
           cost.to_s("F"),
         "discount_amount" =>
-          "0.0"
+          "0.0",
+        "batch_number" =>
+          nil,
+        "manufactured_on" =>
+          nil,
+        "expires_on" =>
+          nil
       }
 
       reset_lines!
@@ -128,7 +138,10 @@ module Purchases
       item_id:,
       quantity:,
       unit_cost:,
-      discount_amount: 0
+      discount_amount: 0,
+      batch_number: nil,
+      manufactured_on: nil,
+      expires_on: nil
     )
       key = item_id.to_s
 
@@ -152,7 +165,19 @@ module Purchases
           decimal(
             discount_amount,
             label: "discount"
-          ).to_s("F")
+          ).to_s("F"),
+        "batch_number" =>
+          batch_number.to_s.strip.presence,
+        "manufactured_on" =>
+          normalized_date(
+            manufactured_on,
+            label: "manufacture date"
+          ),
+        "expires_on" =>
+          normalized_date(
+            expires_on,
+            label: "expiry date"
+          )
       }
 
       reset_lines!
@@ -211,6 +236,21 @@ module Purchases
             decimal(
               attributes["discount_amount"],
               label: "discount"
+            ),
+          batch_number:
+            attributes["batch_number"]
+              .to_s
+              .strip
+              .presence,
+          manufactured_on:
+            optional_date(
+              attributes["manufactured_on"],
+              label: "manufacture date"
+            ),
+          expires_on:
+            optional_date(
+              attributes["expires_on"],
+              label: "expiry date"
             )
         )
       end
@@ -241,6 +281,36 @@ module Purchases
     def decimal(value, label:)
       BigDecimal(value.to_s)
     rescue ArgumentError, TypeError
+      raise Purchases::InvalidLineError,
+            "Invalid #{label}"
+    end
+
+    def normalized_date(value, label:)
+      return if value.blank?
+
+      date_value(
+        value,
+        label: label
+      ).to_s
+    end
+
+    def optional_date(value, label:)
+      return if value.blank?
+
+      date_value(
+        value,
+        label: label
+      )
+    end
+
+    def date_value(value, label:)
+      date =
+        ActiveModel::Type::Date
+          .new
+          .cast(value)
+
+      return date if date.present?
+
       raise Purchases::InvalidLineError,
             "Invalid #{label}"
     end

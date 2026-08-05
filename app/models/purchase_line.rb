@@ -5,6 +5,9 @@ class PurchaseLine < ApplicationRecord
   belongs_to :tax_rate,
              optional: true
 
+  has_one :inventory_batch,
+        dependent: :restrict_with_error
+
   validates :line_number,
             numericality: {
               only_integer: true,
