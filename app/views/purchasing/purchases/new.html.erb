@@ -109,14 +109,19 @@
 
     <% if @items.any? %>
       <table>
-        <thead>
-          <tr>
+       <thead>
+        <tr>
             <th>Item</th>
-            <th>Current cost</th>
             <th>Quantity</th>
-            <th>Purchase cost</th>
+            <th>Unit cost</th>
+            <th>Discount</th>
+            <th>Batch</th>
+            <th>Manufactured</th>
+            <th>Expiry</th>
+            <th>Total</th>
             <th></th>
-          </tr>
+            <th></th>
+        </tr>
         </thead>
 
         <tbody>
@@ -263,6 +268,36 @@
                       ) %>
                 </td>
 
+                <% if line.item.tracks_expiry? %>
+                    <td>
+                        <%= form.text_field(
+                            :batch_number,
+                            value: line.batch_number,
+                            placeholder: "Optional batch number"
+                            ) %>
+                    </td>
+
+                    <td>
+                        <%= form.date_field(
+                            :manufactured_on,
+                            value: line.manufactured_on
+                            ) %>
+                    </td>
+
+                    <td>
+                        <%= form.date_field(
+                            :expires_on,
+                            value: line.expires_on,
+                            min: Date.current,
+                            required: true
+                            ) %>
+                    </td>
+                    <% else %>
+                    <td>Not tracked</td>
+                    <td>—</td>
+                    <td>—</td>
+                    <% end %>
+
                 <td>
                   KSh
                   <%= number_with_precision(
@@ -315,36 +350,6 @@
           </dd>
         </div>
 
-
-        <% if line.item.tracks_expiry? %>
-            <td>
-                <%= form.text_field(
-                    :batch_number,
-                    value: line.batch_number,
-                    placeholder: "Optional batch number"
-                    ) %>
-            </td>
-
-            <td>
-                <%= form.date_field(
-                    :manufactured_on,
-                    value: line.manufactured_on
-                    ) %>
-            </td>
-
-            <td>
-                <%= form.date_field(
-                    :expires_on,
-                    value: line.expires_on,
-                    min: Date.current,
-                    required: true
-                    ) %>
-            </td>
-            <% else %>
-            <td>Not tracked</td>
-            <td>—</td>
-            <td>—</td>
-         <% end %>
 
         <div>
           <dt>Tax included</dt>

@@ -81,7 +81,10 @@ class InventoryAdjustmentsController < ApplicationController
         .items
         .active
         .stock_tracked
-        .where(item_type: "product")
+        .where(
+          item_type: "product",
+          tracks_expiry: false
+        )
         .includes(:unit_of_measure)
         .alphabetical
   end
