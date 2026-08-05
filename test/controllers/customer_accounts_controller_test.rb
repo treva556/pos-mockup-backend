@@ -2,7 +2,6 @@ require "test_helper"
 
 class CustomerAccountsControllerTest <
   ActionDispatch::IntegrationTest
-
   setup do
     @user = create_user
 
