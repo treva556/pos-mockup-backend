@@ -49,6 +49,15 @@ class Organization < ApplicationRecord
   has_many :sale_payments,
           dependent: :restrict_with_error
 
+  has_many :purchases,
+         dependent: :restrict_with_error
+
+  has_many :purchase_lines,
+          dependent: :restrict_with_error
+
+  has_many :purchase_payments,
+          dependent: :restrict_with_error
+
   before_validation :normalize_business_details
 
   validates :name, presence: true

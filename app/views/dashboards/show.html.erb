@@ -227,6 +227,12 @@
             <%= link_to "Movement History",
                         stock_movements_path,
                         class: "button button--secondary" %>
+
+            <% if current_membership.supplier_management? %>
+            <%= link_to "Receive Purchase",
+                        new_purchasing_purchase_path,
+                        class: "button button--primary" %>
+          <% end %>
         </div>
       </div>
 

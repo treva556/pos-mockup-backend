@@ -191,4 +191,12 @@ end
                 alert:
                   "Your role cannot view sales records."
   end
+
+  def require_supplier_management!
+    return if current_membership&.supplier_management?
+
+    redirect_to dashboard_path,
+                alert:
+                  "Your role cannot manage suppliers or purchases."
+  end
 end

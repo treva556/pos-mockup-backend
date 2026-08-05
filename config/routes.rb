@@ -102,6 +102,21 @@ Rails.application.routes.draw do
               param: :entry_id
    end
 
+   namespace :purchasing do
+        resource :purchase,
+                only: %i[new create]
+
+        resource :cart,
+                only: %i[update destroy]
+
+        resources :cart_items,
+                only: %i[create update destroy],
+                param: :item_id
+   end
+
+    resources :purchases,
+              only: :show
+
     resources :sales,
               only: %i[index show] do
       member do

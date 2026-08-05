@@ -1,6 +1,9 @@
 class Supplier < ApplicationRecord
   belongs_to :organization
 
+  has_many :purchases,
+         dependent: :restrict_with_error
+
   before_validation :normalize_details
 
   validates :name,

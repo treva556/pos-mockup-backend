@@ -1,0 +1,212 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>Purchase Received</h1>
+
+      <p>
+        <strong>
+          <%= @purchase.purchase_number %>
+        </strong>
+      </p>
+    </div>
+
+    <div class="form-actions">
+      <%= link_to "Receive Another Purchase",
+                  new_purchasing_purchase_path(
+                    branch_id:
+                      @purchase.branch_id
+                  ),
+                  class: "button button--primary" %>
+
+      <%= link_to "Dashboard",
+                  dashboard_path,
+                  class: "button button--secondary" %>
+    </div>
+  </header>
+
+  <div class="panel">
+    <h2>Purchase Information</h2>
+
+    <dl class="details-list">
+      <div>
+        <dt>Purchase number</dt>
+        <dd><%= @purchase.purchase_number %></dd>
+      </div>
+
+      <div>
+        <dt>Supplier</dt>
+        <dd><%= @purchase.supplier.name %></dd>
+      </div>
+
+      <div>
+        <dt>Supplier invoice</dt>
+        <dd>
+          <%= @purchase
+                .supplier_invoice_number
+                .presence || "—" %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Branch</dt>
+        <dd><%= @purchase.branch.name %></dd>
+      </div>
+
+      <div>
+        <dt>Invoice date</dt>
+        <dd>
+          <%= @purchase
+                .purchased_on
+                .to_fs(:long) %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Recorded by</dt>
+        <dd><%= @purchase.recorded_by.name %></dd>
+      </div>
+
+      <div>
+        <dt>Payment status</dt>
+        <dd>
+          <%= @purchase
+                .payment_status
+                .titleize %>
+        </dd>
+      </div>
+    </dl>
+  </div>
+
+  <div class="panel">
+    <h2>Received Items</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Quantity</th>
+          <th>Unit cost</th>
+          <th>Discount</th>
+          <th>Tax included</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <% @purchase.purchase_lines.ordered.each do |line| %>
+          <tr>
+            <td><%= line.item_name %></td>
+
+            <td>
+              <%= number_with_precision(
+                    line.quantity,
+                    precision: 4,
+                    strip_insignificant_zeros: true
+                  ) %>
+              <%= line.unit_symbol %>
+            </td>
+
+            <td>
+              KSh
+              <%= number_with_precision(
+                    line.unit_cost,
+                    precision: 2
+                  ) %>
+            </td>
+
+            <td>
+              KSh
+              <%= number_with_precision(
+                    line.discount_amount,
+                    precision: 2
+                  ) %>
+            </td>
+
+            <td>
+              KSh
+              <%= number_with_precision(
+                    line.tax_amount,
+                    precision: 2
+                  ) %>
+            </td>
+
+            <td>
+              <strong>
+                KSh
+                <%= number_with_precision(
+                      line.line_total,
+                      precision: 2
+                    ) %>
+              </strong>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h2>Totals</h2>
+
+    <dl class="details-list">
+      <div>
+        <dt>Subtotal</dt>
+        <dd>
+          KSh
+          <%= number_with_precision(
+                @purchase.subtotal,
+                precision: 2
+              ) %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Discount</dt>
+        <dd>
+          KSh
+          <%= number_with_precision(
+                @purchase.discount_total,
+                precision: 2
+              ) %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Tax included</dt>
+        <dd>
+          KSh
+          <%= number_with_precision(
+                @purchase.tax_total,
+                precision: 2
+              ) %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Total</dt>
+        <dd>
+          <strong>
+            KSh
+            <%= number_with_precision(
+                  @purchase.total,
+                  precision: 2
+                ) %>
+          </strong>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Supplier balance</dt>
+        <dd>
+          <strong>
+            KSh
+            <%= number_with_precision(
+                  @purchase.balance_due,
+                  precision: 2
+                ) %>
+          </strong>
+        </dd>
+      </div>
+    </dl>
+  </div>
+</section>
