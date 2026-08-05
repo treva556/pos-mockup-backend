@@ -4,12 +4,24 @@
       <h1>Stock Balances</h1>
 
       <p>
-        View current product quantities for each branch.
+        Review physical, sellable, expired and unassigned
+        product quantities for each branch.
       </p>
     </div>
 
-    <% if current_membership.inventory_adjustment_management? %>
-      <div class="form-actions">
+    <div class="form-actions">
+      <%= link_to "Expiry Alerts",
+                  inventory_batches_path(
+                    branch_id: @branch.id
+                  ),
+                  class: "button button--secondary" %>
+
+      <% if current_membership
+            .inventory_adjustment_management? %>
+        <%= link_to "Assign Existing Stock Batch",
+                    new_inventory_batch_assignment_path,
+                    class: "button button--secondary" %>
+
         <%= link_to "Opening Stock / Adjustment",
                     new_inventory_adjustment_path(
                       branch_id: @branch.id
@@ -19,8 +31,8 @@
         <%= link_to "New Stock Transfer",
                     new_stock_transfer_path,
                     class: "button button--secondary" %>
-      </div>
-    <% end %>
+      <% end %>
+    </div>
   </header>
 
   <div class="panel">
@@ -45,23 +57,28 @@
         <div class="field">
           <%= form.label :q, "Search" %>
 
-          <%= form.search_field :q,
-                                value: @query,
-                                placeholder:
-                                  "Name, SKU or barcode" %>
+          <%= form.search_field(
+                :q,
+                value: @query,
+                placeholder: "Name, SKU or barcode"
+              ) %>
         </div>
 
         <div class="field">
-          <%= form.label :status %>
+          <%= form.label :status, "Stock status" %>
 
-          <%= form.select :status,
-                          [
-                            ["All stock", "all"],
-                            ["In stock", "in_stock"],
-                            ["Low stock", "low_stock"],
-                            ["Out of stock", "out_of_stock"]
-                          ],
-                          selected: @status %>
+          <%= form.select(
+                :status,
+                [
+                  ["All stock", "all"],
+                  ["In stock", "in_stock"],
+                  ["Low sellable stock", "low_stock"],
+                  ["Out of sellable stock", "out_of_stock"],
+                  ["Has expired stock", "expired"],
+                  ["Needs batch assignment", "unassigned"]
+                ],
+                selected: @status
+              ) %>
         </div>
       </div>
 
@@ -79,7 +96,17 @@
   </div>
 
   <div class="panel">
-    <h2><%= @branch.name %></h2>
+    <header class="page-header">
+      <div>
+        <h2><%= @branch.name %></h2>
+
+        <p>
+          Physical stock includes all products still present.
+          Sellable stock excludes expired, quarantined and
+          unassigned expiry-controlled stock.
+        </p>
+      </div>
+    </header>
 
     <% if @inventory_rows.any? %>
       <table>
@@ -87,7 +114,10 @@
           <tr>
             <th>Product</th>
             <th>Unit</th>
-            <th>Quantity on hand</th>
+            <th>Physical stock</th>
+            <th>Sellable stock</th>
+            <th>Expired</th>
+            <th>Unassigned</th>
             <th>Reorder level</th>
             <th>Stock status</th>
             <th>History</th>
@@ -100,16 +130,33 @@
 
             <tr>
               <td>
-                <strong><%= item.name %></strong>
+                <strong>
+                  <%= link_to item.name,
+                              item_path(item) %>
+                </strong>
 
                 <% if item.sku.present? %>
                   <br>
-                  <small>SKU: <%= item.sku %></small>
+
+                  <small>
+                    SKU: <%= item.sku %>
+                  </small>
+                <% end %>
+
+                <% if item.tracks_expiry? %>
+                  <br>
+
+                  <small>
+                    Expiry tracked
+                  </small>
                 <% end %>
 
                 <% unless item.active? %>
                   <br>
-                  <small>Item disabled</small>
+
+                  <small>
+                    Item disabled
+                  </small>
                 <% end %>
               </td>
 
@@ -120,11 +167,64 @@
               <td>
                 <strong>
                   <%= number_with_precision(
-                        row[:quantity],
+                        row[:physical_quantity],
                         precision: 4,
                         strip_insignificant_zeros: true
                       ) %>
                 </strong>
+              </td>
+
+              <td>
+                <strong>
+                  <%= number_with_precision(
+                        row[:sellable_quantity],
+                        precision: 4,
+                        strip_insignificant_zeros: true
+                      ) %>
+                </strong>
+              </td>
+
+              <td>
+                <% if item.tracks_expiry? %>
+                  <%= number_with_precision(
+                        row[:expired_quantity],
+                        precision: 4,
+                        strip_insignificant_zeros: true
+                      ) %>
+
+                  <% if row[:expired_quantity].positive? %>
+                    <br>
+
+                    <%= link_to "Review",
+                                inventory_batches_path(
+                                  branch_id: @branch.id,
+                                  status: "expired"
+                                ) %>
+                  <% end %>
+                <% else %>
+                  —
+                <% end %>
+              </td>
+
+              <td>
+                <% if item.tracks_expiry? %>
+                  <%= number_with_precision(
+                        row[:unassigned_quantity],
+                        precision: 4,
+                        strip_insignificant_zeros: true
+                      ) %>
+
+                  <% if row[:unassigned_quantity].positive? &&
+                        current_membership
+                          .inventory_adjustment_management? %>
+                    <br>
+
+                    <%= link_to "Assign batch",
+                                new_inventory_batch_assignment_path %>
+                  <% end %>
+                <% else %>
+                  —
+                <% end %>
               </td>
 
               <td>
@@ -137,25 +237,30 @@
                         local: true,
                         class: "inline-form"
                       ) do |form| %>
+                    <%= form.hidden_field(
+                          :branch_id,
+                          value: @branch.id
+                        ) %>
 
-                    <%= form.hidden_field :branch_id,
-                                          value: @branch.id %>
-
-                    <%= form.hidden_field :item_id,
-                                          value: item.id %>
+                    <%= form.hidden_field(
+                          :item_id,
+                          value: item.id
+                        ) %>
 
                     <%= form.number_field(
                           :reorder_level,
                           value: row[:reorder_level],
                           min: 0,
                           step:
-                            item.unit_of_measure
+                            item
+                              .unit_of_measure
                               .decimal_allowed? ? 0.0001 : 1
                         ) %>
 
-                    <%= form.submit "Save",
-                                    class:
-                                      "button button--secondary" %>
+                    <%= form.submit(
+                          "Save",
+                          class: "button button--secondary"
+                        ) %>
                   <% end %>
                 <% else %>
                   <%= number_with_precision(
@@ -167,12 +272,34 @@
               </td>
 
               <td>
+                <% if row[:unassigned_quantity].positive? %>
+                  <strong>
+                    Needs batch assignment
+                  </strong>
+
+                  <br>
+                <% end %>
+
                 <% if row[:out_of_stock] %>
-                  <strong>Out of stock</strong>
+                  <strong>
+                    Out of sellable stock
+                  </strong>
                 <% elsif row[:low_stock] %>
-                  <strong>Low stock</strong>
+                  <strong>
+                    Low sellable stock
+                  </strong>
                 <% else %>
-                  <span>In stock</span>
+                  <span>
+                    In stock
+                  </span>
+                <% end %>
+
+                <% if row[:expired_quantity].positive? %>
+                  <br>
+
+                  <strong>
+                    Has expired stock
+                  </strong>
                 <% end %>
               </td>
 
@@ -182,13 +309,25 @@
                               branch_id: @branch.id,
                               item_id: item.id
                             ) %>
+
+                <% if item.tracks_expiry? %>
+                  <br>
+
+                  <%= link_to "View batches",
+                              inventory_batches_path(
+                                branch_id: @branch.id,
+                                status: "all"
+                              ) %>
+                <% end %>
               </td>
             </tr>
           <% end %>
         </tbody>
       </table>
     <% else %>
-      <p>No products match the selected filters.</p>
+      <p>
+        No products match the selected filters.
+      </p>
     <% end %>
   </div>
 </section>

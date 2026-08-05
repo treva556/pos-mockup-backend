@@ -233,6 +233,10 @@
                         new_purchasing_purchase_path,
                         class: "button button--primary" %>
           <% end %>
+           <% if current_membership.inventory_adjustment_management? %>
+              <%= link_to "Assign Existing Stock Batch",
+                          new_inventory_batch_assignment_path %>
+          <% end %>
         </div>
       </div>
 
