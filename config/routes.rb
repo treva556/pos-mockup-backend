@@ -128,6 +128,9 @@ Rails.application.routes.draw do
                 controller: "sale_payments"
     end
 
+    resources :inventory_batches,
+          only: :index
+
     resources :inventory_adjustments,
           only: %i[new create]
 

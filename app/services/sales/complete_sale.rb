@@ -328,7 +328,7 @@ module Sales
       end
     end
 
-    def deduct_inventory!(
+   def deduct_inventory!(
       sale:,
       calculated_lines:
     )
@@ -337,18 +337,16 @@ module Sales
 
         next unless item.stockable?
 
-        Inventory::PostMovement.call(
+        Inventory::DeductForSale.call(
           organization: organization,
           branch: branch,
           item: item,
+          quantity: line[:quantity],
           recorded_by: cashier,
-          movement_type: "sale",
-          quantity_change:
-            -line[:quantity].to_d,
           occurred_at: sold_at,
           reference: sale.sale_number,
           notes:
-            "Inventory issued through POS sale",
+            "Stock sold through #{sale.sale_number}",
           source: sale
         )
       end
