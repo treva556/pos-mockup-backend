@@ -251,14 +251,13 @@
       </div>
 
       <div class="form-actions">
-        <%= link_to "Open Point of Sale",
-                    new_pos_sale_path,
-                    class: "button button--primary" %>
-         <div class="form-actions">
-        <%= link_to "Open Point of Sale",
-                    new_pos_sale_path,
-                    class: "button button--primary" %>
+        <% if current_membership.pos_access? %>
+          <%= link_to "Open Point of Sale",
+                      new_pos_sale_path,
+                      class: "button button--primary" %>
+        <% end %>
 
+        <% if current_membership.sales_view? %>
         <%= link_to "Sales History",
                     sales_path,
                     class: "button button--secondary" %>
@@ -274,6 +273,7 @@
                       payment_status: "unpaid"
                     ),
                     class: "button button--secondary" %>
+      <% end %>
       </div>
       </div>
     </section>

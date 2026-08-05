@@ -183,4 +183,12 @@ end
     redirect_to dashboard_path,
                 alert: "Your role cannot operate the POS."
   end
+
+  def require_sales_view!
+    return if current_membership&.sales_view?
+
+    redirect_to dashboard_path,
+                alert:
+                  "Your role cannot view sales records."
+  end
 end

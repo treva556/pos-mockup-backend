@@ -103,6 +103,14 @@ class Membership < ApplicationRecord
       cashier?
   end
 
+  def sales_view?
+    owner? ||
+      admin? ||
+      manager? ||
+      accountant? ||
+      cashier?
+  end
+
   private
 
   def branch_belongs_to_organization

@@ -1,7 +1,7 @@
 class SalesController < ApplicationController
   before_action :authenticate_user!
   before_action :require_organization!
-  before_action :require_pos_access!
+  before_action :require_sales_view!
 
   before_action :set_sale,
                 only: %i[show receipt]
