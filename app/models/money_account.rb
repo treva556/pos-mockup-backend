@@ -17,6 +17,9 @@ class MoneyAccount < ApplicationRecord
             inverse_of: :to_money_account,
             dependent: :restrict_with_error
 
+  has_many :sale_payments,
+            dependent: :restrict_with_error
+
   enum :account_type, {
     cash: "cash",
     petty_cash: "petty_cash",
@@ -61,17 +64,22 @@ class MoneyAccount < ApplicationRecord
 
   def incoming_transfer_total
       incoming_money_transfers.sum(:amount)
-    end
+  end
 
-    def outgoing_transfer_total
+  def outgoing_transfer_total
       outgoing_money_transfers.sum(:amount)
-    end
+  end
 
-    def current_balance
-      opening_balance.to_d +
-        incoming_transfer_total -
-        outgoing_transfer_total
-    end
+  def current_balance
+    opening_balance.to_d +
+      incoming_transfer_total -
+      outgoing_transfer_total +
+      sale_receipts_total
+  end
+
+  def sale_receipts_total
+    sale_payments.sum(:amount)
+  end
 
   private
 

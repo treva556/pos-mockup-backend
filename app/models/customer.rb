@@ -1,6 +1,9 @@
 class Customer < ApplicationRecord
   belongs_to :organization
 
+  has_many :sales,
+           dependent: :restrict_with_error
+
   before_validation :normalize_details
 
   validates :name,
@@ -43,5 +46,21 @@ class Customer < ApplicationRecord
     self.kra_pin = kra_pin.to_s.strip.upcase.presence
     self.address = address.to_s.strip.presence
     self.notes = notes.to_s.strip.presence
+  end
+
+  def outstanding_sales
+    sales
+      .completed
+      .where("balance_due > 0")
+  end
+
+  def outstanding_balance
+    outstanding_sales.sum(:balance_due)
+  end
+
+  def overdue_balance
+    outstanding_sales
+      .where("due_on < ?", Date.current)
+      .sum(:balance_due)
   end
 end

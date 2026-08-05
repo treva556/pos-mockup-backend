@@ -1,0 +1,393 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>Point of Sale</h1>
+
+      <p>
+        Search products, scan barcodes and prepare a sale.
+      </p>
+    </div>
+
+    <%= link_to "Dashboard",
+                dashboard_path,
+                class: "button button--secondary" %>
+  </header>
+
+  <div class="panel">
+    <%= form_with url: new_pos_sale_path,
+                  method: :get,
+                  local: true do |form| %>
+      <div class="filter-grid">
+        <div class="field">
+          <%= form.label :branch_id, "Selling branch" %>
+
+          <%= form.collection_select(
+                :branch_id,
+                @pos_branches,
+                :id,
+                :name,
+                {
+                  selected: @pos_branch.id
+                },
+                {
+                  disabled:
+                    current_membership.cashier? &&
+                    @pos_branches.one?
+                }
+              ) %>
+        </div>
+
+        <div class="field">
+          <%= form.label :q,
+                         "Product, SKU or barcode" %>
+
+          <%= form.search_field(
+                :q,
+                value: @query,
+                autofocus: true,
+                placeholder:
+                  "Search or scan barcode"
+              ) %>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <%= form.submit "Search",
+                        class: "button button--primary" %>
+
+        <%= link_to "Clear Search",
+                    new_pos_sale_path(
+                      branch_id: @pos_branch.id
+                    ),
+                    class: "button button--secondary" %>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="panel">
+    <h2>Products and Services</h2>
+
+    <% if @items.any? %>
+      <table>
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>SKU / Barcode</th>
+            <th>Price</th>
+            <th>Available</th>
+            <th></th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% @items.each do |item| %>
+            <% available =
+                 @stock_quantities.fetch(
+                   item.id,
+                   0
+                 ).to_d %>
+
+            <tr>
+              <td>
+                <strong><%= item.name %></strong>
+
+                <br>
+
+                <small>
+                  <%= item.item_type.titleize %>
+                  ·
+                  <%= item.unit_of_measure.symbol %>
+                </small>
+              </td>
+
+              <td>
+                <%= item.sku.presence || "—" %>
+
+                <% if item.barcode.present? %>
+                  <br>
+                  <small>
+                    Barcode: <%= item.barcode %>
+                  </small>
+                <% end %>
+              </td>
+
+              <td>
+                KSh
+                <%= number_with_precision(
+                      item.selling_price,
+                      precision: 2
+                    ) %>
+              </td>
+
+              <td>
+                <% if item.stockable? %>
+                  <%= number_with_precision(
+                        available,
+                        precision: 4,
+                        strip_insignificant_zeros: true
+                      ) %>
+
+                  <%= item.unit_of_measure.symbol %>
+                <% else %>
+                  Not stock-tracked
+                <% end %>
+              </td>
+
+              <td>
+                <% unavailable =
+                     item.stockable? &&
+                     available <= 0 %>
+
+                <%= form_with(
+                      url: pos_cart_items_path,
+                      method: :post,
+                      local: true,
+                      class: "inline-form"
+                    ) do |form| %>
+
+                  <%= form.hidden_field(
+                        "cart_item[item_id]",
+                        value: item.id
+                      ) %>
+
+                  <%= form.number_field(
+                        "cart_item[quantity]",
+                        value: 1,
+                        min:
+                          item.unit_of_measure
+                            .decimal_allowed? ? 0.0001 : 1,
+                        step:
+                          item.unit_of_measure
+                            .decimal_allowed? ? 0.0001 : 1,
+                        disabled: unavailable
+                      ) %>
+
+                  <%= form.submit(
+                        unavailable ? "Out of Stock" : "Add",
+                        class: "button button--primary",
+                        disabled: unavailable
+                      ) %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p>No active products or services match the search.</p>
+    <% end %>
+  </div>
+
+  <div class="panel">
+    <header class="panel-heading">
+      <div>
+        <h2>Current Cart</h2>
+
+        <p>
+          <%= pluralize(
+                @cart.item_count,
+                "item type"
+              ) %>
+        </p>
+      </div>
+
+      <% unless @cart.empty? %>
+        <%= button_to "Clear Cart",
+                      pos_cart_path(
+                        branch_id: @pos_branch.id
+                      ),
+                      method: :delete,
+                      class: "button button--secondary",
+                      form: {
+                        data: {
+                          turbo_confirm:
+                            "Clear the entire cart?"
+                        }
+                      } %>
+      <% end %>
+    </header>
+
+    <%= form_with url: pos_cart_path(
+                        branch_id: @pos_branch.id
+                      ),
+                  method: :patch,
+                  local: true do |form| %>
+      <div class="field">
+        <%= form.label "cart[customer_id]",
+                       "Customer" %>
+
+        <%= form.collection_select(
+              "cart[customer_id]",
+              @customers,
+              :id,
+              :name,
+              {
+                include_blank: "Walk-in Customer",
+                selected: @cart.customer_id
+              }
+            ) %>
+
+        <%= form.submit "Update Customer",
+                        class: "button button--secondary" %>
+      </div>
+    <% end %>
+
+    <% if @cart.empty? %>
+      <p>The cart is empty.</p>
+    <% else %>
+      <table>
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Unit price</th>
+            <th>Quantity</th>
+            <th>Discount</th>
+            <th>Line total</th>
+            <th></th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% @cart.lines.each_with_index do |line, index| %>
+            <% calculated_line =
+                 @calculation.lines[index] %>
+
+            <tr>
+              <td>
+                <strong><%= line.item.name %></strong>
+
+                <br>
+
+                <small>
+                  <%= line.item.unit_of_measure.symbol %>
+                </small>
+              </td>
+
+              <td>
+                KSh
+                <%= number_with_precision(
+                      line.unit_price,
+                      precision: 2
+                    ) %>
+              </td>
+
+              <td colspan="2">
+                <%= form_with(
+                      url:
+                        pos_cart_item_path(
+                          line.item.id,
+                          branch_id: @pos_branch.id
+                        ),
+                      method: :patch,
+                      local: true,
+                      class: "inline-form"
+                    ) do |form| %>
+
+                  <%= form.number_field(
+                        "cart_item[quantity]",
+                        value: line.quantity,
+                        min:
+                          line.item
+                            .unit_of_measure
+                            .decimal_allowed? ? 0.0001 : 1,
+                        step:
+                          line.item
+                            .unit_of_measure
+                            .decimal_allowed? ? 0.0001 : 1,
+                        required: true
+                      ) %>
+
+                  <%= form.number_field(
+                        "cart_item[discount_amount]",
+                        value: line.discount_amount,
+                        min: 0,
+                        step: 0.01,
+                        required: true
+                      ) %>
+
+                  <%= form.submit "Update",
+                                  class:
+                                    "button button--secondary" %>
+                <% end %>
+              </td>
+
+              <td>
+                KSh
+                <%= number_with_precision(
+                      calculated_line[:line_total],
+                      precision: 2
+                    ) %>
+              </td>
+
+              <td>
+                <%= button_to "Remove",
+                              pos_cart_item_path(
+                                line.item.id,
+                                branch_id: @pos_branch.id
+                              ),
+                              method: :delete,
+                              class:
+                                "button button--secondary" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+
+      <dl class="details-list">
+        <div>
+          <dt>Subtotal</dt>
+          <dd>
+            KSh
+            <%= number_with_precision(
+                  @calculation.subtotal,
+                  precision: 2
+                ) %>
+          </dd>
+        </div>
+
+        <div>
+          <dt>Discount</dt>
+          <dd>
+            KSh
+            <%= number_with_precision(
+                  @calculation.discount_total,
+                  precision: 2
+                ) %>
+          </dd>
+        </div>
+
+        <div>
+          <dt>Tax included</dt>
+          <dd>
+            KSh
+            <%= number_with_precision(
+                  @calculation.tax_total,
+                  precision: 2
+                ) %>
+          </dd>
+        </div>
+
+        <div>
+          <dt>Total</dt>
+          <dd>
+            <strong>
+              KSh
+              <%= number_with_precision(
+                    @calculation.total,
+                    precision: 2
+                  ) %>
+            </strong>
+          </dd>
+        </div>
+      </dl>
+
+      <%= link_to "Continue to Payment",
+            pos_checkout_path(
+              branch_id: @pos_branch.id
+            ),
+            class: "button button--primary" %>
+      </div>
+    <% end %>
+  </div>
+</section>

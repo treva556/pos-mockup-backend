@@ -1,0 +1,173 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>Receive Customer Payment</h1>
+
+      <p>
+        <%= @sale.customer.name %>
+        ·
+        Receipt <%= @sale.sale_number %>
+      </p>
+    </div>
+
+    <%= link_to "Back to Sale",
+                sale_path(@sale),
+                class: "button button--secondary" %>
+  </header>
+
+  <div class="panel">
+    <dl class="details-list">
+      <div>
+        <dt>Sale total</dt>
+        <dd>
+          KSh
+          <%= number_with_precision(
+                @sale.total,
+                precision: 2
+              ) %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Previously paid</dt>
+        <dd>
+          KSh
+          <%= number_with_precision(
+                @sale.amount_paid,
+                precision: 2
+              ) %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Outstanding balance</dt>
+        <dd>
+          <strong>
+            KSh
+            <%= number_with_precision(
+                  @sale.balance_due,
+                  precision: 2
+                ) %>
+          </strong>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Due date</dt>
+        <dd>
+          <%= @sale.due_on&.to_fs(:long) || "—" %>
+        </dd>
+      </div>
+    </dl>
+  </div>
+
+  <div class="panel">
+    <%= form_with(
+          model: @payment,
+          url: sale_payments_path(@sale),
+          local: true,
+          class: "record-form"
+        ) do |form| %>
+
+      <div class="form-grid">
+        <div class="field">
+          <%= form.label :payment_method_id,
+                         "Payment method" %>
+
+          <%= form.collection_select(
+                :payment_method_id,
+                @payment_methods,
+                :id,
+                :name,
+                {
+                  prompt:
+                    "Select payment method"
+                },
+                {
+                  required: true
+                }
+              ) %>
+        </div>
+
+        <div class="field">
+          <%= form.label :money_account_id,
+                         "Receiving account" %>
+
+          <%= form.collection_select(
+                :money_account_id,
+                @money_accounts,
+                :id,
+                :name,
+                {
+                  prompt:
+                    "Select money account"
+                },
+                {
+                  required: true
+                }
+              ) %>
+        </div>
+
+        <div class="field">
+          <%= form.label :amount,
+                         "Amount applied" %>
+
+          <%= form.number_field(
+                :amount,
+                min: 0.01,
+                max: @sale.balance_due,
+                step: 0.01,
+                required: true
+              ) %>
+        </div>
+
+        <div class="field">
+          <%= form.label :amount_tendered,
+                         "Amount tendered / received" %>
+
+          <%= form.number_field(
+                :amount_tendered,
+                min: 0.01,
+                step: 0.01,
+                required: true
+              ) %>
+        </div>
+
+        <div class="field">
+          <%= form.label :paid_at,
+                         "Payment date and time" %>
+
+          <%= form.datetime_local_field(
+                :paid_at,
+                required: true
+              ) %>
+        </div>
+
+        <div class="field">
+          <%= form.label :reference %>
+
+          <%= form.text_field(
+                :reference,
+                placeholder:
+                  "M-Pesa, card or bank reference"
+              ) %>
+        </div>
+
+        <div class="field field--full">
+          <%= form.label :notes %>
+
+          <%= form.text_area(
+                :notes,
+                rows: 3
+              ) %>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <%= form.submit "Record Payment",
+                        class:
+                          "button button--primary" %>
+      </div>
+    <% end %>
+  </div>
+</section>

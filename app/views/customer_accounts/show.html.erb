@@ -1,0 +1,132 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1><%= @customer.name %></h1>
+
+      <p>Customer sales and credit account.</p>
+    </div>
+
+    <%= link_to "Back to Customer",
+                customer_path(@customer),
+                class: "button button--secondary" %>
+  </header>
+
+  <div class="panel">
+    <h2>Account Summary</h2>
+
+    <dl class="details-list">
+      <div>
+        <dt>Outstanding balance</dt>
+        <dd>
+          <strong>
+            KSh
+            <%= number_with_precision(
+                  @outstanding_balance,
+                  precision: 2
+                ) %>
+          </strong>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Overdue balance</dt>
+        <dd>
+          KSh
+          <%= number_with_precision(
+                @overdue_balance,
+                precision: 2
+              ) %>
+        </dd>
+      </div>
+    </dl>
+  </div>
+
+  <div class="panel">
+    <h2>Sales</h2>
+
+    <% if @sales.any? %>
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Receipt</th>
+            <th>Branch</th>
+            <th>Total</th>
+            <th>Paid</th>
+            <th>Balance</th>
+            <th>Due date</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% @sales.each do |sale| %>
+            <tr>
+              <td>
+                <%= sale.sold_at.to_date.to_fs(:long) %>
+              </td>
+
+              <td><%= sale.sale_number %></td>
+
+              <td><%= sale.branch.name %></td>
+
+              <td>
+                KSh
+                <%= number_with_precision(
+                      sale.total,
+                      precision: 2
+                    ) %>
+              </td>
+
+              <td>
+                KSh
+                <%= number_with_precision(
+                      sale.amount_paid,
+                      precision: 2
+                    ) %>
+              </td>
+
+              <td>
+                <strong>
+                  KSh
+                  <%= number_with_precision(
+                        sale.balance_due,
+                        precision: 2
+                      ) %>
+                </strong>
+              </td>
+
+              <td>
+                <%= sale.due_on&.to_fs(:long) || "—" %>
+              </td>
+
+              <td>
+                <% if sale.overdue? %>
+                  <strong>Overdue</strong>
+                <% else %>
+                  <%= sale.payment_status.titleize %>
+                <% end %>
+              </td>
+
+              <td>
+                <%= link_to "View",
+                            sale_path(sale) %>
+
+                <% if sale.balance_due.positive? &&
+                      current_membership
+                        .customer_payment_management? %>
+                  ·
+                  <%= link_to "Receive Payment",
+                              new_sale_payment_path(sale) %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p>This customer has no completed sales.</p>
+    <% end %>
+  </div>
+</section>

@@ -35,9 +35,15 @@ Rails.application.routes.draw do
            only: %i[edit update]
   end
 
-  resources :customers, except: :destroy do
-      patch :toggle_status, on: :member
-    end
+  resources :customers do
+        member do
+        patch :toggle_status
+        end
+
+     resource :account,
+                only: :show,
+                controller: "customer_accounts"
+   end
 
   resources :suppliers, except: :destroy do
       patch :toggle_status, on: :member
@@ -66,14 +72,45 @@ Rails.application.routes.draw do
       patch :toggle_status, on: :member
   end
 
-    resources :payment_methods, except: :destroy do
+  resources :payment_methods, except: :destroy do
       patch :toggle_status, on: :member
-    end
+  end
 
-    resources :branch_payment_settings,
+  resources :branch_payment_settings,
                 only: :index do
         patch :update_defaults,
               on: :collection
+  end
+
+  namespace :pos do
+    resource :sale,
+            only: %i[new create]
+
+    resource :cart,
+            only: %i[update destroy]
+
+    resources :cart_items,
+              only: %i[create update destroy],
+              param: :item_id
+
+
+    resource :checkout,
+         only: :show
+
+    resources :checkout_payments,
+              only: %i[create update destroy],
+              param: :entry_id
+   end
+
+    resources :sales,
+              only: %i[index show] do
+      member do
+        get :receipt
+      end
+
+      resources :payments,
+                only: %i[new create],
+                controller: "sale_payments"
     end
 
     resources :inventory_adjustments,
@@ -90,7 +127,7 @@ Rails.application.routes.draw do
           on: :collection
   end
 
-resources :stock_movements,
+  resources :stock_movements,
           only: %i[index show]
 
   get "up" => "rails/health#show",

@@ -1,0 +1,244 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>Sales History</h1>
+
+      <p>
+        Search receipts and review completed sales.
+      </p>
+    </div>
+
+    <%= link_to "New Sale",
+                new_pos_sale_path,
+                class: "button button--primary" %>
+  </header>
+
+  <div class="panel">
+    <%= form_with url: sales_path,
+                  method: :get,
+                  local: true do |form| %>
+      <div class="filter-grid">
+        <div class="field">
+          <%= form.label :q,
+                         "Receipt or customer" %>
+
+          <%= form.search_field(
+                :q,
+                value: @query,
+                placeholder:
+                  "Receipt number or customer name"
+              ) %>
+        </div>
+
+        <div class="field">
+          <%= form.label :branch_id,
+                         "Branch" %>
+
+          <%= form.collection_select(
+                :branch_id,
+                @branches,
+                :id,
+                :name,
+                {
+                  include_blank: "All branches",
+                  selected: @branch_id
+                }
+              ) %>
+        </div>
+
+        <div class="field">
+          <%= form.label :payment_status,
+                         "Payment status" %>
+
+          <%= form.select(
+                :payment_status,
+                [
+                  ["All statuses", "all"],
+                  ["Paid", "paid"],
+                  ["Partially paid", "partially_paid"],
+                  ["Unpaid", "unpaid"]
+                ],
+                selected: @payment_status
+              ) %>
+        </div>
+
+        <div class="field">
+          <%= form.label :date_from,
+                         "From date" %>
+
+          <%= form.date_field(
+                :date_from,
+                value: @date_from
+              ) %>
+        </div>
+
+        <div class="field">
+          <%= form.label :date_to,
+                         "To date" %>
+
+          <%= form.date_field(
+                :date_to,
+                value: @date_to
+              ) %>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <%= form.submit "Filter Sales",
+                        class: "button button--primary" %>
+
+        <%= link_to "Clear",
+                    sales_path,
+                    class: "button button--secondary" %>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="panel">
+    <h2>Filtered Summary</h2>
+
+    <dl class="details-list">
+      <div>
+        <dt>Sales value</dt>
+        <dd>
+          KSh
+          <%= number_with_precision(
+                @sales_total,
+                precision: 2
+              ) %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Payments received</dt>
+        <dd>
+          KSh
+          <%= number_with_precision(
+                @payments_total,
+                precision: 2
+              ) %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Outstanding balance</dt>
+        <dd>
+          <strong>
+            KSh
+            <%= number_with_precision(
+                  @outstanding_total,
+                  precision: 2
+                ) %>
+          </strong>
+        </dd>
+      </div>
+    </dl>
+  </div>
+
+  <div class="panel">
+    <% if @sales.any? %>
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Receipt</th>
+            <th>Branch</th>
+            <th>Customer</th>
+            <th>Cashier</th>
+            <th>Total</th>
+            <th>Paid</th>
+            <th>Balance</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% @sales.each do |sale| %>
+            <tr>
+              <td>
+                <%= sale.sold_at.to_fs(:short) %>
+              </td>
+
+              <td>
+                <strong>
+                  <%= sale.sale_number %>
+                </strong>
+              </td>
+
+              <td><%= sale.branch.name %></td>
+
+              <td>
+                <%= sale.customer&.name ||
+                      "Walk-in Customer" %>
+              </td>
+
+              <td><%= sale.cashier.name %></td>
+
+              <td>
+                KSh
+                <%= number_with_precision(
+                      sale.total,
+                      precision: 2
+                    ) %>
+              </td>
+
+              <td>
+                KSh
+                <%= number_with_precision(
+                      sale.amount_paid,
+                      precision: 2
+                    ) %>
+              </td>
+
+              <td>
+                KSh
+                <%= number_with_precision(
+                      sale.balance_due,
+                      precision: 2
+                    ) %>
+              </td>
+
+              <td>
+                <% if sale.overdue? %>
+                  <strong>Overdue</strong>
+                <% else %>
+                  <%= sale.payment_status.titleize %>
+                <% end %>
+              </td>
+
+              <td>
+                <%= link_to "View",
+                            sale_path(sale) %>
+
+                ·
+
+                <%= link_to "Receipt",
+                            receipt_sale_path(sale),
+                            target: "_blank",
+                            rel: "noopener" %>
+
+                <% if sale.balance_due.positive? &&
+                      current_membership
+                        .customer_payment_management? %>
+                  ·
+
+                  <%= link_to "Receive Payment",
+                              new_sale_payment_path(sale) %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+
+      <% if @sales.length == 200 %>
+        <p>
+          Only the most recent 200 matching sales are shown.
+        </p>
+      <% end %>
+    <% else %>
+      <p>No completed sales match the selected filters.</p>
+    <% end %>
+  </div>
+</section>

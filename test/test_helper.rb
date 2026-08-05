@@ -161,6 +161,19 @@ def create_stock_level(
   )
 end
 
+def create_customer(organization:, overrides: {})
+  token = SecureRandom.hex(4)
+
+  defaults = {
+    name: "Test Customer #{token}",
+    active: true
+  }
+
+  organization.customers.create!(
+    defaults.merge(overrides)
+  )
+end
+
 # 1. Define the module first
 module IntegrationTestHelpers
   TEST_PASSWORD = "Password123!".freeze

@@ -57,3 +57,7 @@
   <%= link_to "Back to customers",
               customers_path %>
 </p>
+
+<%= link_to "View Customer Account",
+            customer_account_path(@customer),
+            class: "button button--primary" %>

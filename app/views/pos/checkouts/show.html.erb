@@ -1,0 +1,479 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>Sale Payment</h1>
+
+      <p>
+        <%= @pos_branch.name %>
+        ·
+        <%= @cart.customer&.name ||
+              "Walk-in Customer" %>
+      </p>
+    </div>
+
+    <%= link_to "Back to Cart",
+                new_pos_sale_path(
+                  branch_id: @pos_branch.id
+                ),
+                class: "button button--secondary" %>
+  </header>
+
+  <div class="panel">
+    <h2>Sale Summary</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Quantity</th>
+          <th>Unit price</th>
+          <th>Discount</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <% @cart.lines.each_with_index do |line, index| %>
+          <% calculated_line =
+               @calculation.lines[index] %>
+
+          <tr>
+            <td><%= line.item.name %></td>
+
+            <td>
+              <%= number_with_precision(
+                    line.quantity,
+                    precision: 4,
+                    strip_insignificant_zeros: true
+                  ) %>
+              <%= line.item.unit_of_measure.symbol %>
+            </td>
+
+            <td>
+              KSh
+              <%= number_with_precision(
+                    line.unit_price,
+                    precision: 2
+                  ) %>
+            </td>
+
+            <td>
+              KSh
+              <%= number_with_precision(
+                    line.discount_amount,
+                    precision: 2
+                  ) %>
+            </td>
+
+            <td>
+              KSh
+              <%= number_with_precision(
+                    calculated_line[:line_total],
+                    precision: 2
+                  ) %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h2>Add Payment</h2>
+
+    <% if @payment_methods.any? &&
+          @money_accounts.any? %>
+      <%= form_with(
+            url: pos_checkout_payments_path(
+              branch_id: @pos_branch.id
+            ),
+            scope: :checkout_payment,
+            method: :post,
+            local: true,
+            class: "record-form"
+          ) do |form| %>
+
+        <div class="form-grid">
+          <div class="field">
+            <%= form.label :payment_method_id,
+                           "Payment method" %>
+
+            <%= form.collection_select(
+                  :payment_method_id,
+                  @payment_methods,
+                  :id,
+                  :name,
+                  {
+                    prompt:
+                      "Select payment method"
+                  },
+                  {
+                    required: true
+                  }
+                ) %>
+          </div>
+
+          <div class="field">
+            <%= form.label :money_account_id,
+                           "Receiving account" %>
+
+            <%= form.collection_select(
+                  :money_account_id,
+                  @money_accounts,
+                  :id,
+                  :name,
+                  {
+                    prompt:
+                      "Select money account"
+                  },
+                  {
+                    required: true
+                  }
+                ) %>
+          </div>
+
+          <div class="field">
+            <%= form.label :amount,
+                           "Amount applied" %>
+
+            <%= form.number_field(
+                  :amount,
+                  min: 0.01,
+                  step: 0.01,
+                  value:
+                    @payment_plan.balance_due,
+                  required: true
+                ) %>
+          </div>
+
+          <div class="field">
+            <%= form.label :amount_tendered,
+                           "Amount tendered / received" %>
+
+            <%= form.number_field(
+                  :amount_tendered,
+                  min: 0.01,
+                  step: 0.01,
+                  placeholder:
+                    "Same as applied unless cash exceeds total"
+                ) %>
+          </div>
+
+          <div class="field">
+            <%= form.label :reference,
+                           "Payment reference" %>
+
+            <%= form.text_field(
+                  :reference,
+                  placeholder:
+                    "M-Pesa code, card or bank reference"
+                ) %>
+          </div>
+
+          <div class="field field--full">
+            <%= form.label :notes %>
+
+            <%= form.text_area(
+                  :notes,
+                  rows: 3
+                ) %>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <%= form.submit "Add Payment",
+                          class:
+                            "button button--primary" %>
+        </div>
+      <% end %>
+    <% else %>
+      <p>
+        Configure at least one active payment method and
+        money account before receiving payment.
+      </p>
+    <% end %>
+  </div>
+
+  <div class="panel">
+    <h2>Payment Entries</h2>
+
+    <% if @payment_plan.entries.any? %>
+      <% @payment_plan.entries.each do |entry| %>
+        <div class="panel">
+          <%= form_with(
+                url: pos_checkout_payment_path(
+                  entry.id,
+                  branch_id: @pos_branch.id
+                ),
+                scope: :checkout_payment,
+                method: :patch,
+                local: true,
+                class: "record-form"
+              ) do |form| %>
+
+            <div class="form-grid">
+              <div class="field">
+                <%= form.label :payment_method_id,
+                               "Payment method" %>
+
+                <%= form.collection_select(
+                      :payment_method_id,
+                      @payment_methods,
+                      :id,
+                      :name,
+                      {
+                        selected:
+                          entry.payment_method.id
+                      }
+                    ) %>
+              </div>
+
+              <div class="field">
+                <%= form.label :money_account_id,
+                               "Receiving account" %>
+
+                <%= form.collection_select(
+                      :money_account_id,
+                      @money_accounts,
+                      :id,
+                      :name,
+                      {
+                        selected:
+                          entry.money_account.id
+                      }
+                    ) %>
+              </div>
+
+              <div class="field">
+                <%= form.label :amount,
+                               "Amount applied" %>
+
+                <%= form.number_field(
+                      :amount,
+                      value: entry.amount,
+                      min: 0.01,
+                      step: 0.01,
+                      required: true
+                    ) %>
+              </div>
+
+              <div class="field">
+                <%= form.label :amount_tendered,
+                               "Tendered / received" %>
+
+                <%= form.number_field(
+                      :amount_tendered,
+                      value: entry.amount_tendered,
+                      min: 0.01,
+                      step: 0.01,
+                      required: true
+                    ) %>
+              </div>
+
+              <div class="field">
+                <%= form.label :reference %>
+
+                <%= form.text_field(
+                      :reference,
+                      value: entry.reference
+                    ) %>
+              </div>
+
+              <div class="field field--full">
+                <%= form.label :notes %>
+
+                <%= form.text_area(
+                      :notes,
+                      value: entry.notes,
+                      rows: 2
+                    ) %>
+              </div>
+            </div>
+
+            <p>
+              Change:
+              <strong>
+                KSh
+                <%= number_with_precision(
+                      entry.change_given,
+                      precision: 2
+                    ) %>
+              </strong>
+            </p>
+
+            <div class="form-actions">
+              <%= form.submit "Update Payment",
+                              class:
+                                "button button--secondary" %>
+            </div>
+          <% end %>
+
+          <%= button_to "Remove Payment",
+                        pos_checkout_payment_path(
+                          entry.id,
+                          branch_id: @pos_branch.id
+                        ),
+                        method: :delete,
+                        class:
+                          "button button--secondary" %>
+        </div>
+      <% end %>
+    <% else %>
+      <p>
+        No payments have been added. The full amount is
+        currently outstanding.
+      </p>
+    <% end %>
+  </div>
+
+  <div class="panel">
+    <h2>Payment Summary</h2>
+
+    <dl class="details-list">
+      <div>
+        <dt>Sale total</dt>
+        <dd>
+          KSh
+          <%= number_with_precision(
+                @payment_plan.sale_total,
+                precision: 2
+              ) %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Payments applied</dt>
+        <dd>
+          KSh
+          <%= number_with_precision(
+                @payment_plan.applied_total,
+                precision: 2
+              ) %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Balance due</dt>
+        <dd>
+          <strong>
+            KSh
+            <%= number_with_precision(
+                  @payment_plan.balance_due,
+                  precision: 2
+                ) %>
+          </strong>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Change to customer</dt>
+        <dd>
+          KSh
+          <%= number_with_precision(
+                @payment_plan.change_total,
+                precision: 2
+              ) %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Payment status</dt>
+        <dd>
+          <%= @payment_plan
+                .payment_status
+                .titleize %>
+        </dd>
+      </div>
+    </dl>
+
+    <% if @payment_plan.credit_sale? &&
+          @cart.customer.blank? %>
+      <div class="form-errors">
+        A customer must be selected before an outstanding
+        balance can be recorded as credit.
+      </div>
+    <% elsif @payment_plan.credit_sale? %>
+      <p>
+        The outstanding balance will be charged to
+        <strong><%= @cart.customer.name %></strong>.
+      </p>
+    <% end %>
+
+    <div class="form-actions">
+      <% ready_for_completion =
+        @payment_plan.ready_for_completion?(
+        customer: @cart.customer
+        ) %>
+
+   <% ready_for_completion =
+     @payment_plan.ready_for_completion?(
+       customer: @cart.customer
+     ) %>
+
+<%= form_with(
+      url: pos_sale_path(
+        branch_id: @pos_branch.id
+      ),
+      scope: :sale,
+      method: :post,
+      local: true,
+      class: "record-form"
+    ) do |form| %>
+
+  <% if @payment_plan.credit_sale? %>
+    <div class="form-grid">
+      <div class="field">
+        <%= form.label :due_on,
+                       "Credit due date" %>
+
+        <%= form.date_field(
+              :due_on,
+              value: 30.days.from_now.to_date,
+              min: Date.current,
+              required: true
+            ) %>
+      </div>
+
+      <div class="field field--full">
+        <%= form.label :notes,
+                       "Sale notes" %>
+
+        <%= form.text_area(
+              :notes,
+              rows: 3,
+              placeholder:
+                "Credit terms or other sale notes"
+            ) %>
+      </div>
+    </div>
+  <% else %>
+        <%= form.hidden_field :due_on,
+                            value: "" %>
+
+        <div class="field">
+        <%= form.label :notes,
+                        "Sale notes" %>
+
+        <%= form.text_area(
+                :notes,
+                rows: 3
+            ) %>
+        </div>
+    <% end %>
+
+    <div class="form-actions">
+        <%= form.submit "Complete Sale",
+                        class:
+                        "button button--primary",
+                        disabled:
+                        !ready_for_completion,
+                        data: {
+                        turbo_confirm:
+                            "Complete this sale? It will deduct stock " \
+                            "and record the payments."
+                        } %>
+    </div>
+    <% end %>
+    </div>
+  </div>
+</section>

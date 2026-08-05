@@ -1,0 +1,329 @@
+<section class="page-section">
+<header class="page-header">
+  <div>
+    <h1>Sale Completed</h1>
+
+    <p>
+      Receipt <strong><%= @sale.sale_number %></strong>
+      ·
+      <%= @sale.sold_at.to_fs(:long) %>
+    </p>
+  </div>
+
+  <div class="form-actions">
+    <%= link_to "New Sale",
+                new_pos_sale_path(
+                  branch_id: @sale.branch_id
+                ),
+                class: "button button--primary" %>
+
+    <%= link_to "Printable Receipt",
+                receipt_sale_path(@sale),
+                target: "_blank",
+                rel: "noopener",
+                class: "button button--secondary" %>
+
+    <%= link_to "Sales History",
+                sales_path,
+                class: "button button--secondary" %>
+
+    <% if @sale.customer.present? %>
+      <%= link_to "Customer Account",
+                  customer_account_path(
+                    @sale.customer
+                  ),
+                  class: "button button--secondary" %>
+    <% end %>
+
+    <% if @sale.balance_due.positive? &&
+          current_membership
+            .customer_payment_management? %>
+      <%= link_to "Receive Payment",
+                  new_sale_payment_path(@sale),
+                  class: "button button--primary" %>
+    <% end %>
+
+    <%= link_to "Dashboard",
+                dashboard_path,
+                class: "button button--secondary" %>
+  </div>
+</header>
+
+  <% if @sale.customer.present? %>
+    <%= link_to "Customer Account",
+                customer_account_path(
+                    @sale.customer
+                ),
+                class: "button button--secondary" %>
+    <% end %>
+
+    <% if @sale.balance_due.positive? &&
+        current_membership
+            .customer_payment_management? %>
+    <%= link_to "Receive Payment",
+                new_sale_payment_path(@sale),
+                class: "button button--primary" %>
+    <% end %>
+
+  <div class="panel">
+    <h2>Sale Information</h2>
+
+    <dl class="details-list">
+      <div>
+        <dt>Receipt number</dt>
+        <dd><%= @sale.sale_number %></dd>
+      </div>
+
+      <div>
+        <dt>Branch</dt>
+        <dd><%= @sale.branch.name %></dd>
+      </div>
+
+      <div>
+        <dt>Customer</dt>
+        <dd>
+          <%= @sale.customer&.name ||
+                "Walk-in Customer" %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Cashier</dt>
+        <dd><%= @sale.cashier.name %></dd>
+      </div>
+
+      <div>
+        <dt>Payment status</dt>
+        <dd>
+          <strong>
+            <%= @sale.payment_status.titleize %>
+          </strong>
+        </dd>
+      </div>
+    </dl>
+  </div>
+
+  <div class="panel">
+    <h2>Items</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Quantity</th>
+          <th>Unit price</th>
+          <th>Discount</th>
+          <th>Tax included</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <% @sale.sale_lines.ordered.each do |line| %>
+          <tr>
+            <td>
+              <strong><%= line.item_name %></strong>
+
+              <% if line.sku.present? %>
+                <br>
+                <small>SKU: <%= line.sku %></small>
+              <% end %>
+            </td>
+
+            <td>
+              <%= number_with_precision(
+                    line.quantity,
+                    precision: 4,
+                    strip_insignificant_zeros: true
+                  ) %>
+              <%= line.unit_symbol %>
+            </td>
+
+            <td>
+              KSh
+              <%= number_with_precision(
+                    line.unit_price,
+                    precision: 2
+                  ) %>
+            </td>
+
+            <td>
+              KSh
+              <%= number_with_precision(
+                    line.discount_amount,
+                    precision: 2
+                  ) %>
+            </td>
+
+            <td>
+              KSh
+              <%= number_with_precision(
+                    line.tax_amount,
+                    precision: 2
+                  ) %>
+            </td>
+
+            <td>
+              <strong>
+                KSh
+                <%= number_with_precision(
+                      line.line_total,
+                      precision: 2
+                    ) %>
+              </strong>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h2>Totals</h2>
+
+    <dl class="details-list">
+      <div>
+        <dt>Subtotal</dt>
+        <dd>
+          KSh
+          <%= number_with_precision(
+                @sale.subtotal,
+                precision: 2
+              ) %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Discount</dt>
+        <dd>
+          KSh
+          <%= number_with_precision(
+                @sale.discount_total,
+                precision: 2
+              ) %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Tax included</dt>
+        <dd>
+          KSh
+          <%= number_with_precision(
+                @sale.tax_total,
+                precision: 2
+              ) %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Total</dt>
+        <dd>
+          <strong>
+            KSh
+            <%= number_with_precision(
+                  @sale.total,
+                  precision: 2
+                ) %>
+          </strong>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Amount paid</dt>
+        <dd>
+          KSh
+          <%= number_with_precision(
+                @sale.amount_paid,
+                precision: 2
+              ) %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Balance due</dt>
+        <dd>
+          <strong>
+            KSh
+            <%= number_with_precision(
+                  @sale.balance_due,
+                  precision: 2
+                ) %>
+          </strong>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Change given</dt>
+        <dd>
+          KSh
+          <%= number_with_precision(
+                @sale.change_given,
+                precision: 2
+              ) %>
+        </dd>
+      </div>
+    </dl>
+  </div>
+
+  <div class="panel">
+    <h2>Payments</h2>
+
+    <% if @sale.sale_payments.any? %>
+      <table>
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th>Account</th>
+            <th>Applied</th>
+            <th>Received</th>
+            <th>Change</th>
+            <th>Reference</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% @sale.sale_payments.oldest_first.each do |payment| %>
+            <tr>
+              <td><%= payment.payment_method.name %></td>
+
+              <td><%= payment.money_account.name %></td>
+
+              <td>
+                KSh
+                <%= number_with_precision(
+                      payment.amount,
+                      precision: 2
+                    ) %>
+              </td>
+
+              <td>
+                KSh
+                <%= number_with_precision(
+                      payment.amount_tendered,
+                      precision: 2
+                    ) %>
+              </td>
+
+              <td>
+                KSh
+                <%= number_with_precision(
+                      payment.change_given,
+                      precision: 2
+                    ) %>
+              </td>
+
+              <td>
+                <%= payment.reference.presence || "—" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p>
+        No payment was received. This sale was recorded
+        fully on customer credit.
+      </p>
+    <% end %>
+  </div>
+</section>

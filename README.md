@@ -17,7 +17,13 @@ gem "rails", "~> 8.1.3"
 * Database initialization
 
 * How to run the test suite
-
+## App Tests
+bin/rails test test/services/sales/payment_plan_test.rb
+bin/rails zeitwerk:check
+bin/rubocop -a
+bin/rubocop
+bin/rails test
+git diff --check
 * Services (job queues, cache servers, search engines, etc.)
 
 * Deployment instructions

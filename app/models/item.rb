@@ -13,6 +13,9 @@ class Item < ApplicationRecord
   has_many :stock_transfers,
          dependent: :restrict_with_error
 
+  has_many :sale_lines,
+         dependent: :restrict_with_error
+
   enum :item_type, {
     product: "product",
     service: "service"

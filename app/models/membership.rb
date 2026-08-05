@@ -80,6 +80,37 @@ class Membership < ApplicationRecord
       cashier?
   end
 
+  def pos_access?
+    owner? ||
+      admin? ||
+      manager? ||
+      cashier?
+  end
+
+  def customer_account_view?
+    owner? ||
+      admin? ||
+      manager? ||
+      accountant? ||
+      cashier?
+  end
+
+  def customer_payment_management?
+    owner? ||
+      admin? ||
+      manager? ||
+      accountant? ||
+      cashier?
+  end
+
+  def sales_view?
+    owner? ||
+      admin? ||
+      manager? ||
+      accountant? ||
+      cashier?
+  end
+
   private
 
   def branch_belongs_to_organization
