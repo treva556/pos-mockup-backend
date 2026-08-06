@@ -84,6 +84,18 @@ module Purchases
         value.to_s
     end
 
+    def due_on
+        optional_date(
+            data["due_on"],
+            label: "supplier payment due date"
+        )
+        end
+
+        def due_on=(value)
+        data["due_on"] =
+            value.to_s
+    end
+
     def notes
       data["notes"]
         .to_s

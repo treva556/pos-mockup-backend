@@ -1,0 +1,13 @@
+ .../inventory_batch_assignments_controller.rb      | 108 [32m++++++++[m
+ app/controllers/stock_levels_controller.rb         | 263 [32m+++++++++++++++[m[31m-----[m
+ app/models/stock_level.rb                          |  58 [32m+++++[m
+ .../inventory/assign_existing_stock_batch.rb       | 136 [32m+++++++++++[m
+ app/services/inventory/batch_assignment_error.rb   |   4 [32m+[m
+ app/views/dashboards/show.html.erb                 |   4 [32m+[m
+ app/views/inventory_batch_assignments/new.html.erb | 114 [32m+++++++++[m
+ app/views/inventory_batches/index.html.erb         |  32 [32m++[m[31m-[m
+ app/views/stock_levels/index.html.erb              | 215 [32m+++++++++++++[m[31m---[m
+ config/routes.rb                                   |   3 [32m+[m
+ test/models/stock_level_test.rb                    | 271 [32m++++++++++++++[m[31m-------[m
+ .../inventory/assign_existing_stock_batch_test.rb  | 121 [32m+++++++++[m
+ 12 files changed, 1137 insertions(+), 192 deletions(-)

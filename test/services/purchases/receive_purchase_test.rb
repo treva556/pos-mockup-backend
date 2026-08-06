@@ -17,6 +17,9 @@ module Purchases
           active: true
         )
 
+      @due_on =
+        30.days.from_now.to_date
+
       @expiry_date =
         180.days.from_now.to_date
 
@@ -87,8 +90,14 @@ module Purchases
       assert_equal 1_250.to_d,
                    purchase.total
 
+      assert_equal 0.to_d,
+                   purchase.amount_paid
+
       assert_equal 1_250.to_d,
                    purchase.balance_due
+
+      assert_equal @due_on,
+                   purchase.due_on
 
       assert_equal "SUP-INV-001",
                    purchase.supplier_invoice_number
@@ -180,6 +189,12 @@ module Purchases
         second.purchase_number
       )
 
+      assert_equal @due_on,
+                   first.due_on
+
+      assert_equal @due_on,
+                   second.due_on
+
       assert_equal(
         "PAINT-BATCH-001",
         first.purchase_lines
@@ -213,6 +228,9 @@ module Purchases
       cart.purchased_on =
         Date.current
 
+      cart.due_on =
+        @due_on
+
       cart.add_item(
         item: @item,
         quantity: 5,
@@ -222,19 +240,27 @@ module Purchases
       sequence_before =
         @branch.reload.next_purchase_sequence
 
+      error = nil
+
       assert_no_difference("Purchase.count") do
         assert_no_difference("PurchaseLine.count") do
           assert_no_difference("InventoryBatch.count") do
             assert_no_difference("StockMovement.count") do
-              assert_raises(
-                Purchases::ReceivingError
-              ) do
-                receive_purchase(cart)
-              end
+              error =
+                assert_raises(
+                  Purchases::ReceivingError
+                ) do
+                  receive_purchase(cart)
+                end
             end
           end
         end
       end
+
+      assert_match(
+        /expiry date/i,
+        error.message
+      )
 
       assert_equal(
         sequence_before,
@@ -266,6 +292,9 @@ module Purchases
 
       cart.purchased_on =
         Date.current
+
+      cart.due_on =
+        @due_on
 
       cart.add_item(
         item: @item,
@@ -308,6 +337,35 @@ module Purchases
                    @item.reload.purchase_cost
     end
 
+    test "rejects due date before purchase date" do
+      cart =
+        build_cart(
+          invoice_number: "SUP-INV-BAD-DUE-DATE",
+          batch_number: "PAINT-BATCH-BAD-DUE",
+          quantity: 1,
+          unit_cost: 250
+        )
+
+      cart.due_on =
+        1.day.ago.to_date
+
+      error = nil
+
+      assert_no_difference("Purchase.count") do
+        error =
+          assert_raises(
+            Purchases::ReceivingError
+          ) do
+            receive_purchase(cart)
+          end
+      end
+
+      assert_match(
+        /due date cannot be before/i,
+        error.message
+      )
+    end
+
     private
 
     def build_cart(
@@ -330,6 +388,9 @@ module Purchases
 
       cart.purchased_on =
         Date.current
+
+      cart.due_on =
+        @due_on
 
       cart.add_item(
         item: @item,

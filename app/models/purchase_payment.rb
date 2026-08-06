@@ -16,9 +16,13 @@ class PurchasePayment < ApplicationRecord
             presence: true
 
   validate :relationships_share_organization
+  validate :purchase_is_received
 
   scope :oldest_first,
         -> { order(:paid_at, :created_at) }
+
+  scope :recent_first,
+        -> { order(paid_at: :desc, created_at: :desc) }
 
   private
 
@@ -37,5 +41,15 @@ class PurchasePayment < ApplicationRecord
         "to the same organization"
       )
     end
+  end
+
+  def purchase_is_received
+    return if purchase.blank?
+    return if purchase.received?
+
+    errors.add(
+      :purchase,
+      "must be a received purchase"
+    )
   end
 end

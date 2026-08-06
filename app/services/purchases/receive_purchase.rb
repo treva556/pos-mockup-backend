@@ -81,6 +81,17 @@ module Purchases
         raise Purchases::ReceivingError,
               "Select the supplier invoice date"
       end
+
+      if cart.due_on.blank?
+        raise Purchases::ReceivingError,
+                "Select the supplier payment due date"
+      end
+
+      if cart.due_on < cart.purchased_on
+        raise Purchases::ReceivingError,
+                "Supplier payment due date cannot be before " \
+                "the invoice date"
+      end
     end
 
     def validate_branch!
@@ -144,29 +155,30 @@ module Purchases
         supplier: supplier,
         recorded_by: recorded_by,
         purchase_number:
-          Purchases::NextPurchaseNumber.call(
+            Purchases::NextPurchaseNumber.call(
             branch: branch
-          ),
+            ),
         supplier_invoice_number:
-          cart.supplier_invoice_number,
+            cart.supplier_invoice_number,
         status: "received",
         payment_status: "unpaid",
         purchased_on: cart.purchased_on,
+        due_on: cart.due_on,
         received_at: received_at,
         prices_include_tax: true,
         subtotal:
-          money(calculation.subtotal),
+            money(calculation.subtotal),
         discount_total:
-          money(calculation.discount_total),
+            money(calculation.discount_total),
         tax_total:
-          money(calculation.tax_total),
+            money(calculation.tax_total),
         total:
-          money(calculation.total),
+            money(calculation.total),
         amount_paid: 0,
         balance_due:
-          money(calculation.total),
+            money(calculation.total),
         notes: cart.notes
-      )
+        )
     end
 
     def create_lines!(

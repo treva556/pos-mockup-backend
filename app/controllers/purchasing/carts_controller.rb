@@ -10,6 +10,9 @@ module Purchasing
       purchase_cart.purchased_on =
         cart_params[:purchased_on]
 
+      purchase_cart.due_on =
+        cart_params[:due_on]
+
       purchase_cart.notes =
         cart_params[:notes]
 
@@ -48,6 +51,7 @@ module Purchasing
           :supplier_id,
           :supplier_invoice_number,
           :purchased_on,
+          :due_on,
           :notes
         )
     end

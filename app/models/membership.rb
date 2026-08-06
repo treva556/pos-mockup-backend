@@ -111,6 +111,21 @@ class Membership < ApplicationRecord
       cashier?
   end
 
+  def supplier_account_view?
+    owner? ||
+      admin? ||
+      manager? ||
+      accountant? ||
+      stock_clerk?
+  end
+
+  def supplier_payment_management?
+    owner? ||
+      admin? ||
+      manager? ||
+      accountant?
+  end
+
   private
 
   def branch_belongs_to_organization

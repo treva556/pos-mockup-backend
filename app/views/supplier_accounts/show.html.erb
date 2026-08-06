@@ -1,0 +1,153 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1><%= @supplier.name %> Account</h1>
+
+      <p>
+        Purchases, payments and outstanding supplier balances.
+      </p>
+    </div>
+
+    <div class="form-actions">
+      <%= link_to "Supplier Details",
+                  supplier_path(@supplier),
+                  class: "button button--secondary" %>
+
+      <%= link_to "Receive Purchase",
+                  new_purchasing_purchase_path,
+                  class: "button button--primary" %>
+    </div>
+  </header>
+
+  <div class="panel">
+    <dl class="details-list">
+      <div>
+        <dt>Total purchases</dt>
+        <dd>
+          <%= number_to_currency(
+                @total_purchases,
+                unit: "KSh "
+              ) %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Total paid</dt>
+        <dd>
+          <%= number_to_currency(
+                @total_paid,
+                unit: "KSh "
+              ) %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Outstanding</dt>
+        <dd>
+          <strong>
+            <%= number_to_currency(
+                  @outstanding_balance,
+                  unit: "KSh "
+                ) %>
+          </strong>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Overdue</dt>
+        <dd>
+          <strong>
+            <%= number_to_currency(
+                  @overdue_balance,
+                  unit: "KSh "
+                ) %>
+          </strong>
+        </dd>
+      </div>
+    </dl>
+  </div>
+
+  <div class="panel">
+    <h2>Purchase Statement</h2>
+
+    <% if @purchases.any? %>
+      <table>
+        <thead>
+          <tr>
+            <th>Purchase</th>
+            <th>Branch</th>
+            <th>Invoice date</th>
+            <th>Due date</th>
+            <th>Total</th>
+            <th>Paid</th>
+            <th>Balance</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% @purchases.each do |purchase| %>
+            <tr>
+              <td>
+                <%= link_to purchase.purchase_number,
+                            purchase_path(purchase) %>
+              </td>
+
+              <td><%= purchase.branch.name %></td>
+
+              <td>
+                <%= purchase.purchased_on.to_fs(:long) %>
+              </td>
+
+              <td>
+                <%= purchase.due_on&.to_fs(:long) || "—" %>
+              </td>
+
+              <td>
+                <%= number_to_currency(
+                      purchase.total,
+                      unit: "KSh "
+                    ) %>
+              </td>
+
+              <td>
+                <%= number_to_currency(
+                      purchase.amount_paid,
+                      unit: "KSh "
+                    ) %>
+              </td>
+
+              <td>
+                <%= number_to_currency(
+                      purchase.balance_due,
+                      unit: "KSh "
+                    ) %>
+              </td>
+
+              <td>
+                <% if purchase.overdue? %>
+                  <strong>Overdue</strong>
+                <% else %>
+                  <%= purchase.payment_status.titleize %>
+                <% end %>
+
+                <% if purchase.outstanding? &&
+                      current_membership
+                        .supplier_payment_management? %>
+                  <br>
+
+                  <%= link_to "Record payment",
+                              new_purchase_payment_path(
+                                purchase
+                              ) %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p>No purchases have been recorded for this supplier.</p>
+    <% end %>
+  </div>
+</section>

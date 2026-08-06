@@ -115,7 +115,11 @@ Rails.application.routes.draw do
    end
 
     resources :purchases,
-              only: :show
+                only: :show do
+        resources :payments,
+                only: %i[new create],
+                controller: "purchase_payments"
+   end
 
     resources :sales,
               only: %i[index show] do
@@ -127,6 +131,16 @@ Rails.application.routes.draw do
                 only: %i[new create],
                 controller: "sale_payments"
     end
+
+    resources :suppliers do
+        member do
+        patch :toggle_status
+        end
+
+        resource :account,
+                only: :show,
+                controller: "supplier_accounts"
+     end
 
     resource :inventory_batch_assignment,
          only: %i[new create]

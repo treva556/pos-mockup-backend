@@ -199,4 +199,19 @@ end
                 alert:
                   "Your role cannot manage suppliers or purchases."
   end
+  def require_supplier_account_view!
+    return if current_membership&.supplier_account_view?
+
+    redirect_to dashboard_path,
+                alert:
+                  "Your role cannot view supplier accounts."
+  end
+
+  def require_supplier_payment_management!
+    return if current_membership&.supplier_payment_management?
+
+    redirect_to dashboard_path,
+                alert:
+                  "Your role cannot record supplier payments."
+  end
 end

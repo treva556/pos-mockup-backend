@@ -58,6 +58,18 @@
         </div>
 
         <div class="field">
+        <%= form.label :due_on,
+                        "Supplier payment due date" %>
+
+        <%= form.date_field(
+                :due_on,
+                value: @cart.due_on,
+                min: @cart.purchased_on,
+                required: true
+            ) %>
+        </div>
+
+        <div class="field">
           <%= form.label :purchased_on,
                          "Supplier invoice date" %>
 
