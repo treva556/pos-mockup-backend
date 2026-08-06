@@ -30,6 +30,12 @@ class Branch < ApplicationRecord
   has_many :sales,
          dependent: :restrict_with_error
 
+  has_many :purchases,
+         dependent: :restrict_with_error
+
+  has_many :inventory_batches,
+         dependent: :restrict_with_error
+
    validates :name, presence: true
 
    validates :code,

@@ -14,7 +14,8 @@ module Inventory
       occurred_at: Time.current,
       reference: nil,
       notes: nil,
-      source: nil
+      source: nil,
+      inventory_batch: nil
     )
       @organization = organization
       @branch = branch
@@ -26,6 +27,7 @@ module Inventory
       @reference = reference
       @notes = notes
       @source = source
+      @inventory_batch = inventory_batch
     end
 
     def call
@@ -49,7 +51,8 @@ module Inventory
                 :occurred_at,
                 :reference,
                 :notes,
-                :source
+                :source,
+                :inventory_batch
 
     def find_or_create_stock_level
       StockLevel.create_or_find_by!(
@@ -77,6 +80,7 @@ module Inventory
 
     def post_locked_movement(stock_level)
         ensure_opening_is_first!(stock_level)
+        validate_inventory_batch!
 
         new_quantity =
             stock_level.quantity_on_hand.to_d +
@@ -95,7 +99,8 @@ module Inventory
           occurred_at: occurred_at,
           reference: reference,
           notes: notes,
-          source: source
+          source: source,
+          inventory_batch: inventory_batch,
         )
 
       stock_level.update!(
@@ -118,6 +123,22 @@ module Inventory
       raise Inventory::InsufficientStockError,
             "#{item.name} does not have enough stock " \
             "at #{branch.name}"
+    end
+    def validate_inventory_batch!
+      return if inventory_batch.blank?
+
+      valid =
+        inventory_batch.organization_id ==
+          organization.id &&
+        inventory_batch.branch_id ==
+          branch.id &&
+        inventory_batch.item_id ==
+          item.id
+
+      return if valid
+
+      raise ArgumentError,
+            "Inventory batch does not match the movement context"
     end
   end
 end

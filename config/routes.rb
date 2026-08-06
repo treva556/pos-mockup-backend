@@ -102,6 +102,29 @@ Rails.application.routes.draw do
               param: :entry_id
    end
 
+   namespace :purchasing do
+        resource :purchase,
+                only: %i[new create]
+
+        resource :cart,
+                only: %i[update destroy]
+
+        resources :cart_items,
+                only: %i[create update destroy],
+                param: :item_id
+   end
+
+   resources :purchases,
+                only: %i[index show] do
+        member do
+        get :receipt
+   end
+
+        resources :payments,
+                only: %i[new create],
+                controller: "purchase_payments"
+   end
+
     resources :sales,
               only: %i[index show] do
       member do
@@ -112,6 +135,22 @@ Rails.application.routes.draw do
                 only: %i[new create],
                 controller: "sale_payments"
     end
+
+    resources :suppliers do
+        member do
+        patch :toggle_status
+        end
+
+        resource :account,
+                only: :show,
+                controller: "supplier_accounts"
+     end
+
+    resource :inventory_batch_assignment,
+         only: %i[new create]
+
+    resources :inventory_batches,
+          only: :index
 
     resources :inventory_adjustments,
           only: %i[new create]

@@ -32,6 +32,12 @@ class User < ApplicationRecord
             inverse_of: :recorded_by,
             dependent: :restrict_with_error
 
+  has_many :recorded_purchases,
+            class_name: "Purchase",
+            foreign_key: :recorded_by_id,
+            inverse_of: :recorded_by,
+            dependent: :restrict_with_error
+
   enum :platform_role, {
     regular: "regular",
     support: "support",

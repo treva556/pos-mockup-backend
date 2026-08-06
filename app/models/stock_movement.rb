@@ -26,6 +26,9 @@ class StockMovement < ApplicationRecord
              polymorphic: true,
              optional: true
 
+  belongs_to :inventory_batch,
+           optional: true
+
   enum :movement_type, {
     opening: "opening",
     adjustment_in: "adjustment_in",
@@ -35,7 +38,8 @@ class StockMovement < ApplicationRecord
     sale_return: "sale_return",
     purchase_return: "purchase_return",
     transfer_in: "transfer_in",
-    transfer_out: "transfer_out"
+    transfer_out: "transfer_out",
+    purchase: "purchase"
   }, validate: true
 
   before_validation :normalize_details
@@ -54,6 +58,7 @@ class StockMovement < ApplicationRecord
   validate :recorded_by_belongs_to_organization
   validate :movement_direction_matches_type
   validate :quantity_matches_unit
+  validate :inventory_batch_matches_movement
 
   scope :recent_first,
         lambda {
@@ -165,6 +170,25 @@ class StockMovement < ApplicationRecord
     errors.add(
       :quantity_change,
       "must be a whole number for this unit"
+    )
+  end
+
+  def inventory_batch_matches_movement
+    return if inventory_batch.blank?
+
+    valid =
+      inventory_batch.organization_id ==
+        organization_id &&
+      inventory_batch.branch_id ==
+        branch_id &&
+      inventory_batch.item_id ==
+        item_id
+
+    return if valid
+
+    errors.add(
+      :inventory_batch,
+      "must match the movement organization, branch and item"
     )
   end
 end

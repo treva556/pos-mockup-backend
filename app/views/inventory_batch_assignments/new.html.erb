@@ -1,0 +1,114 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>Assign Existing Stock Batch</h1>
+
+      <p>
+        Add batch and expiry details to stock that existed
+        before expiry tracking was enabled.
+      </p>
+    </div>
+
+    <%= link_to "Expiry Report",
+                inventory_batches_path,
+                class: "button button--secondary" %>
+  </header>
+
+  <div class="panel">
+    <%= form_with(
+          url: inventory_batch_assignment_path,
+          scope: :inventory_batch_assignment,
+          local: true,
+          class: "record-form"
+        ) do |form| %>
+
+      <div class="form-grid">
+        <div class="field">
+          <%= form.label :branch_id,
+                         "Branch" %>
+
+          <%= form.collection_select(
+                :branch_id,
+                @branches,
+                :id,
+                :name,
+                {
+                  prompt: "Select branch"
+                },
+                {
+                  required: true
+                }
+              ) %>
+        </div>
+
+        <div class="field">
+          <%= form.label :item_id,
+                         "Expiry-tracked product" %>
+
+          <%= form.collection_select(
+                :item_id,
+                @items,
+                :id,
+                :name,
+                {
+                  prompt: "Select product"
+                },
+                {
+                  required: true
+                }
+              ) %>
+        </div>
+
+        <div class="field">
+          <%= form.label :batch_number,
+                         "Batch number" %>
+
+          <%= form.text_field(
+                :batch_number,
+                placeholder: "Optional"
+              ) %>
+        </div>
+
+        <div class="field">
+          <%= form.label :unit_cost,
+                         "Unit cost" %>
+
+          <%= form.number_field(
+                :unit_cost,
+                min: 0,
+                step: 0.01
+              ) %>
+        </div>
+
+        <div class="field">
+          <%= form.label :manufactured_on,
+                         "Manufacture date" %>
+
+          <%= form.date_field :manufactured_on %>
+        </div>
+
+        <div class="field">
+          <%= form.label :expires_on,
+                         "Expiry date" %>
+
+          <%= form.date_field(
+                :expires_on,
+                required: true
+              ) %>
+        </div>
+      </div>
+
+      <%= form.submit "Assign Existing Stock",
+                      class: "button button--primary" %>
+    <% end %>
+  </div>
+
+  <div class="panel">
+    <h2>Important</h2>
+
+    <p>
+      This operation does not increase stock. It only assigns
+      existing physical stock to an expiry batch.
+    </p>
+  </div>
+</section>

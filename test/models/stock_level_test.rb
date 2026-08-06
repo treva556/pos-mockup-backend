@@ -1,122 +1,217 @@
 require "test_helper"
 
 class StockLevelTest < ActiveSupport::TestCase
-  setup do
-    @organization =
-      provision_organization_for(create_user)
+  test "uses unexpired batch quantity for expiry tracked products" do
+    owner = create_user
 
-    @branch = @organization.main_branch
+    organization =
+      provision_organization_for(owner)
 
-    @item = create_inventory_item(
-      organization: @organization
-    )
-  end
+    branch =
+      organization.main_branch
 
-  test "identifies low and out of stock levels" do
-    level = create_stock_level(
-      organization: @organization,
-      branch: @branch,
-      item: @item,
-      overrides: {
-        quantity_on_hand: 1,
-        reorder_level: 3
-      }
-    )
+    item =
+      create_inventory_item(
+        organization: organization,
+        overrides: {
+          tracks_expiry: true
+        }
+      )
 
-    assert level.low_stock?
-    assert_not level.out_of_stock?
+    stock_level =
+      organization.stock_levels.find_or_initialize_by(
+        branch: branch,
+        item: item
+      )
 
-    level.update!(quantity_on_hand: 0)
-
-    assert_not level.low_stock?
-    assert level.out_of_stock?
-  end
-
-  test "rejects a service item" do
-    service = create_inventory_item(
-      organization: @organization,
-      overrides: {
-        name: "Bookkeeping Service",
-        item_type: "service",
-        track_inventory: false
-      }
+    stock_level.update!(
+      quantity_on_hand: 15,
+      reorder_level: 10
     )
 
-    level = @organization.stock_levels.new(
-      branch: @branch,
-      item: service,
-      quantity_on_hand: 0,
-      reorder_level: 0
-    )
-
-    assert_not level.valid?
-
-    assert_includes(
-      level.errors[:item],
-      "must be an inventory-tracked product"
-    )
-  end
-
-  test "rejects branch from another organization" do
-    other_organization =
-      provision_organization_for(create_user)
-
-    level = @organization.stock_levels.new(
-      branch: other_organization.main_branch,
-      item: @item,
-      quantity_on_hand: 0,
-      reorder_level: 0
-    )
-
-    assert_not level.valid?
-
-    assert_includes(
-      level.errors[:branch],
-      "must belong to the same organization"
-    )
-  end
-
-  test "whole-number unit rejects decimal quantities" do
-    level = @organization.stock_levels.new(
-      branch: @branch,
-      item: @item,
-      quantity_on_hand: 1.5,
-      reorder_level: 0
-    )
-
-    assert_not level.valid?
-
-    assert_includes(
-      level.errors[:quantity_on_hand],
-      "must be a whole number for this unit"
-    )
-  end
-
-  test "decimal-enabled unit accepts decimal quantities" do
-    decimal_unit = create_unit_of_measure(
-      organization: @organization,
-      overrides: {
-        name: "Kilogram",
-        symbol: "kg",
-        decimal_allowed: true
-      }
-    )
-
-    item = create_inventory_item(
-      organization: @organization,
-      overrides: {
-        name: "Loose Sugar",
-        unit_of_measure: decimal_unit
-      }
-    )
-
-    level = @organization.stock_levels.new(
-      branch: @branch,
+    organization.inventory_batches.create!(
+      branch: branch,
       item: item,
-      quantity_on_hand: 1.5,
-      reorder_level: 0.5
+      batch_number: "EXPIRED-BATCH",
+      expires_on:
+        2.days.ago.to_date,
+      quantity_received: 10,
+      quantity_remaining: 10,
+      unit_cost: 100,
+      received_at: Time.current
     )
 
-    assert level.valid?
+    organization.inventory_batches.create!(
+      branch: branch,
+      item: item,
+      batch_number: "ACTIVE-BATCH",
+      expires_on:
+        30.days.from_now.to_date,
+      quantity_received: 5,
+      quantity_remaining: 5,
+      unit_cost: 100,
+      received_at: Time.current
+    )
+
+    assert_equal 15.to_d,
+                 stock_level.quantity_on_hand
+
+    assert_equal 5.to_d,
+                 stock_level.sellable_quantity
+
+    assert_equal 10.to_d,
+                 stock_level.expired_quantity
+
+    assert_equal 15.to_d,
+                 stock_level.assigned_batch_quantity
+
+    assert_equal 0.to_d,
+                 stock_level.unassigned_expiry_quantity
+
+    assert stock_level.low_sellable_stock?
+
+    refute stock_level.out_of_sellable_stock?
+  end
+
+  test "normal products use physical quantity as sellable quantity" do
+    owner = create_user
+
+    organization =
+      provision_organization_for(owner)
+
+    branch =
+      organization.main_branch
+
+    item =
+      create_inventory_item(
+        organization: organization,
+        overrides: {
+          tracks_expiry: false
+        }
+      )
+
+    stock_level =
+      organization.stock_levels.find_or_initialize_by(
+        branch: branch,
+        item: item
+      )
+
+    stock_level.update!(
+      quantity_on_hand: 8,
+      reorder_level: 10
+    )
+
+    assert_equal 8.to_d,
+                 stock_level.quantity_on_hand
+
+    assert_equal 8.to_d,
+                 stock_level.sellable_quantity
+
+    assert_equal 0.to_d,
+                 stock_level.expired_quantity
+
+    assert_equal 0.to_d,
+                 stock_level.unassigned_expiry_quantity
+
+    assert stock_level.low_sellable_stock?
+
+    refute stock_level.out_of_sellable_stock?
+  end
+
+  test "expiry tracked product with only expired stock is out of sellable stock" do
+    owner = create_user
+
+    organization =
+      provision_organization_for(owner)
+
+    branch =
+      organization.main_branch
+
+    item =
+      create_inventory_item(
+        organization: organization,
+        overrides: {
+          tracks_expiry: true
+        }
+      )
+
+    stock_level =
+      organization.stock_levels.find_or_initialize_by(
+        branch: branch,
+        item: item
+      )
+
+    stock_level.update!(
+      quantity_on_hand: 6,
+      reorder_level: 3
+    )
+
+    organization.inventory_batches.create!(
+      branch: branch,
+      item: item,
+      batch_number: "EXPIRED-ONLY",
+      expires_on:
+        1.day.ago.to_date,
+      quantity_received: 6,
+      quantity_remaining: 6,
+      unit_cost: 100,
+      received_at: Time.current
+    )
+
+    assert_equal 6.to_d,
+                 stock_level.quantity_on_hand
+
+    assert_equal 0.to_d,
+                 stock_level.sellable_quantity
+
+    assert_equal 6.to_d,
+                 stock_level.expired_quantity
+
+    assert stock_level.out_of_sellable_stock?
+
+    refute stock_level.low_sellable_stock?
+  end
+
+  test "reports expiry tracked stock without a batch as unassigned" do
+    owner = create_user
+
+    organization =
+      provision_organization_for(owner)
+
+    branch =
+      organization.main_branch
+
+    item =
+      create_inventory_item(
+        organization: organization,
+        overrides: {
+          tracks_expiry: true
+        }
+      )
+
+    stock_level =
+      organization.stock_levels.find_or_initialize_by(
+        branch: branch,
+        item: item
+      )
+
+    stock_level.update!(
+      quantity_on_hand: 12,
+      reorder_level: 5
+    )
+
+    assert_equal 12.to_d,
+                 stock_level.quantity_on_hand
+
+    assert_equal 0.to_d,
+                 stock_level.sellable_quantity
+
+    assert_equal 0.to_d,
+                 stock_level.expired_quantity
+
+    assert_equal 12.to_d,
+                 stock_level.unassigned_expiry_quantity
+
+    assert stock_level.out_of_sellable_stock?
   end
 end

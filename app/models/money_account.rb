@@ -20,6 +20,9 @@ class MoneyAccount < ApplicationRecord
   has_many :sale_payments,
             dependent: :restrict_with_error
 
+  has_many :purchase_payments,
+            dependent: :restrict_with_error
+
   enum :account_type, {
     cash: "cash",
     petty_cash: "petty_cash",
@@ -70,11 +73,22 @@ class MoneyAccount < ApplicationRecord
       outgoing_money_transfers.sum(:amount)
   end
 
-  def current_balance
-    opening_balance.to_d +
+  def balance_before_purchase_disbursements
+  opening_balance.to_d +
       incoming_transfer_total -
       outgoing_transfer_total +
       sale_receipts_total
+  end
+
+  def current_balance
+    balance_before_purchase_disbursements -
+      purchase_disbursements_total
+  end
+
+  def purchase_disbursements_total
+    purchase_payments
+      .sum(:amount)
+      .to_d
   end
 
   def sale_receipts_total

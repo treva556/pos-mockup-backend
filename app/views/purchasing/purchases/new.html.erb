@@ -1,0 +1,425 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>Receive Purchase</h1>
+
+      <p>
+        <%= @purchase_branch.name %>
+      </p>
+    </div>
+
+    <%= link_to "Dashboard",
+                dashboard_path,
+                class: "button button--secondary" %>
+  </header>
+
+  <div class="panel">
+    <h2>Supplier Invoice</h2>
+
+    <%= form_with(
+          url: purchasing_cart_path(
+            branch_id: @purchase_branch.id
+          ),
+          scope: :purchase_cart,
+          method: :patch,
+          local: true,
+          class: "record-form"
+        ) do |form| %>
+
+      <div class="form-grid">
+        <div class="field">
+          <%= form.label :supplier_id,
+                         "Supplier" %>
+
+          <%= form.collection_select(
+                :supplier_id,
+                @suppliers,
+                :id,
+                :name,
+                {
+                  prompt: "Select supplier",
+                  selected: @cart.supplier_id
+                },
+                {
+                  required: true
+                }
+              ) %>
+        </div>
+
+        <div class="field">
+          <%= form.label :supplier_invoice_number,
+                         "Supplier invoice number" %>
+
+          <%= form.text_field(
+                :supplier_invoice_number,
+                value:
+                  @cart.supplier_invoice_number
+              ) %>
+        </div>
+
+        <div class="field">
+        <%= form.label :due_on,
+                        "Supplier payment due date" %>
+
+        <%= form.date_field(
+                :due_on,
+                value: @cart.due_on,
+                min: @cart.purchased_on,
+                required: true
+            ) %>
+        </div>
+
+        <div class="field">
+          <%= form.label :purchased_on,
+                         "Supplier invoice date" %>
+
+          <%= form.date_field(
+                :purchased_on,
+                value: @cart.purchased_on,
+                required: true
+              ) %>
+        </div>
+
+        <div class="field field--full">
+          <%= form.label :notes %>
+
+          <%= form.text_area(
+                :notes,
+                value: @cart.notes,
+                rows: 3
+              ) %>
+        </div>
+      </div>
+
+      <%= form.submit "Save Purchase Details",
+                      class: "button button--secondary" %>
+    <% end %>
+  </div>
+
+  <div class="panel">
+    <h2>Add Inventory Items</h2>
+
+    <%= form_with(
+          url: new_purchasing_purchase_path,
+          method: :get,
+          local: true
+        ) do |form| %>
+      <%= form.hidden_field(
+            :branch_id,
+            value: @purchase_branch.id
+          ) %>
+
+      <%= form.search_field(
+            :q,
+            value: @query,
+            placeholder:
+              "Search item, SKU or barcode"
+          ) %>
+
+      <%= form.submit "Search" %>
+    <% end %>
+
+    <% if @items.any? %>
+      <table>
+       <thead>
+        <tr>
+            <th>Item</th>
+            <th>Quantity</th>
+            <th>Unit cost</th>
+            <th>Discount</th>
+            <th>Batch</th>
+            <th>Manufactured</th>
+            <th>Expiry</th>
+            <th>Total</th>
+            <th></th>
+            <th></th>
+        </tr>
+        </thead>
+
+        <tbody>
+          <% @items.each do |item| %>
+            <tr>
+              <td>
+                <strong><%= item.name %></strong>
+
+                <% if item.sku.present? %>
+                    <br>
+                    <small>SKU: <%= item.sku %></small>
+                <% end %>
+
+                <% if item.tracks_expiry? %>
+                    <br>
+                    <small>Batch and expiry required</small>
+                <% end %>
+                </td>
+
+              <td>
+                KSh
+                <%= number_with_precision(
+                      item.purchase_cost,
+                      precision: 2
+                    ) %>
+              </td>
+
+              <%= form_with(
+                    url:
+                      purchasing_cart_items_path(
+                        branch_id:
+                          @purchase_branch.id
+                      ),
+                    scope: :purchase_cart_item,
+                    method: :post,
+                    local: true
+                  ) do |form| %>
+
+                <%= form.hidden_field(
+                      :item_id,
+                      value: item.id
+                    ) %>
+
+                <td>
+                  <%= form.number_field(
+                        :quantity,
+                        value: 1,
+                        min: 0.0001,
+                        step: 0.0001,
+                        required: true
+                      ) %>
+                </td>
+
+                <td>
+                  <%= form.number_field(
+                        :unit_cost,
+                        value: item.purchase_cost,
+                        min: 0,
+                        step: 0.01,
+                        required: true
+                      ) %>
+                </td>
+
+                <td>
+                  <%= form.submit "Add" %>
+                </td>
+              <% end %>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p>No inventory items match the search.</p>
+    <% end %>
+  </div>
+
+  <div class="panel">
+    <h2>Purchase Cart</h2>
+
+    <% if @cart.lines.any? %>
+      <table>
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Quantity</th>
+            <th>Unit cost</th>
+            <th>Discount</th>
+            <th>Batch</th>
+            <th>Manufactured</th>
+            <th>Expiry</th>
+            <th>Total</th>
+            <th></th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% @cart.lines.each_with_index do |line, index| %>
+            <% calculated =
+                 @calculation.lines[index] %>
+
+            <tr>
+              <td><%= line.item.name %></td>
+
+              <%= form_with(
+                    url:
+                      purchasing_cart_item_path(
+                        line.item.id,
+                        branch_id:
+                          @purchase_branch.id
+                      ),
+                    scope: :purchase_cart_item,
+                    method: :patch,
+                    local: true
+                  ) do |form| %>
+
+                <td>
+                  <%= form.number_field(
+                        :quantity,
+                        value: line.quantity,
+                        min: 0.0001,
+                        step: 0.0001,
+                        required: true
+                      ) %>
+                </td>
+
+                <td>
+                  <%= form.number_field(
+                        :unit_cost,
+                        value: line.unit_cost,
+                        min: 0,
+                        step: 0.01,
+                        required: true
+                      ) %>
+                </td>
+
+                <td>
+                  <%= form.number_field(
+                        :discount_amount,
+                        value:
+                          line.discount_amount,
+                        min: 0,
+                        step: 0.01,
+                        required: true
+                      ) %>
+                </td>
+
+                <% if line.item.tracks_expiry? %>
+                    <td>
+                        <%= form.text_field(
+                            :batch_number,
+                            value: line.batch_number,
+                            placeholder: "Optional batch number"
+                            ) %>
+                    </td>
+
+                    <td>
+                        <%= form.date_field(
+                            :manufactured_on,
+                            value: line.manufactured_on
+                            ) %>
+                    </td>
+
+                    <td>
+                        <%= form.date_field(
+                            :expires_on,
+                            value: line.expires_on,
+                            min: Date.current,
+                            required: true
+                            ) %>
+                    </td>
+                    <% else %>
+                    <td>Not tracked</td>
+                    <td>—</td>
+                    <td>—</td>
+                    <% end %>
+
+                <td>
+                  KSh
+                  <%= number_with_precision(
+                        calculated[:line_total],
+                        precision: 2
+                      ) %>
+                </td>
+
+                <td>
+                  <%= form.submit "Update" %>
+                </td>
+              <% end %>
+
+              <td>
+                <%= button_to(
+                      "Remove",
+                      purchasing_cart_item_path(
+                        line.item.id,
+                        branch_id:
+                          @purchase_branch.id
+                      ),
+                      method: :delete
+                    ) %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+
+      <dl class="details-list">
+        <div>
+          <dt>Subtotal</dt>
+          <dd>
+            KSh
+            <%= number_with_precision(
+                  @calculation.subtotal,
+                  precision: 2
+                ) %>
+          </dd>
+        </div>
+
+        <div>
+          <dt>Discount</dt>
+          <dd>
+            KSh
+            <%= number_with_precision(
+                  @calculation.discount_total,
+                  precision: 2
+                ) %>
+          </dd>
+        </div>
+
+
+        <div>
+          <dt>Tax included</dt>
+          <dd>
+            KSh
+            <%= number_with_precision(
+                  @calculation.tax_total,
+                  precision: 2
+                ) %>
+          </dd>
+        </div>
+
+        <div>
+          <dt>Total</dt>
+          <dd>
+            <strong>
+              KSh
+              <%= number_with_precision(
+                    @calculation.total,
+                    precision: 2
+                  ) %>
+            </strong>
+          </dd>
+        </div>
+      </dl>
+
+      <div class="form-actions">
+        <%= button_to(
+              "Receive Purchase",
+              purchasing_purchase_path(
+                branch_id:
+                  @purchase_branch.id
+              ),
+              method: :post,
+              class: "button button--primary",
+              disabled:
+                @cart.supplier_id.blank?,
+              form: {
+                data: {
+                  turbo_confirm:
+                    "Receive this purchase and add its " \
+                    "quantities to stock?"
+                }
+              }
+            ) %>
+
+        <%= button_to(
+              "Clear Purchase Cart",
+              purchasing_cart_path(
+                branch_id:
+                  @purchase_branch.id
+              ),
+              method: :delete,
+              class: "button button--secondary"
+            ) %>
+      </div>
+    <% else %>
+      <p>No items have been added.</p>
+    <% end %>
+  </div>
+</section>

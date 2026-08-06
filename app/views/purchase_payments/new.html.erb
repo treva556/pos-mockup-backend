@@ -1,0 +1,159 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>Record Supplier Payment</h1>
+
+      <p>
+        <%= @purchase.purchase_number %> —
+        <%= @purchase.supplier.name %>
+      </p>
+    </div>
+
+    <%= link_to "Back to Purchase",
+                purchase_path(@purchase),
+                class: "button button--secondary" %>
+  </header>
+
+  <div class="panel">
+    <dl class="details-list">
+      <div>
+        <dt>Purchase total</dt>
+        <dd>
+          <%= number_to_currency(
+                @purchase.total,
+                unit: "KSh "
+              ) %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Already paid</dt>
+        <dd>
+          <%= number_to_currency(
+                @purchase.amount_paid,
+                unit: "KSh "
+              ) %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Outstanding</dt>
+        <dd>
+          <strong>
+            <%= number_to_currency(
+                  @purchase.balance_due,
+                  unit: "KSh "
+                ) %>
+          </strong>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Due date</dt>
+        <dd>
+          <%= @purchase.due_on&.to_fs(:long) || "—" %>
+        </dd>
+      </div>
+    </dl>
+  </div>
+
+  <div class="panel">
+    <%= form_with(
+          url: purchase_payments_path(@purchase),
+          scope: :purchase_payment,
+          local: true,
+          class: "record-form"
+        ) do |form| %>
+      <div class="form-grid">
+        <div class="field">
+          <%= form.label :amount %>
+
+          <%= form.number_field(
+                :amount,
+                min: 0.01,
+                max: @purchase.balance_due,
+                step: 0.01,
+                value: @purchase.balance_due,
+                required: true
+              ) %>
+        </div>
+
+        <div class="field">
+          <%= form.label :payment_method_id,
+                         "Payment method" %>
+
+          <%= form.collection_select(
+                :payment_method_id,
+                @payment_methods,
+                :id,
+                :name,
+                {
+                  prompt: "Select payment method"
+                },
+                {
+                  required: true
+                }
+              ) %>
+        </div>
+
+        <div class="field">
+          <%= form.label :money_account_id,
+                         "Paid from" %>
+
+          <%= form.collection_select(
+                :money_account_id,
+                @money_accounts,
+                :id,
+                :name,
+                {
+                  prompt: "Select money account"
+                },
+                {
+                  required: true
+                }
+              ) %>
+        </div>
+
+        <div class="field">
+          <%= form.label :paid_at,
+                         "Payment date and time" %>
+
+          <%= form.datetime_local_field(
+                :paid_at,
+                value:
+                  Time.current.strftime(
+                    "%Y-%m-%dT%H:%M"
+                  ),
+                required: true
+              ) %>
+        </div>
+
+        <div class="field">
+          <%= form.label :reference %>
+
+          <%= form.text_field(
+                :reference,
+                placeholder:
+                  "Bank, M-Pesa or cheque reference"
+              ) %>
+        </div>
+
+        <div class="field field--full">
+          <%= form.label :notes %>
+
+          <%= form.text_area(
+                :notes,
+                rows: 3
+              ) %>
+        </div>
+      </div>
+
+      <%= form.submit "Record Payment",
+                      class: "button button--primary",
+                      data: {
+                        turbo_confirm:
+                          "Record this supplier payment?"
+                      } %>
+    <% end %>
+  </div>
+</section>

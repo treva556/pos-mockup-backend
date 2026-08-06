@@ -44,6 +44,64 @@ class StockLevel < ApplicationRecord
     quantity_on_hand.zero?
   end
 
+  def sellable_quantity(on: Date.current)
+    return quantity_on_hand.to_d unless item.tracks_expiry?
+
+    Inventory::SellableQuantity.call(
+      organization: organization,
+      branch: branch,
+      item: item,
+      on: on
+    )
+  end
+
+  def expired_quantity(on: Date.current)
+    return 0.to_d unless item.tracks_expiry?
+
+    organization.inventory_batches
+      .where(
+        branch: branch,
+        item: item
+      )
+      .with_quantity
+      .expired(on)
+      .sum(:quantity_remaining)
+      .to_d
+  end
+
+  def assigned_batch_quantity
+    return 0.to_d unless item.tracks_expiry?
+
+    organization.inventory_batches
+      .where(
+        branch: branch,
+        item: item
+      )
+      .sum(:quantity_remaining)
+      .to_d
+  end
+
+  def unassigned_expiry_quantity
+    return 0.to_d unless item.tracks_expiry?
+
+    [
+      quantity_on_hand.to_d -
+        assigned_batch_quantity,
+      0.to_d
+    ].max
+  end
+
+  def low_sellable_stock?
+    available = sellable_quantity
+
+    available.positive? &&
+      available <= reorder_level.to_d
+  end
+
+  def out_of_sellable_stock?
+    sellable_quantity.zero?
+  end
+
   private
 
   def branch_belongs_to_organization

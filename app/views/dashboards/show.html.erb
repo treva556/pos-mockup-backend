@@ -227,8 +227,36 @@
             <%= link_to "Movement History",
                         stock_movements_path,
                         class: "button button--secondary" %>
+
+            <% if current_membership.supplier_management? %>
+            <%= link_to "Receive Purchase",
+                        new_purchasing_purchase_path,
+                        class: "button button--primary" %>
+          <% end %>
+           <% if current_membership.inventory_adjustment_management? %>
+              <%= link_to "Assign Existing Stock Batch",
+                          new_inventory_batch_assignment_path %>
+          <% end %>
         </div>
       </div>
+
+      <% if current_membership.supplier_account_view? %>
+        <%= link_to "Purchase History",
+                    purchases_path,
+                    class: "button button--secondary" %>
+
+        <%= link_to "Outstanding Supplier Balances",
+                    purchases_path(
+                      status: "outstanding"
+                    ),
+                    class: "button button--secondary" %>
+
+        <%= link_to "Overdue Supplier Balances",
+                    purchases_path(
+                      status: "overdue"
+                    ),
+                    class: "button button--secondary" %>
+      <% end %>
 
       <div class="form-actions">
         <%= link_to "Opening Stock / Adjustment",
@@ -276,6 +304,76 @@
       <% end %>
       </div>
       </div>
+    </section>
+  <% end %>
+
+  <% if @expiry_summary.present? %>
+    <section class="panel">
+      <header>
+        <h2>Expiry Alerts</h2>
+
+        <%= link_to "View Expiry Report",
+                    inventory_batches_path %>
+      </header>
+
+      <% if @expiry_summary.expired_batches.positive? %>
+        <p>
+          <strong>
+            <%= @expiry_summary.expired_batches %>
+            expired batches must be removed from sale.
+          </strong>
+        </p>
+      <% end %>
+
+      <% if @expiry_summary
+              .expiring_within_7_days
+              .positive? %>
+        <p>
+          <strong>
+            <%= @expiry_summary
+                  .expiring_within_7_days %>
+            batches expire within 7 days.
+          </strong>
+
+          <%= link_to "Review now",
+                      inventory_batches_path(
+                        status: "7"
+                      ) %>
+        </p>
+      <% end %>
+
+      <dl class="details-list">
+        <div>
+          <dt>Expired batches</dt>
+          <dd>
+            <%= @expiry_summary.expired_batches %>
+          </dd>
+        </div>
+
+        <div>
+          <dt>Within 7 days</dt>
+          <dd>
+            <%= @expiry_summary
+                  .expiring_within_7_days %>
+          </dd>
+        </div>
+
+        <div>
+          <dt>Within 30 days</dt>
+          <dd>
+            <%= @expiry_summary
+                  .expiring_within_30_days %>
+          </dd>
+        </div>
+
+        <div>
+          <dt>Within 90 days</dt>
+          <dd>
+            <%= @expiry_summary
+                  .expiring_within_90_days %>
+          </dd>
+        </div>
+      </dl>
     </section>
   <% end %>
 

@@ -1,76 +1,189 @@
-<header>
-  <h1>Suppliers</h1>
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>Suppliers</h1>
 
-  <%= link_to "New Supplier", new_supplier_path %>
-</header>
+      <p>
+        Manage suppliers and review their outstanding balances.
+      </p>
+    </div>
 
-<%= form_with url: suppliers_path,
-              method: :get,
-              local: true do |form| %>
-  <%= form.search_field :q,
-                        value: @query,
-                        placeholder:
-                          "Search name, phone, email or KRA PIN" %>
-
-  <%= form.select :status,
-                  [
-                    [ "Active", "active" ],
-                    [ "Inactive", "inactive" ],
-                    [ "All", "all" ]
-                  ],
-                  selected: @status %>
-
-  <%= form.submit "Search" %>
-
-  <%= link_to "Clear", suppliers_path %>
-<% end %>
-
-<% if @suppliers.any? %>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Phone</th>
-        <th>KRA PIN</th>
-        <th>Credit limit</th>
-        <th>Status</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-
-    <tbody>
-      <% @supplier.each do |supplier| %>
-        <tr>
-          <td><%= link_to supplier.name, supplier %></td>
-          <td><%= supplier.phone.presence || "—" %></td>
-          <td><%= supplier.kra_pin.presence || "—" %></td>
-
-          <td>
-            <%= number_to_currency(
-                  supplier.contact person,
-                  unit: "KSh ",
-                  precision: 2
-                ) %>
-          </td>
-
-          <td>
-            <%= supplier.active? ? "Active" : "Inactive" %>
-          </td>
-
-          <td>
-            <%= link_to "Edit",
-                        edit_supplier_path(customer) %>
-
-            <%= button_to(
-                  supplier.active? ? "Disable" : "Enable",
-                  toggle_status_dupplier_path(supplier),
-                  method: :patch
-                ) %>
-          </td>
-        </tr>
+    <div class="form-actions">
+      <% if current_membership.supplier_account_view? %>
+        <%= link_to "Purchase History",
+                    purchases_path,
+                    class: "button button--secondary" %>
       <% end %>
-    </tbody>
-  </table>
-<% else %>
-  <p>No suppliers found.</p>
-<% end %>
+
+      <% if current_membership.supplier_management? %>
+        <%= link_to "New Supplier",
+                    new_supplier_path,
+                    class: "button button--primary" %>
+      <% end %>
+    </div>
+  </header>
+
+  <div class="panel">
+    <%= form_with url: suppliers_path,
+                  method: :get,
+                  local: true do |form| %>
+      <div class="filter-grid">
+        <div class="field">
+          <%= form.label :q, "Search" %>
+
+          <%= form.search_field(
+                :q,
+                value: @query,
+                placeholder:
+                  "Search name, phone, email or KRA PIN"
+              ) %>
+        </div>
+
+        <div class="field">
+          <%= form.label :status, "Status" %>
+
+          <%= form.select(
+                :status,
+                [
+                  ["Active", "active"],
+                  ["Inactive", "inactive"],
+                  ["All", "all"]
+                ],
+                selected: @status
+              ) %>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <%= form.submit "Search",
+                        class: "button button--primary" %>
+
+        <%= link_to "Clear",
+                    suppliers_path,
+                    class: "button button--secondary" %>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="panel">
+    <% if @suppliers.any? %>
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>KRA PIN</th>
+            <th>Contact person</th>
+            <th>Outstanding</th>
+            <th>Overdue</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% @suppliers.each do |supplier| %>
+            <% outstanding =
+                (@supplier_outstanding || {})
+                  .fetch(supplier.id, 0)
+                  .to_d %>
+
+            <% overdue =
+                (@supplier_overdue || {})
+                  .fetch(supplier.id, 0)
+                  .to_d %>
+
+            <tr>
+              <td>
+                <strong>
+                  <%= link_to supplier.name,
+                              supplier_path(supplier) %>
+                </strong>
+              </td>
+
+              <td>
+                <%= supplier.phone.presence || "—" %>
+              </td>
+
+              <td>
+                <%= supplier.kra_pin.presence || "—" %>
+              </td>
+
+              <td>
+                <%= supplier.contact_person.presence || "—" %>
+              </td>
+
+              <td>
+                <% if outstanding.positive? %>
+                  <strong>
+                    <%= number_to_currency(
+                          outstanding,
+                          unit: "KSh "
+                        ) %>
+                  </strong>
+                <% else %>
+                  <%= number_to_currency(
+                        0,
+                        unit: "KSh "
+                      ) %>
+                <% end %>
+              </td>
+
+              <td>
+                <% if overdue.positive? %>
+                  <strong>
+                    <%= number_to_currency(
+                          overdue,
+                          unit: "KSh "
+                        ) %>
+                  </strong>
+                <% else %>
+                  <%= number_to_currency(
+                        0,
+                        unit: "KSh "
+                      ) %>
+                <% end %>
+              </td>
+
+              <td>
+                <%= supplier.active? ? "Active" : "Inactive" %>
+              </td>
+
+              <td>
+                <% if current_membership.supplier_account_view? %>
+                  <%= link_to "Account",
+                              supplier_account_path(supplier) %>
+                <% end %>
+
+                <% if current_membership.supplier_management? %>
+                  <br>
+
+                  <%= link_to "Edit",
+                              edit_supplier_path(supplier) %>
+
+                  <br>
+
+                  <%= button_to(
+                        supplier.active? ? "Disable" : "Enable",
+                        toggle_status_supplier_path(supplier),
+                        method: :patch,
+                        form: {
+                          data: {
+                            turbo_confirm:
+                              supplier.active? ?
+                                "Disable this supplier?" :
+                                "Enable this supplier?"
+                          }
+                        }
+                      ) %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p>No suppliers found.</p>
+    <% end %>
+  </div>
+</section>

@@ -1,0 +1,151 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+        <h1>Expiry Alerts</h1>
+
+        <p>
+        Review expired and soon-to-expire inventory
+        before it reaches the sales desk.
+        </p>
+    </div>
+
+    <div class="form-actions">
+        <% if current_membership.inventory_adjustment_management? %>
+        <%= link_to "Assign Existing Stock",
+                    new_inventory_batch_assignment_path,
+                    class: "button button--primary" %>
+        <% end %>
+
+        <% if current_membership.supplier_management? %>
+        <%= link_to "Receive Purchase",
+                    new_purchasing_purchase_path,
+                    class: "button button--secondary" %>
+        <% end %>
+
+        <%= link_to "Dashboard",
+                    dashboard_path,
+                    class: "button button--secondary" %>
+    </div>
+    </header>
+
+  <div class="panel">
+    <%= form_with url: inventory_batches_path,
+                  method: :get,
+                  local: true do |form| %>
+      <%= form.select(
+            :status,
+            [
+              ["Expired", "expired"],
+              ["Expiring within 7 days", "7"],
+              ["Expiring within 30 days", "30"],
+              ["Expiring within 90 days", "90"],
+              ["All batches with stock", "all"]
+            ],
+            selected: @status
+          ) %>
+
+      <% if @branches.any? %>
+        <%= form.collection_select(
+              :branch_id,
+              @branches,
+              :id,
+              :name,
+              {
+                include_blank: "All branches",
+                selected: @branch_id
+              }
+            ) %>
+      <% end %>
+
+      <%= form.submit "Apply" %>
+
+      <%= link_to "Clear",
+       inventory_batches_path %>
+   <% end %>
+  </div>
+
+  <div class="panel">
+    <% if @batches.any? %>
+      <table>
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>Branch</th>
+            <th>Batch</th>
+            <th>Supplier</th>
+            <th>Expiry date</th>
+            <th>Days remaining</th>
+            <th>Quantity</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% @batches.each do |batch| %>
+            <tr>
+              <td>
+                <%= link_to batch.item.name,
+                            item_path(batch.item) %>
+              </td>
+
+              <td><%= batch.branch.name %></td>
+
+              <td>
+                <%= batch.batch_number.presence || "—" %>
+              </td>
+
+              <td>
+                <%= batch
+                      .purchase_line
+                      &.purchase
+                      &.supplier
+                      &.name || "—" %>
+              </td>
+
+              <td>
+                <%= batch.expires_on.to_fs(:long) %>
+              </td>
+
+              <td>
+                <% if batch.expired? %>
+                  <strong>
+                    Expired
+                    <%= batch.days_until_expiry.abs %>
+                    days ago
+                  </strong>
+                <% else %>
+                  <%= batch.days_until_expiry %>
+                  days
+                <% end %>
+              </td>
+
+              <td>
+                <%= number_with_precision(
+                      batch.quantity_remaining,
+                      precision: 4,
+                      strip_insignificant_zeros: true
+                    ) %>
+              </td>
+
+              <td>
+                <% if batch.expired? %>
+                  Expired
+                <% elsif batch.days_until_expiry <= 7 %>
+                  Urgent
+                <% elsif batch.days_until_expiry <= 30 %>
+                  Expiring soon
+                <% else %>
+                  Safe
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p>
+        No inventory batches match this expiry filter.
+      </p>
+    <% end %>
+  </div>
+</section>

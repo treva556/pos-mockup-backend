@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_31_155848) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_05_182908) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -38,6 +38,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_31_155848) do
     t.string "email"
     t.boolean "main", default: false, null: false
     t.string "name", null: false
+    t.bigint "next_purchase_sequence", default: 1, null: false
     t.bigint "next_sale_sequence", default: 1, null: false
     t.bigint "organization_id", null: false
     t.string "phone"
@@ -45,6 +46,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_31_155848) do
     t.index ["organization_id", "code"], name: "index_branches_on_organization_id_and_code", unique: true
     t.index ["organization_id"], name: "index_branches_on_one_main_per_organization", unique: true, where: "(main = true)"
     t.index ["organization_id"], name: "index_branches_on_organization_id"
+    t.check_constraint "next_purchase_sequence > 0", name: "branches_next_purchase_sequence_positive"
     t.check_constraint "next_sale_sequence > 0", name: "branches_positive_sale_sequence"
   end
 
@@ -67,6 +69,36 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_31_155848) do
     t.index ["organization_id"], name: "index_customers_on_organization_id"
   end
 
+  create_table "inventory_batches", force: :cascade do |t|
+    t.string "batch_number"
+    t.bigint "branch_id", null: false
+    t.datetime "created_at", null: false
+    t.date "expires_on", null: false
+    t.bigint "item_id", null: false
+    t.date "manufactured_on"
+    t.bigint "organization_id", null: false
+    t.bigint "purchase_line_id"
+    t.decimal "quantity_received", precision: 15, scale: 4, null: false
+    t.decimal "quantity_remaining", precision: 15, scale: 4, null: false
+    t.datetime "received_at", null: false
+    t.string "status", default: "active", null: false
+    t.decimal "unit_cost", precision: 15, scale: 2, null: false
+    t.datetime "updated_at", null: false
+    t.index ["branch_id"], name: "index_inventory_batches_on_branch_id"
+    t.index ["item_id"], name: "index_inventory_batches_on_item_id"
+    t.index ["organization_id", "branch_id", "item_id", "batch_number"], name: "index_unique_inventory_batch_number", unique: true, where: "((batch_number IS NOT NULL) AND ((batch_number)::text <> ''::text))"
+    t.index ["organization_id", "branch_id", "item_id", "expires_on"], name: "index_batches_for_expiry_lookup"
+    t.index ["organization_id", "status", "expires_on"], name: "index_batches_for_expiry_reports"
+    t.index ["organization_id"], name: "index_inventory_batches_on_organization_id"
+    t.index ["purchase_line_id"], name: "index_inventory_batches_on_purchase_line_id"
+    t.check_constraint "manufactured_on IS NULL OR manufactured_on <= expires_on", name: "inventory_batches_manufacture_before_expiry"
+    t.check_constraint "quantity_received > 0::numeric", name: "inventory_batches_received_quantity_positive"
+    t.check_constraint "quantity_remaining <= quantity_received", name: "inventory_batches_remaining_not_above_received"
+    t.check_constraint "quantity_remaining >= 0::numeric", name: "inventory_batches_remaining_quantity_nonnegative"
+    t.check_constraint "status::text = ANY (ARRAY['active'::character varying, 'quarantined'::character varying, 'depleted'::character varying]::text[])", name: "inventory_batches_status_valid"
+    t.check_constraint "unit_cost >= 0::numeric", name: "inventory_batches_unit_cost_nonnegative"
+  end
+
   create_table "items", force: :cascade do |t|
     t.boolean "active", default: true, null: false
     t.string "barcode"
@@ -81,6 +113,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_31_155848) do
     t.string "sku"
     t.bigint "tax_rate_id"
     t.boolean "track_inventory", default: true, null: false
+    t.boolean "tracks_expiry", default: false, null: false
     t.bigint "unit_of_measure_id", null: false
     t.datetime "updated_at", null: false
     t.index ["organization_id", "active"], name: "index_items_on_organization_id_and_active"
@@ -204,6 +237,95 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_31_155848) do
     t.index ["organization_id", "active"], name: "index_product_categories_on_organization_id_and_active"
     t.index ["organization_id", "name"], name: "index_product_categories_on_org_and_name", unique: true
     t.index ["organization_id"], name: "index_product_categories_on_organization_id"
+  end
+
+  create_table "purchase_lines", force: :cascade do |t|
+    t.string "barcode"
+    t.datetime "created_at", null: false
+    t.decimal "discount_amount", precision: 15, scale: 2, default: "0.0", null: false
+    t.decimal "gross_amount", precision: 15, scale: 2, null: false
+    t.bigint "item_id", null: false
+    t.string "item_name", null: false
+    t.string "item_type", null: false
+    t.integer "line_number", null: false
+    t.decimal "line_total", precision: 15, scale: 2, null: false
+    t.bigint "organization_id", null: false
+    t.bigint "purchase_id", null: false
+    t.decimal "quantity", precision: 15, scale: 4, null: false
+    t.string "sku"
+    t.decimal "tax_amount", precision: 15, scale: 2, default: "0.0", null: false
+    t.decimal "tax_percentage", precision: 7, scale: 4, default: "0.0", null: false
+    t.bigint "tax_rate_id"
+    t.decimal "unit_cost", precision: 15, scale: 2, null: false
+    t.string "unit_name", null: false
+    t.string "unit_symbol", null: false
+    t.datetime "updated_at", null: false
+    t.index ["item_id"], name: "index_purchase_lines_on_item_id"
+    t.index ["organization_id"], name: "index_purchase_lines_on_organization_id"
+    t.index ["purchase_id", "line_number"], name: "index_purchase_lines_on_purchase_id_and_line_number", unique: true
+    t.index ["purchase_id"], name: "index_purchase_lines_on_purchase_id"
+    t.index ["tax_rate_id"], name: "index_purchase_lines_on_tax_rate_id"
+    t.check_constraint "line_number > 0", name: "purchase_lines_line_number_positive"
+    t.check_constraint "quantity > 0::numeric", name: "purchase_lines_quantity_positive"
+    t.check_constraint "unit_cost >= 0::numeric AND gross_amount >= 0::numeric AND discount_amount >= 0::numeric AND tax_percentage >= 0::numeric AND tax_amount >= 0::numeric AND line_total >= 0::numeric", name: "purchase_lines_amounts_nonnegative"
+  end
+
+  create_table "purchase_payments", force: :cascade do |t|
+    t.decimal "amount", precision: 15, scale: 2, null: false
+    t.datetime "created_at", null: false
+    t.bigint "money_account_id", null: false
+    t.text "notes"
+    t.bigint "organization_id", null: false
+    t.datetime "paid_at", null: false
+    t.bigint "payment_method_id", null: false
+    t.bigint "purchase_id", null: false
+    t.bigint "recorded_by_id", null: false
+    t.string "reference"
+    t.datetime "updated_at", null: false
+    t.index ["money_account_id"], name: "index_purchase_payments_on_money_account_id"
+    t.index ["organization_id", "paid_at"], name: "index_purchase_payments_on_organization_id_and_paid_at"
+    t.index ["organization_id"], name: "index_purchase_payments_on_organization_id"
+    t.index ["payment_method_id"], name: "index_purchase_payments_on_payment_method_id"
+    t.index ["purchase_id"], name: "index_purchase_payments_on_purchase_id"
+    t.index ["recorded_by_id"], name: "index_purchase_payments_on_recorded_by_id"
+    t.check_constraint "amount > 0::numeric", name: "purchase_payments_amount_positive"
+  end
+
+  create_table "purchases", force: :cascade do |t|
+    t.decimal "amount_paid", precision: 15, scale: 2, default: "0.0", null: false
+    t.decimal "balance_due", precision: 15, scale: 2, default: "0.0", null: false
+    t.bigint "branch_id", null: false
+    t.datetime "created_at", null: false
+    t.decimal "discount_total", precision: 15, scale: 2, default: "0.0", null: false
+    t.date "due_on"
+    t.text "notes"
+    t.bigint "organization_id", null: false
+    t.string "payment_status", default: "unpaid", null: false
+    t.boolean "prices_include_tax", default: true, null: false
+    t.string "purchase_number", null: false
+    t.date "purchased_on", null: false
+    t.datetime "received_at", null: false
+    t.bigint "recorded_by_id", null: false
+    t.string "status", default: "received", null: false
+    t.decimal "subtotal", precision: 15, scale: 2, default: "0.0", null: false
+    t.bigint "supplier_id", null: false
+    t.string "supplier_invoice_number"
+    t.decimal "tax_total", precision: 15, scale: 2, default: "0.0", null: false
+    t.decimal "total", precision: 15, scale: 2, default: "0.0", null: false
+    t.datetime "updated_at", null: false
+    t.index ["branch_id"], name: "index_purchases_on_branch_id"
+    t.index ["organization_id", "payment_status"], name: "index_purchases_on_organization_id_and_payment_status"
+    t.index ["organization_id", "purchase_number"], name: "index_purchases_on_organization_id_and_purchase_number", unique: true
+    t.index ["organization_id", "purchased_on"], name: "index_purchases_on_organization_id_and_purchased_on"
+    t.index ["organization_id", "supplier_id", "supplier_invoice_number"], name: "index_unique_supplier_purchase_invoice", unique: true, where: "((supplier_invoice_number IS NOT NULL) AND ((supplier_invoice_number)::text <> ''::text))"
+    t.index ["organization_id"], name: "index_purchases_on_organization_id"
+    t.index ["recorded_by_id"], name: "index_purchases_on_recorded_by_id"
+    t.index ["supplier_id"], name: "index_purchases_on_supplier_id"
+    t.check_constraint "amount_paid <= total", name: "purchases_amount_paid_not_above_total"
+    t.check_constraint "due_on IS NULL OR due_on >= purchased_on", name: "purchases_due_date_valid"
+    t.check_constraint "payment_status::text = ANY (ARRAY['unpaid'::character varying, 'partially_paid'::character varying, 'paid'::character varying]::text[])", name: "purchases_payment_status_valid"
+    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying, 'received'::character varying, 'cancelled'::character varying]::text[])", name: "purchases_status_valid"
+    t.check_constraint "subtotal >= 0::numeric AND discount_total >= 0::numeric AND tax_total >= 0::numeric AND total >= 0::numeric AND amount_paid >= 0::numeric AND balance_due >= 0::numeric", name: "purchases_amounts_nonnegative"
   end
 
   create_table "sale_lines", force: :cascade do |t|
@@ -352,6 +474,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_31_155848) do
   create_table "stock_movements", force: :cascade do |t|
     t.bigint "branch_id", null: false
     t.datetime "created_at", null: false
+    t.bigint "inventory_batch_id"
     t.bigint "item_id", null: false
     t.string "movement_type", null: false
     t.text "notes"
@@ -365,6 +488,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_31_155848) do
     t.datetime "updated_at", null: false
     t.index ["branch_id", "item_id", "occurred_at"], name: "index_stock_movements_on_branch_item_and_time"
     t.index ["branch_id"], name: "index_stock_movements_on_branch_id"
+    t.index ["inventory_batch_id"], name: "index_stock_movements_on_inventory_batch_id"
     t.index ["item_id"], name: "index_stock_movements_on_item_id"
     t.index ["organization_id", "occurred_at"], name: "index_stock_movements_on_org_and_time"
     t.index ["organization_id", "reference"], name: "index_stock_movements_on_organization_id_and_reference"
@@ -467,6 +591,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_31_155848) do
   add_foreign_key "branch_payment_settings", "payment_methods"
   add_foreign_key "branches", "organizations"
   add_foreign_key "customers", "organizations"
+  add_foreign_key "inventory_batches", "branches"
+  add_foreign_key "inventory_batches", "items"
+  add_foreign_key "inventory_batches", "organizations"
+  add_foreign_key "inventory_batches", "purchase_lines"
   add_foreign_key "items", "organizations"
   add_foreign_key "items", "product_categories"
   add_foreign_key "items", "tax_rates"
@@ -482,6 +610,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_31_155848) do
   add_foreign_key "money_transfers", "users", column: "recorded_by_id"
   add_foreign_key "payment_methods", "organizations"
   add_foreign_key "product_categories", "organizations"
+  add_foreign_key "purchase_lines", "items"
+  add_foreign_key "purchase_lines", "organizations"
+  add_foreign_key "purchase_lines", "purchases"
+  add_foreign_key "purchase_lines", "tax_rates"
+  add_foreign_key "purchase_payments", "money_accounts"
+  add_foreign_key "purchase_payments", "organizations"
+  add_foreign_key "purchase_payments", "payment_methods"
+  add_foreign_key "purchase_payments", "purchases"
+  add_foreign_key "purchase_payments", "users", column: "recorded_by_id"
+  add_foreign_key "purchases", "branches"
+  add_foreign_key "purchases", "organizations"
+  add_foreign_key "purchases", "suppliers"
+  add_foreign_key "purchases", "users", column: "recorded_by_id"
   add_foreign_key "sale_lines", "items"
   add_foreign_key "sale_lines", "organizations"
   add_foreign_key "sale_lines", "sales"
@@ -499,6 +640,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_31_155848) do
   add_foreign_key "stock_levels", "items"
   add_foreign_key "stock_levels", "organizations"
   add_foreign_key "stock_movements", "branches"
+  add_foreign_key "stock_movements", "inventory_batches"
   add_foreign_key "stock_movements", "items"
   add_foreign_key "stock_movements", "organizations"
   add_foreign_key "stock_movements", "users", column: "recorded_by_id"

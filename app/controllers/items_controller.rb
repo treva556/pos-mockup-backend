@@ -205,7 +205,8 @@ class ItemsController < ApplicationController
       :tax_rate_id,
       :selling_price,
       :purchase_cost,
-      :track_inventory
+      :track_inventory,
+      :tracks_expiry
     )
   end
 end

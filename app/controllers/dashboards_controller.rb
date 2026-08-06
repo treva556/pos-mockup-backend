@@ -7,7 +7,18 @@ class DashboardsController < ApplicationController
     @membership = current_membership
     @branch = current_branch
 
-    @branches_count = @organization.branches.active.count
-    @users_count = @organization.memberships.active.count
+    @branches_count =
+      @organization.branches.active.count
+
+    @users_count =
+      @organization.memberships.active.count
+
+    if @membership&.inventory_view?
+      @expiry_summary =
+        Inventory::ExpirySummary.call(
+          organization: @organization,
+          branch_id: @membership.branch_id
+        )
+    end
   end
 end

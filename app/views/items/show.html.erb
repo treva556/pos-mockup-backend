@@ -88,6 +88,13 @@
       </div>
 
       <div>
+        <dt>Expiry tracking</dt>
+        <dd>
+          <%= @item.tracks_expiry? ? "Enabled" : "Not enabled" %>
+        </dd>
+      </div>
+
+      <div>
         <dt>Inventory tracking</dt>
         <dd>
           <%= @item.stockable? ? "Enabled" : "Disabled" %>
