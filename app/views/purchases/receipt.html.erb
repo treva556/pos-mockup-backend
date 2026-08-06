@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+
+    <title>
+      <%= @purchase.purchase_number %>
+    </title>
+
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 24px;
+        color: #111;
+      }
+
+      header {
+        text-align: center;
+        margin-bottom: 24px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 16px;
+      }
+
+      th,
+      td {
+        border: 1px solid #999;
+        padding: 8px;
+        text-align: left;
+      }
+
+      .totals {
+        margin-top: 20px;
+        margin-left: auto;
+        width: 340px;
+      }
+
+      .totals div {
+        display: flex;
+        justify-content: space-between;
+        padding: 4px 0;
+      }
+
+      .print-actions {
+        margin-bottom: 20px;
+      }
+
+      @media print {
+        .print-actions {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="print-actions">
+      <button type="button"
+              onclick="window.print()">
+        Print
+      </button>
+
+      <%= link_to "Back",
+                  purchase_path(@purchase) %>
+    </div>
+
+    <header>
+      <h1>
+        <%= current_organization.name %>
+      </h1>
+
+      <h2>Goods Received Note</h2>
+
+      <p>
+        <strong>
+          <%= @purchase.purchase_number %>
+        </strong>
+      </p>
+    </header>
+
+    <table>
+      <tbody>
+        <tr>
+          <th>Supplier</th>
+          <td><%= @purchase.supplier.name %></td>
+
+          <th>Branch</th>
+          <td><%= @purchase.branch.name %></td>
+        </tr>
+
+        <tr>
+          <th>Supplier invoice</th>
+          <td>
+            <%= @purchase
+                  .supplier_invoice_number
+                  .presence || "—" %>
+          </td>
+
+          <th>Invoice date</th>
+          <td>
+            <%= @purchase.purchased_on.to_fs(:long) %>
+          </td>
+        </tr>
+
+        <tr>
+          <th>Due date</th>
+          <td>
+            <%= @purchase.due_on&.to_fs(:long) || "—" %>
+          </td>
+
+          <th>Recorded by</th>
+          <td><%= @purchase.recorded_by.name %></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Quantity</th>
+          <th>Unit cost</th>
+          <th>Discount</th>
+          <th>Tax</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <% @purchase.purchase_lines.ordered.each do |line| %>
+          <tr>
+            <td><%= line.item_name %></td>
+
+            <td>
+              <%= number_with_precision(
+                    line.quantity,
+                    precision: 4,
+                    strip_insignificant_zeros: true
+                  ) %>
+              <%= line.unit_symbol %>
+            </td>
+
+            <td>
+              <%= number_to_currency(
+                    line.unit_cost,
+                    unit: "KSh "
+                  ) %>
+            </td>
+
+            <td>
+              <%= number_to_currency(
+                    line.discount_amount,
+                    unit: "KSh "
+                  ) %>
+            </td>
+
+            <td>
+              <%= number_to_currency(
+                    line.tax_amount,
+                    unit: "KSh "
+                  ) %>
+            </td>
+
+            <td>
+              <%= number_to_currency(
+                    line.line_total,
+                    unit: "KSh "
+                  ) %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+
+    <div class="totals">
+      <div>
+        <span>Subtotal</span>
+
+        <span>
+          <%= number_to_currency(
+                @purchase.subtotal,
+                unit: "KSh "
+              ) %>
+        </span>
+      </div>
+
+      <div>
+        <span>Discount</span>
+
+        <span>
+          <%= number_to_currency(
+                @purchase.discount_total,
+                unit: "KSh "
+              ) %>
+        </span>
+      </div>
+
+      <div>
+        <span>Tax included</span>
+
+        <span>
+          <%= number_to_currency(
+                @purchase.tax_total,
+                unit: "KSh "
+              ) %>
+        </span>
+      </div>
+
+      <div>
+        <strong>Total</strong>
+
+        <strong>
+          <%= number_to_currency(
+                @purchase.total,
+                unit: "KSh "
+              ) %>
+        </strong>
+      </div>
+
+      <div>
+        <span>Amount paid</span>
+
+        <span>
+          <%= number_to_currency(
+                @purchase.amount_paid,
+                unit: "KSh "
+              ) %>
+        </span>
+      </div>
+
+      <div>
+        <strong>Balance due</strong>
+
+        <strong>
+          <%= number_to_currency(
+                @purchase.balance_due,
+                unit: "KSh "
+              ) %>
+        </strong>
+      </div>
+    </div>
+
+    <% if @purchase.notes.present? %>
+      <h3>Notes</h3>
+      <p><%= @purchase.notes %></p>
+    <% end %>
+  </body>
+</html>

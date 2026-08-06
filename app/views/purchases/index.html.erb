@@ -1,0 +1,283 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>Purchase History</h1>
+
+      <p>
+        Review supplier purchases, payments and outstanding
+        balances.
+      </p>
+    </div>
+
+    <div class="form-actions">
+      <% if current_membership.supplier_management? %>
+        <%= link_to "Receive Purchase",
+                    new_purchasing_purchase_path,
+                    class: "button button--primary" %>
+      <% end %>
+
+      <%= link_to "Suppliers",
+                  suppliers_path,
+                  class: "button button--secondary" %>
+
+      <%= link_to "Dashboard",
+                  dashboard_path,
+                  class: "button button--secondary" %>
+    </div>
+  </header>
+
+  <div class="panel">
+    <%= form_with url: purchases_path,
+                  method: :get,
+                  local: true do |form| %>
+      <div class="filter-grid">
+        <div class="field">
+          <%= form.label :q, "Search" %>
+
+          <%= form.search_field(
+                :q,
+                value: @query,
+                placeholder:
+                  "Purchase, supplier invoice or supplier"
+              ) %>
+        </div>
+
+        <div class="field">
+          <%= form.label :status,
+                         "Payment status" %>
+
+          <%= form.select(
+                :status,
+                [
+                  ["All purchases", "all"],
+                  ["Outstanding", "outstanding"],
+                  ["Unpaid", "unpaid"],
+                  ["Partially paid", "partially_paid"],
+                  ["Paid", "paid"],
+                  ["Overdue", "overdue"]
+                ],
+                selected: @status
+              ) %>
+        </div>
+
+        <% if @branches.many? %>
+          <div class="field">
+            <%= form.label :branch_id,
+                           "Branch" %>
+
+            <%= form.collection_select(
+                  :branch_id,
+                  @branches,
+                  :id,
+                  :name,
+                  {
+                    include_blank: "All branches",
+                    selected: @branch_id
+                  }
+                ) %>
+          </div>
+        <% end %>
+
+        <div class="field">
+          <%= form.label :supplier_id,
+                         "Supplier" %>
+
+          <%= form.collection_select(
+                :supplier_id,
+                @suppliers,
+                :id,
+                :name,
+                {
+                  include_blank: "All suppliers",
+                  selected: @supplier_id
+                }
+              ) %>
+        </div>
+
+        <div class="field">
+          <%= form.label :date_from,
+                         "From" %>
+
+          <%= form.date_field(
+                :date_from,
+                value: @date_from
+              ) %>
+        </div>
+
+        <div class="field">
+          <%= form.label :date_to,
+                         "To" %>
+
+          <%= form.date_field(
+                :date_to,
+                value: @date_to
+              ) %>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <%= form.submit "Apply Filters",
+                        class: "button button--primary" %>
+
+        <%= link_to "Clear",
+                    purchases_path,
+                    class: "button button--secondary" %>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="panel">
+    <h2>Purchase Summary</h2>
+
+    <dl class="details-list">
+      <div>
+        <dt>Purchases</dt>
+        <dd><%= @purchase_count %></dd>
+      </div>
+
+      <div>
+        <dt>Total purchased</dt>
+        <dd>
+          <%= number_to_currency(
+                @purchase_total,
+                unit: "KSh "
+              ) %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Total paid</dt>
+        <dd>
+          <%= number_to_currency(
+                @amount_paid_total,
+                unit: "KSh "
+              ) %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Outstanding balance</dt>
+        <dd>
+          <strong>
+            <%= number_to_currency(
+                  @balance_due_total,
+                  unit: "KSh "
+                ) %>
+          </strong>
+        </dd>
+      </div>
+    </dl>
+  </div>
+
+  <div class="panel">
+    <% if @purchases.any? %>
+      <table>
+        <thead>
+          <tr>
+            <th>Purchase</th>
+            <th>Supplier</th>
+            <th>Supplier invoice</th>
+            <th>Branch</th>
+            <th>Invoice date</th>
+            <th>Due date</th>
+            <th>Total</th>
+            <th>Paid</th>
+            <th>Balance</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% @purchases.each do |purchase| %>
+            <tr>
+              <td>
+                <%= link_to purchase.purchase_number,
+                            purchase_path(purchase) %>
+              </td>
+
+              <td>
+                <%= link_to purchase.supplier.name,
+                            supplier_account_path(
+                              purchase.supplier
+                            ) %>
+              </td>
+
+              <td>
+                <%= purchase
+                      .supplier_invoice_number
+                      .presence || "—" %>
+              </td>
+
+              <td><%= purchase.branch.name %></td>
+
+              <td>
+                <%= purchase.purchased_on.to_fs(:long) %>
+              </td>
+
+              <td>
+                <%= purchase.due_on&.to_fs(:long) || "—" %>
+              </td>
+
+              <td>
+                <%= number_to_currency(
+                      purchase.total,
+                      unit: "KSh "
+                    ) %>
+              </td>
+
+              <td>
+                <%= number_to_currency(
+                      purchase.amount_paid,
+                      unit: "KSh "
+                    ) %>
+              </td>
+
+              <td>
+                <strong>
+                  <%= number_to_currency(
+                        purchase.balance_due,
+                        unit: "KSh "
+                      ) %>
+                </strong>
+              </td>
+
+              <td>
+                <% if purchase.overdue? %>
+                  <strong>Overdue</strong>
+                <% else %>
+                  <%= purchase.payment_status.titleize %>
+                <% end %>
+              </td>
+
+              <td>
+                <%= link_to "View",
+                            purchase_path(purchase) %>
+
+                <br>
+
+                <%= link_to "Print",
+                            receipt_purchase_path(purchase),
+                            target: "_blank",
+                            rel: "noopener" %>
+
+                <% if purchase.outstanding? &&
+                      current_membership
+                        .supplier_payment_management? %>
+                  <br>
+
+                  <%= link_to "Record payment",
+                              new_purchase_payment_path(
+                                purchase
+                              ) %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p>No purchases match the selected filters.</p>
+    <% end %>
+  </div>
+</section>

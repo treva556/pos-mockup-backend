@@ -114,8 +114,12 @@ Rails.application.routes.draw do
                 param: :item_id
    end
 
-    resources :purchases,
-                only: :show do
+   resources :purchases,
+                only: %i[index show] do
+        member do
+        get :receipt
+   end
+
         resources :payments,
                 only: %i[new create],
                 controller: "purchase_payments"

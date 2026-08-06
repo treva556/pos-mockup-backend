@@ -240,6 +240,24 @@
         </div>
       </div>
 
+      <% if current_membership.supplier_account_view? %>
+        <%= link_to "Purchase History",
+                    purchases_path,
+                    class: "button button--secondary" %>
+
+        <%= link_to "Outstanding Supplier Balances",
+                    purchases_path(
+                      status: "outstanding"
+                    ),
+                    class: "button button--secondary" %>
+
+        <%= link_to "Overdue Supplier Balances",
+                    purchases_path(
+                      status: "overdue"
+                    ),
+                    class: "button button--secondary" %>
+      <% end %>
+
       <div class="form-actions">
         <%= link_to "Opening Stock / Adjustment",
                     new_inventory_adjustment_path,

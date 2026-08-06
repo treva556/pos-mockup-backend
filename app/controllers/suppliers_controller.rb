@@ -12,7 +12,9 @@ class SuppliersController < ApplicationController
                 ]
 
   def index
-    @query = params[:q].to_s.strip
+    @query =
+      params[:q].to_s.strip
+
     @status =
       params[:status].presence_in(
         %w[active inactive all]
@@ -21,34 +23,35 @@ class SuppliersController < ApplicationController
     @suppliers =
       current_organization
         .suppliers
-        .alphabetical
+        .order(:name)
+
+    if @query.present?
+      pattern =
+        "%#{ActiveRecord::Base.sanitize_sql_like(@query)}%"
+
+      @suppliers =
+        @suppliers.where(
+          <<~SQL.squish,
+            suppliers.name ILIKE :pattern OR
+            suppliers.phone ILIKE :pattern OR
+            suppliers.email ILIKE :pattern OR
+            suppliers.kra_pin ILIKE :pattern
+          SQL
+          pattern: pattern
+        )
+    end
 
     @suppliers =
       case @status
+      when "active"
+        @suppliers.where(active: true)
       when "inactive"
         @suppliers.where(active: false)
-      when "all"
-        @suppliers
       else
-        @suppliers.active
+        @suppliers
       end
 
-    return if @query.blank?
-
-    pattern =
-      "%#{ActiveRecord::Base.sanitize_sql_like(@query)}%"
-
-    @suppliers =
-      @suppliers.where(
-        <<~SQL.squish,
-          suppliers.name ILIKE :pattern OR
-          suppliers.contact_person ILIKE :pattern OR
-          suppliers.phone ILIKE :pattern OR
-          suppliers.email ILIKE :pattern OR
-          suppliers.kra_pin ILIKE :pattern
-        SQL
-        pattern: pattern
-      )
+    load_supplier_balances
   end
 
   def show
@@ -128,5 +131,36 @@ class SuppliersController < ApplicationController
       :notes,
       :payment_terms_days
     )
+  end
+
+  def load_supplier_balances
+    supplier_ids =
+      @suppliers.pluck(:id)
+
+    if supplier_ids.empty?
+      @supplier_outstanding = {}
+      @supplier_overdue = {}
+      return
+    end
+
+    purchases =
+      current_organization
+        .purchases
+        .received
+        .where(
+          supplier_id: supplier_ids
+        )
+
+    @supplier_outstanding =
+      purchases
+        .group(:supplier_id)
+        .sum(:balance_due)
+
+    @supplier_overdue =
+      purchases
+        .where("balance_due > 0")
+        .where("due_on < ?", Date.current)
+        .group(:supplier_id)
+        .sum(:balance_due)
   end
 end

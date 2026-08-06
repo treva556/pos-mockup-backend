@@ -73,6 +73,12 @@ class Purchase < ApplicationRecord
     balance_due.to_d.positive?
   end
 
+  def overdue?(on = Date.current)
+    outstanding? &&
+        due_on.present? &&
+        due_on < on
+  end
+
   private
 
   def relationships_share_organization
