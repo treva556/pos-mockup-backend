@@ -8,6 +8,9 @@ class PurchaseLine < ApplicationRecord
   has_one :inventory_batch,
         dependent: :restrict_with_error
 
+  has_many :purchase_return_lines,
+         dependent: :restrict_with_error
+
   validates :line_number,
             numericality: {
               only_integer: true,
@@ -44,6 +47,37 @@ class PurchaseLine < ApplicationRecord
 
   scope :ordered,
         -> { order(:line_number) }
+  def returned_quantity(excluding_return: nil)
+    relation =
+      purchase_return_lines
+        .joins(:purchase_return)
+        .where(
+          purchase_returns: {
+            status: "completed"
+          }
+        )
+
+    if excluding_return&.persisted?
+      relation =
+        relation.where.not(
+          purchase_returns: {
+            id: excluding_return.id
+          }
+        )
+    end
+
+    relation.sum(:quantity).to_d
+  end
+
+  def returnable_quantity(excluding_return: nil)
+    [
+      quantity.to_d -
+        returned_quantity(
+          excluding_return: excluding_return
+        ),
+      0.to_d
+    ].max
+  end
 
   private
 

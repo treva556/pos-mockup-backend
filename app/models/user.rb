@@ -38,6 +38,30 @@ class User < ApplicationRecord
             inverse_of: :recorded_by,
             dependent: :restrict_with_error
 
+  has_many :recorded_sale_returns,
+         class_name: "SaleReturn",
+         foreign_key: :recorded_by_id,
+         inverse_of: :recorded_by,
+         dependent: :restrict_with_error
+
+  has_many :recorded_purchase_returns,
+            class_name: "PurchaseReturn",
+            foreign_key: :recorded_by_id,
+            inverse_of: :recorded_by,
+            dependent: :restrict_with_error
+
+   has_many :recorded_customer_refunds,
+            class_name: "CustomerRefund",
+            foreign_key: :recorded_by_id,
+            inverse_of: :recorded_by,
+            dependent: :restrict_with_error
+
+   has_many :recorded_supplier_credits,
+            class_name: "SupplierCredit",
+            foreign_key: :recorded_by_id,
+            inverse_of: :recorded_by,
+            dependent: :restrict_with_error
+
   enum :platform_role, {
     regular: "regular",
     support: "support",

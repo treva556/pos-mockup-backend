@@ -192,6 +192,54 @@ end
                   "Your role cannot view sales records."
   end
 
+  def require_sales_return_view!
+    return if current_membership&.sales_return_view?
+
+    redirect_to dashboard_path,
+                alert:
+                  "Your role cannot view sales returns."
+  end
+
+  def require_sales_return_management!
+    return if current_membership&.sales_return_management?
+
+    redirect_to dashboard_path,
+                alert:
+                  "Your role cannot process sales returns."
+  end
+
+  def require_customer_refund_management!
+    return if current_membership&.customer_refund_management?
+
+    redirect_to dashboard_path,
+                alert:
+                  "Your role cannot issue customer refunds."
+  end
+
+  def require_purchase_return_view!
+    return if current_membership&.purchase_return_view?
+
+    redirect_to dashboard_path,
+                alert:
+                  "Your role cannot view purchase returns."
+  end
+
+  def require_purchase_return_management!
+    return if current_membership&.purchase_return_management?
+
+    redirect_to dashboard_path,
+                alert:
+                  "Your role cannot process purchase returns."
+  end
+
+  def require_supplier_credit_management!
+    return if current_membership&.supplier_credit_management?
+
+    redirect_to dashboard_path,
+                alert:
+                  "Your role cannot manage supplier credits."
+  end
+
   def require_supplier_management!
     return if current_membership&.supplier_management?
 

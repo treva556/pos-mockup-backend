@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_05_182908) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_06_225728) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -38,7 +38,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_05_182908) do
     t.string "email"
     t.boolean "main", default: false, null: false
     t.string "name", null: false
+    t.integer "next_purchase_return_sequence", default: 1, null: false
     t.bigint "next_purchase_sequence", default: 1, null: false
+    t.integer "next_sale_return_sequence", default: 1, null: false
     t.bigint "next_sale_sequence", default: 1, null: false
     t.bigint "organization_id", null: false
     t.string "phone"
@@ -46,8 +48,33 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_05_182908) do
     t.index ["organization_id", "code"], name: "index_branches_on_organization_id_and_code", unique: true
     t.index ["organization_id"], name: "index_branches_on_one_main_per_organization", unique: true, where: "(main = true)"
     t.index ["organization_id"], name: "index_branches_on_organization_id"
+    t.check_constraint "next_purchase_return_sequence > 0", name: "branches_purchase_return_sequence_positive"
     t.check_constraint "next_purchase_sequence > 0", name: "branches_next_purchase_sequence_positive"
+    t.check_constraint "next_sale_return_sequence > 0", name: "branches_sale_return_sequence_positive"
     t.check_constraint "next_sale_sequence > 0", name: "branches_positive_sale_sequence"
+  end
+
+  create_table "customer_refunds", force: :cascade do |t|
+    t.decimal "amount", precision: 15, scale: 2, null: false
+    t.datetime "created_at", null: false
+    t.bigint "money_account_id", null: false
+    t.text "notes"
+    t.bigint "organization_id", null: false
+    t.bigint "payment_method_id", null: false
+    t.bigint "recorded_by_id", null: false
+    t.string "reference"
+    t.datetime "refunded_at", null: false
+    t.bigint "sale_return_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["money_account_id"], name: "index_customer_refunds_on_money_account_id"
+    t.index ["organization_id", "money_account_id"], name: "index_customer_refunds_on_org_and_account"
+    t.index ["organization_id", "refunded_at"], name: "index_customer_refunds_on_org_and_time"
+    t.index ["organization_id"], name: "index_customer_refunds_on_organization_id"
+    t.index ["payment_method_id"], name: "index_customer_refunds_on_payment_method_id"
+    t.index ["recorded_by_id"], name: "index_customer_refunds_on_recorded_by_id"
+    t.index ["sale_return_id", "refunded_at"], name: "index_customer_refunds_on_return_and_time"
+    t.index ["sale_return_id"], name: "index_customer_refunds_on_sale_return_id"
+    t.check_constraint "amount > 0::numeric", name: "customer_refunds_amount_positive"
   end
 
   create_table "customers", force: :cascade do |t|
@@ -291,6 +318,80 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_05_182908) do
     t.check_constraint "amount > 0::numeric", name: "purchase_payments_amount_positive"
   end
 
+  create_table "purchase_return_lines", force: :cascade do |t|
+    t.string "barcode"
+    t.datetime "created_at", null: false
+    t.decimal "discount_amount", precision: 15, scale: 2, default: "0.0", null: false
+    t.decimal "gross_amount", precision: 15, scale: 2, null: false
+    t.bigint "inventory_batch_id"
+    t.bigint "item_id", null: false
+    t.string "item_name", null: false
+    t.string "item_type", null: false
+    t.integer "line_number", null: false
+    t.decimal "line_total", precision: 15, scale: 2, null: false
+    t.text "notes"
+    t.bigint "organization_id", null: false
+    t.bigint "purchase_line_id", null: false
+    t.bigint "purchase_return_id", null: false
+    t.decimal "quantity", precision: 15, scale: 4, null: false
+    t.string "reason_code"
+    t.string "sku"
+    t.decimal "tax_amount", precision: 15, scale: 2, default: "0.0", null: false
+    t.decimal "tax_percentage", precision: 7, scale: 4, default: "0.0", null: false
+    t.decimal "unit_cost", precision: 15, scale: 2, null: false
+    t.string "unit_name", null: false
+    t.string "unit_symbol", null: false
+    t.datetime "updated_at", null: false
+    t.index ["inventory_batch_id"], name: "index_purchase_return_lines_on_inventory_batch_id"
+    t.index ["item_id"], name: "index_purchase_return_lines_on_item_id"
+    t.index ["organization_id", "item_id"], name: "index_purchase_return_lines_on_org_and_item"
+    t.index ["organization_id"], name: "index_purchase_return_lines_on_organization_id"
+    t.index ["purchase_line_id", "inventory_batch_id"], name: "index_purchase_return_lines_on_source_and_batch"
+    t.index ["purchase_line_id"], name: "index_purchase_return_lines_on_purchase_line_id"
+    t.index ["purchase_return_id", "line_number"], name: "index_purchase_return_lines_on_return_and_line", unique: true
+    t.index ["purchase_return_id"], name: "index_purchase_return_lines_on_purchase_return_id"
+    t.check_constraint "discount_amount <= gross_amount", name: "purchase_return_lines_discount_within_gross"
+    t.check_constraint "item_type::text = ANY (ARRAY['product'::character varying, 'service'::character varying]::text[])", name: "purchase_return_lines_item_type_valid"
+    t.check_constraint "line_number > 0", name: "purchase_return_lines_line_number_positive"
+    t.check_constraint "line_total <= gross_amount", name: "purchase_return_lines_total_within_gross"
+    t.check_constraint "quantity > 0::numeric", name: "purchase_return_lines_quantity_positive"
+    t.check_constraint "tax_amount <= line_total", name: "purchase_return_lines_tax_within_total"
+    t.check_constraint "unit_cost >= 0::numeric AND gross_amount >= 0::numeric AND discount_amount >= 0::numeric AND tax_percentage >= 0::numeric AND tax_amount >= 0::numeric AND line_total >= 0::numeric", name: "purchase_return_lines_amounts_nonnegative"
+  end
+
+  create_table "purchase_returns", force: :cascade do |t|
+    t.bigint "branch_id", null: false
+    t.datetime "created_at", null: false
+    t.decimal "discount_total", precision: 15, scale: 2, default: "0.0", null: false
+    t.text "notes"
+    t.bigint "organization_id", null: false
+    t.bigint "purchase_id", null: false
+    t.string "reason_code", default: "other", null: false
+    t.text "reason_details"
+    t.bigint "recorded_by_id", null: false
+    t.string "return_number", null: false
+    t.datetime "returned_at"
+    t.string "status", default: "draft", null: false
+    t.decimal "subtotal", precision: 15, scale: 2, default: "0.0", null: false
+    t.string "supplier_document_number"
+    t.decimal "tax_total", precision: 15, scale: 2, default: "0.0", null: false
+    t.decimal "total", precision: 15, scale: 2, default: "0.0", null: false
+    t.datetime "updated_at", null: false
+    t.index ["branch_id", "returned_at"], name: "index_purchase_returns_on_branch_and_time"
+    t.index ["branch_id"], name: "index_purchase_returns_on_branch_id"
+    t.index ["organization_id", "return_number"], name: "index_purchase_returns_on_org_and_number", unique: true
+    t.index ["organization_id", "status"], name: "index_purchase_returns_on_org_and_status"
+    t.index ["organization_id"], name: "index_purchase_returns_on_organization_id"
+    t.index ["purchase_id", "returned_at"], name: "index_purchase_returns_on_purchase_and_time"
+    t.index ["purchase_id"], name: "index_purchase_returns_on_purchase_id"
+    t.index ["recorded_by_id"], name: "index_purchase_returns_on_recorded_by_id"
+    t.check_constraint "discount_total <= subtotal", name: "purchase_returns_discount_within_subtotal"
+    t.check_constraint "status::text <> 'completed'::text OR returned_at IS NOT NULL", name: "purchase_returns_completed_has_time"
+    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying, 'completed'::character varying, 'cancelled'::character varying]::text[])", name: "purchase_returns_status_valid"
+    t.check_constraint "subtotal >= 0::numeric AND discount_total >= 0::numeric AND tax_total >= 0::numeric AND total >= 0::numeric", name: "purchase_returns_amounts_nonnegative"
+    t.check_constraint "tax_total <= total", name: "purchase_returns_tax_within_total"
+  end
+
   create_table "purchases", force: :cascade do |t|
     t.decimal "amount_paid", precision: 15, scale: 2, default: "0.0", null: false
     t.decimal "balance_due", precision: 15, scale: 2, default: "0.0", null: false
@@ -401,6 +502,82 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_05_182908) do
     t.check_constraint "amount_tendered >= amount", name: "sale_payments_tendered_covers_amount"
     t.check_constraint "change_given = (amount_tendered - amount)", name: "sale_payments_change_matches_tendered"
     t.check_constraint "change_given >= 0::numeric", name: "sale_payments_nonnegative_change"
+  end
+
+  create_table "sale_return_lines", force: :cascade do |t|
+    t.string "barcode"
+    t.datetime "created_at", null: false
+    t.decimal "discount_amount", precision: 15, scale: 2, default: "0.0", null: false
+    t.decimal "gross_amount", precision: 15, scale: 2, null: false
+    t.bigint "inventory_batch_id"
+    t.bigint "item_id", null: false
+    t.string "item_name", null: false
+    t.string "item_type", null: false
+    t.integer "line_number", null: false
+    t.decimal "line_total", precision: 15, scale: 2, null: false
+    t.text "notes"
+    t.bigint "organization_id", null: false
+    t.decimal "quantity", precision: 15, scale: 4, null: false
+    t.string "reason_code"
+    t.bigint "sale_line_id", null: false
+    t.bigint "sale_return_id", null: false
+    t.string "sku"
+    t.string "stock_disposition", default: "not_applicable", null: false
+    t.decimal "tax_amount", precision: 15, scale: 2, default: "0.0", null: false
+    t.decimal "tax_rate_percentage", precision: 7, scale: 4, default: "0.0", null: false
+    t.decimal "unit_cost", precision: 15, scale: 2, default: "0.0", null: false
+    t.string "unit_name", null: false
+    t.decimal "unit_price", precision: 15, scale: 2, null: false
+    t.string "unit_symbol", null: false
+    t.datetime "updated_at", null: false
+    t.index ["inventory_batch_id"], name: "index_sale_return_lines_on_inventory_batch_id"
+    t.index ["item_id"], name: "index_sale_return_lines_on_item_id"
+    t.index ["organization_id", "item_id"], name: "index_sale_return_lines_on_org_and_item"
+    t.index ["organization_id"], name: "index_sale_return_lines_on_organization_id"
+    t.index ["sale_line_id", "inventory_batch_id"], name: "index_sale_return_lines_on_source_and_batch"
+    t.index ["sale_line_id"], name: "index_sale_return_lines_on_sale_line_id"
+    t.index ["sale_return_id", "line_number"], name: "index_sale_return_lines_on_return_and_line", unique: true
+    t.index ["sale_return_id"], name: "index_sale_return_lines_on_sale_return_id"
+    t.check_constraint "discount_amount <= gross_amount", name: "sale_return_lines_discount_within_gross"
+    t.check_constraint "item_type::text = ANY (ARRAY['product'::character varying, 'service'::character varying]::text[])", name: "sale_return_lines_item_type_valid"
+    t.check_constraint "line_number > 0", name: "sale_return_lines_line_number_positive"
+    t.check_constraint "line_total <= gross_amount", name: "sale_return_lines_total_within_gross"
+    t.check_constraint "quantity > 0::numeric", name: "sale_return_lines_quantity_positive"
+    t.check_constraint "stock_disposition::text = ANY (ARRAY['restock'::character varying, 'quarantine'::character varying, 'damaged'::character varying, 'expired'::character varying, 'not_applicable'::character varying]::text[])", name: "sale_return_lines_disposition_valid"
+    t.check_constraint "tax_amount <= line_total", name: "sale_return_lines_tax_within_total"
+    t.check_constraint "unit_price >= 0::numeric AND unit_cost >= 0::numeric AND gross_amount >= 0::numeric AND discount_amount >= 0::numeric AND tax_rate_percentage >= 0::numeric AND tax_amount >= 0::numeric AND line_total >= 0::numeric", name: "sale_return_lines_amounts_nonnegative"
+  end
+
+  create_table "sale_returns", force: :cascade do |t|
+    t.bigint "branch_id", null: false
+    t.datetime "created_at", null: false
+    t.decimal "discount_total", precision: 15, scale: 2, default: "0.0", null: false
+    t.text "notes"
+    t.bigint "organization_id", null: false
+    t.string "reason_code", default: "other", null: false
+    t.text "reason_details"
+    t.bigint "recorded_by_id", null: false
+    t.string "return_number", null: false
+    t.datetime "returned_at"
+    t.bigint "sale_id", null: false
+    t.string "status", default: "draft", null: false
+    t.decimal "subtotal", precision: 15, scale: 2, default: "0.0", null: false
+    t.decimal "tax_total", precision: 15, scale: 2, default: "0.0", null: false
+    t.decimal "total", precision: 15, scale: 2, default: "0.0", null: false
+    t.datetime "updated_at", null: false
+    t.index ["branch_id", "returned_at"], name: "index_sale_returns_on_branch_and_time"
+    t.index ["branch_id"], name: "index_sale_returns_on_branch_id"
+    t.index ["organization_id", "return_number"], name: "index_sale_returns_on_org_and_number", unique: true
+    t.index ["organization_id", "status"], name: "index_sale_returns_on_org_and_status"
+    t.index ["organization_id"], name: "index_sale_returns_on_organization_id"
+    t.index ["recorded_by_id"], name: "index_sale_returns_on_recorded_by_id"
+    t.index ["sale_id", "returned_at"], name: "index_sale_returns_on_sale_and_time"
+    t.index ["sale_id"], name: "index_sale_returns_on_sale_id"
+    t.check_constraint "discount_total <= subtotal", name: "sale_returns_discount_within_subtotal"
+    t.check_constraint "status::text <> 'completed'::text OR returned_at IS NOT NULL", name: "sale_returns_completed_has_time"
+    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying, 'completed'::character varying, 'cancelled'::character varying]::text[])", name: "sale_returns_status_valid"
+    t.check_constraint "subtotal >= 0::numeric AND discount_total >= 0::numeric AND tax_total >= 0::numeric AND total >= 0::numeric", name: "sale_returns_amounts_nonnegative"
+    t.check_constraint "tax_total <= total", name: "sale_returns_tax_within_total"
   end
 
   create_table "sales", force: :cascade do |t|
@@ -524,6 +701,29 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_05_182908) do
     t.check_constraint "quantity > 0::numeric", name: "stock_transfers_positive_quantity"
   end
 
+  create_table "supplier_credits", force: :cascade do |t|
+    t.decimal "amount", precision: 15, scale: 2, null: false
+    t.decimal "applied_amount", precision: 15, scale: 2, default: "0.0", null: false
+    t.datetime "created_at", null: false
+    t.string "credit_number"
+    t.date "issued_on"
+    t.text "notes"
+    t.bigint "organization_id", null: false
+    t.bigint "purchase_return_id", null: false
+    t.bigint "recorded_by_id", null: false
+    t.string "status", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.index ["organization_id", "credit_number"], name: "index_supplier_credits_on_org_and_number", unique: true, where: "((credit_number IS NOT NULL) AND ((credit_number)::text <> ''::text))"
+    t.index ["organization_id", "status"], name: "index_supplier_credits_on_org_and_status"
+    t.index ["organization_id"], name: "index_supplier_credits_on_organization_id"
+    t.index ["purchase_return_id", "issued_on"], name: "index_supplier_credits_on_return_and_date"
+    t.index ["purchase_return_id"], name: "index_supplier_credits_on_purchase_return_id"
+    t.index ["recorded_by_id"], name: "index_supplier_credits_on_recorded_by_id"
+    t.check_constraint "amount > 0::numeric", name: "supplier_credits_amount_positive"
+    t.check_constraint "applied_amount >= 0::numeric AND applied_amount <= amount", name: "supplier_credits_applied_amount_valid"
+    t.check_constraint "status::text = ANY (ARRAY['pending'::character varying, 'available'::character varying, 'partially_applied'::character varying, 'applied'::character varying, 'cancelled'::character varying]::text[])", name: "supplier_credits_status_valid"
+  end
+
   create_table "suppliers", force: :cascade do |t|
     t.boolean "active", default: true, null: false
     t.text "address"
@@ -590,6 +790,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_05_182908) do
   add_foreign_key "branch_payment_settings", "organizations"
   add_foreign_key "branch_payment_settings", "payment_methods"
   add_foreign_key "branches", "organizations"
+  add_foreign_key "customer_refunds", "money_accounts"
+  add_foreign_key "customer_refunds", "organizations"
+  add_foreign_key "customer_refunds", "payment_methods"
+  add_foreign_key "customer_refunds", "sale_returns"
+  add_foreign_key "customer_refunds", "users", column: "recorded_by_id"
   add_foreign_key "customers", "organizations"
   add_foreign_key "inventory_batches", "branches"
   add_foreign_key "inventory_batches", "items"
@@ -619,6 +824,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_05_182908) do
   add_foreign_key "purchase_payments", "payment_methods"
   add_foreign_key "purchase_payments", "purchases"
   add_foreign_key "purchase_payments", "users", column: "recorded_by_id"
+  add_foreign_key "purchase_return_lines", "inventory_batches"
+  add_foreign_key "purchase_return_lines", "items"
+  add_foreign_key "purchase_return_lines", "organizations"
+  add_foreign_key "purchase_return_lines", "purchase_lines"
+  add_foreign_key "purchase_return_lines", "purchase_returns"
+  add_foreign_key "purchase_returns", "branches"
+  add_foreign_key "purchase_returns", "organizations"
+  add_foreign_key "purchase_returns", "purchases"
+  add_foreign_key "purchase_returns", "users", column: "recorded_by_id"
   add_foreign_key "purchases", "branches"
   add_foreign_key "purchases", "organizations"
   add_foreign_key "purchases", "suppliers"
@@ -632,6 +846,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_05_182908) do
   add_foreign_key "sale_payments", "payment_methods"
   add_foreign_key "sale_payments", "sales"
   add_foreign_key "sale_payments", "users", column: "recorded_by_id"
+  add_foreign_key "sale_return_lines", "inventory_batches"
+  add_foreign_key "sale_return_lines", "items"
+  add_foreign_key "sale_return_lines", "organizations"
+  add_foreign_key "sale_return_lines", "sale_lines"
+  add_foreign_key "sale_return_lines", "sale_returns"
+  add_foreign_key "sale_returns", "branches"
+  add_foreign_key "sale_returns", "organizations"
+  add_foreign_key "sale_returns", "sales"
+  add_foreign_key "sale_returns", "users", column: "recorded_by_id"
   add_foreign_key "sales", "branches"
   add_foreign_key "sales", "customers"
   add_foreign_key "sales", "organizations"
@@ -649,6 +872,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_05_182908) do
   add_foreign_key "stock_transfers", "items"
   add_foreign_key "stock_transfers", "organizations"
   add_foreign_key "stock_transfers", "users", column: "recorded_by_id"
+  add_foreign_key "supplier_credits", "organizations"
+  add_foreign_key "supplier_credits", "purchase_returns"
+  add_foreign_key "supplier_credits", "users", column: "recorded_by_id"
   add_foreign_key "suppliers", "organizations"
   add_foreign_key "tax_rates", "organizations"
   add_foreign_key "unit_of_measures", "organizations"

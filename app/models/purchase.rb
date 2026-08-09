@@ -17,6 +17,9 @@ class Purchase < ApplicationRecord
            as: :source,
            dependent: :restrict_with_error
 
+  has_many :purchase_returns,
+           dependent: :restrict_with_error
+
   enum :status,
        {
          draft: "draft",

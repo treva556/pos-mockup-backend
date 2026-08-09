@@ -29,6 +29,9 @@ class Sale < ApplicationRecord
          as: :source,
          dependent: :restrict_with_error
 
+  has_many :sale_returns,
+         dependent: :restrict_with_error
+
   enum :status,
        STATUSES,
        validate: true

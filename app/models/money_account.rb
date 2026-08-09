@@ -23,6 +23,9 @@ class MoneyAccount < ApplicationRecord
   has_many :purchase_payments,
             dependent: :restrict_with_error
 
+  has_many :customer_refunds,
+            dependent: :restrict_with_error
+
   enum :account_type, {
     cash: "cash",
     petty_cash: "petty_cash",

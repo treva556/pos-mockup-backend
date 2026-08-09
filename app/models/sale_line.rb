@@ -9,6 +9,9 @@ class SaleLine < ApplicationRecord
   belongs_to :item
   belongs_to :tax_rate, optional: true
 
+  has_many :sale_return_lines,
+         dependent: :restrict_with_error
+
   validates :line_number,
             numericality: {
               only_integer: true,
@@ -60,6 +63,38 @@ class SaleLine < ApplicationRecord
 
   scope :ordered,
         -> { order(:line_number) }
+
+  def returned_quantity(excluding_return: nil)
+    relation =
+      sale_return_lines
+        .joins(:sale_return)
+        .where(
+          sale_returns: {
+            status: "completed"
+          }
+        )
+
+    if excluding_return&.persisted?
+      relation =
+        relation.where.not(
+          sale_returns: {
+            id: excluding_return.id
+          }
+        )
+    end
+
+    relation.sum(:quantity).to_d
+  end
+
+  def returnable_quantity(excluding_return: nil)
+    [
+      quantity.to_d -
+        returned_quantity(
+          excluding_return: excluding_return
+        ),
+      0.to_d
+    ].max
+  end
 
   private
 
