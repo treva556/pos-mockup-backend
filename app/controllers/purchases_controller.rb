@@ -185,56 +185,53 @@ class PurchasesController < ApplicationController
     apply_status_filter(scope)
   end
 
-  def apply_status_filter(scope)
-    case @status
-    when "outstanding"
-      scope.where(
-        "#{effective_balance_sql} > 0"
-      )
-    when "unpaid"
-      scope.where(
-        payment_status: "unpaid"
-      )
-    when "partially_paid"
-      scope.where(
-        payment_status: "partially_paid"
-      )
-    when "paid"
-      scope.where(
-        payment_status: "paid"
-      )
-    when "overdue"
+def apply_status_filter(scope)
+  case @status
+  when "outstanding"
+    with_outstanding_effective_balance(
       scope
-        .where(
-          "#{effective_balance_sql} > 0"
-        )
-        .where(
-          "purchases.due_on < ?",
-          Date.current
-        )
-    else
+    )
+  when "unpaid"
+    scope.where(
+      payment_status: "unpaid"
+    )
+  when "partially_paid"
+    scope.where(
+      payment_status: "partially_paid"
+    )
+  when "paid"
+    scope.where(
+      payment_status: "paid"
+    )
+  when "overdue"
+    with_outstanding_effective_balance(
       scope
-    end
+    ).where(
+      "purchases.due_on < ?",
+      Date.current
+    )
+  else
+    scope
   end
+end
 
-  def effective_balance_sql
+def with_outstanding_effective_balance(scope)
+  scope.where(
     <<~SQL.squish
-      GREATEST(
-        purchases.balance_due -
-        COALESCE(
-          (
-            SELECT SUM(purchase_returns.total)
-            FROM purchase_returns
-            WHERE purchase_returns.purchase_id =
-                  purchases.id
-              AND purchase_returns.status = 'completed'
-          ),
-          0
+      purchases.balance_due >
+      COALESCE(
+        (
+          SELECT SUM(purchase_returns.total)
+          FROM purchase_returns
+          WHERE purchase_returns.purchase_id =
+                purchases.id
+            AND purchase_returns.status = 'completed'
         ),
         0
       )
     SQL
-  end
+  )
+end
 
   def available_branches
     scope =
