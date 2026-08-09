@@ -86,17 +86,55 @@ class PurchaseReturn < ApplicationRecord
 
   def supplier_credit_total
     supplier_credits
-      .where.not(status: "cancelled")
-      .sum(:amount)
-      .to_d
+        .where.not(status: "cancelled")
+        .sum(:amount)
+        .to_d
   end
 
-  def uncredited_balance
+    def prior_completed_return_total
+    return 0.to_d unless persisted?
+
+    purchase
+        .purchase_returns
+        .completed
+        .where("id < ?", id)
+        .sum(:total)
+        .to_d
+    end
+
+    def debt_offset_amount
+    return 0.to_d unless completed?
+
+    payable_before_this_return =
+        [
+        purchase.balance_due.to_d -
+            prior_completed_return_total,
+        0.to_d
+        ].max
+
     [
-      total.to_d - supplier_credit_total,
-      0.to_d
+        total.to_d,
+        payable_before_this_return
+    ].min
+    end
+
+    def supplier_credit_due
+    return 0.to_d unless completed?
+
+    [
+        total.to_d -
+        debt_offset_amount,
+        0.to_d
     ].max
-  end
+    end
+
+    def uncredited_balance
+    [
+        supplier_credit_due -
+        supplier_credit_total,
+        0.to_d
+    ].max
+    end
 
   private
 

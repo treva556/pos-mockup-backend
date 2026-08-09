@@ -62,7 +62,7 @@ class Purchase < ApplicationRecord
   validate :due_date_is_valid
 
   scope :recent_first,
-        -> {
+        lambda {
           order(
             purchased_on: :desc,
             created_at: :desc
@@ -72,14 +72,38 @@ class Purchase < ApplicationRecord
   scope :with_outstanding_balance,
         -> { where("balance_due > 0") }
 
+  def completed_return_total
+    purchase_returns
+      .completed
+      .sum(:total)
+      .to_d
+  end
+
+  def effective_balance_due
+    [
+      balance_due.to_d -
+        completed_return_total,
+      0.to_d
+    ].max
+  end
+
+  def supplier_credit_due
+    [
+      completed_return_total -
+        balance_due.to_d,
+      0.to_d
+    ].max
+  end
+
   def outstanding?
-    balance_due.to_d.positive?
+    effective_balance_due.positive?
   end
 
   def overdue?(on = Date.current)
-    outstanding? &&
-        due_on.present? &&
-        due_on < on
+    received? &&
+      outstanding? &&
+      due_on.present? &&
+      due_on < on
   end
 
   private
