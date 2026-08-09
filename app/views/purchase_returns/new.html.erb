@@ -1,0 +1,326 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>Return Items to Supplier</h1>
+
+      <p>
+        Purchase
+        <strong>
+          <%= @purchase.purchase_number %>
+        </strong>
+        ·
+        <%= @purchase.supplier.name %>
+      </p>
+    </div>
+
+    <div class="form-actions">
+      <%= link_to "Back to Purchase",
+                  purchase_path(@purchase),
+                  class: "button button--secondary" %>
+    </div>
+  </header>
+
+  <% if @error_message.present? %>
+    <div class="alert alert--danger">
+      <%= @error_message %>
+    </div>
+  <% end %>
+
+  <div class="panel">
+    <h2>Original Purchase</h2>
+
+    <dl class="details-list">
+      <div>
+        <dt>Purchase number</dt>
+        <dd><%= @purchase.purchase_number %></dd>
+      </div>
+
+      <div>
+        <dt>Supplier</dt>
+        <dd><%= @purchase.supplier.name %></dd>
+      </div>
+
+      <div>
+        <dt>Supplier invoice</dt>
+        <dd>
+          <%= @purchase
+                .supplier_invoice_number
+                .presence || "—" %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Branch</dt>
+        <dd><%= @purchase.branch.name %></dd>
+      </div>
+
+      <div>
+        <dt>Original total</dt>
+        <dd>
+          <%= number_to_currency(
+                @purchase.total,
+                unit: "KSh "
+              ) %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Already returned</dt>
+        <dd>
+          <%= number_to_currency(
+                @purchase.completed_return_total,
+                unit: "KSh "
+              ) %>
+        </dd>
+      </div>
+    </dl>
+  </div>
+
+  <% if @returnable_lines.any? %>
+    <%= form_with url:
+          purchase_returns_path(@purchase),
+          scope: :purchase_return,
+          method: :post do |form| %>
+
+      <div class="panel">
+        <h2>Select Items to Return</h2>
+
+        <p>
+          Only tick items that are physically being
+          returned to the supplier.
+        </p>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Return</th>
+              <th>Item</th>
+              <th>Received</th>
+              <th>Already returned</th>
+              <th>Returnable</th>
+              <th>Return quantity</th>
+              <th>Original batch</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <% @returnable_lines.each_with_index do |line, index| %>
+              <% prefix =
+                   "purchase_return[lines][#{index}]" %>
+
+              <tr>
+                <td>
+                  <%= hidden_field_tag(
+                        "#{prefix}[selected]",
+                        "0"
+                      ) %>
+
+                  <%= check_box_tag(
+                        "#{prefix}[selected]",
+                        "1",
+                        false
+                      ) %>
+
+                  <%= hidden_field_tag(
+                        "#{prefix}[purchase_line_id]",
+                        line.id
+                      ) %>
+                </td>
+
+                <td>
+                  <strong>
+                    <%= line.item_name %>
+                  </strong>
+
+                  <% if line.sku.present? %>
+                    <br>
+                    <small>
+                      SKU: <%= line.sku %>
+                    </small>
+                  <% end %>
+                </td>
+
+                <td>
+                  <%= number_with_precision(
+                        line.quantity,
+                        precision: 4,
+                        strip_insignificant_zeros: true
+                      ) %>
+                  <%= line.unit_symbol %>
+                </td>
+
+                <td>
+                  <%= number_with_precision(
+                        line.returned_quantity,
+                        precision: 4,
+                        strip_insignificant_zeros: true
+                      ) %>
+                  <%= line.unit_symbol %>
+                </td>
+
+                <td>
+                  <strong>
+                    <%= number_with_precision(
+                          line.returnable_quantity,
+                          precision: 4,
+                          strip_insignificant_zeros: true
+                        ) %>
+                    <%= line.unit_symbol %>
+                  </strong>
+                </td>
+
+                <td>
+                  <% step =
+                       line
+                         .item
+                         .unit_of_measure
+                         .decimal_allowed? ?
+                           "0.0001" :
+                           "1" %>
+
+                  <%= number_field_tag(
+                        "#{prefix}[quantity]",
+                        nil,
+                        min: step,
+                        max:
+                          line.returnable_quantity,
+                        step: step
+                      ) %>
+                </td>
+
+                <td>
+                  <% if line.inventory_batch.present? %>
+                    <strong>
+                      <%= line
+                            .inventory_batch
+                            .batch_number
+                            .presence ||
+                            "Batch ##{line.inventory_batch.id}" %>
+                    </strong>
+
+                    <br>
+
+                    <small>
+                      Remaining:
+                      <%= number_with_precision(
+                            line
+                              .inventory_batch
+                              .quantity_remaining,
+                            precision: 4,
+                            strip_insignificant_zeros: true
+                          ) %>
+
+                      · Expires:
+                      <%= line
+                            .inventory_batch
+                            .expires_on
+                            .to_fs(:long) %>
+                    </small>
+                  <% else %>
+                    —
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="panel">
+        <h2>Return Details</h2>
+
+        <div class="form-field">
+          <%= form.label :reason_code,
+                         "Main reason" %>
+
+          <%= form.select(
+                :reason_code,
+                options_for_select(
+                  @reason_options,
+                  params.dig(
+                    :purchase_return,
+                    :reason_code
+                  ) ||
+                    "other"
+                ),
+                {},
+                required: true
+              ) %>
+        </div>
+
+        <div class="form-field">
+          <%= form.label :returned_at,
+                         "Returned at" %>
+
+          <%= form.datetime_local_field(
+                :returned_at,
+                value:
+                  params.dig(
+                    :purchase_return,
+                    :returned_at
+                  ) ||
+                    Time.current.strftime(
+                      "%Y-%m-%dT%H:%M"
+                    ),
+                required: true
+              ) %>
+        </div>
+
+        <div class="form-field">
+          <%= form.label(
+                :supplier_document_number,
+                "Supplier return / reference number"
+              ) %>
+
+          <%= form.text_field(
+                :supplier_document_number
+              ) %>
+        </div>
+
+        <div class="form-field">
+          <%= form.label :reason_details,
+                         "Reason details" %>
+
+          <%= form.text_area(
+                :reason_details,
+                rows: 3
+              ) %>
+        </div>
+
+        <div class="form-field">
+          <%= form.label :notes %>
+
+          <%= form.text_area(
+                :notes,
+                rows: 3
+              ) %>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <%= form.submit(
+              "Complete Purchase Return",
+              class: "button button--primary",
+              data: {
+                turbo_confirm:
+                  "Return these goods to the supplier? " \
+                  "The completed return cannot be edited."
+              }
+            ) %>
+
+        <%= link_to "Cancel",
+                    purchase_path(@purchase),
+                    class: "button button--secondary" %>
+      </div>
+    <% end %>
+  <% else %>
+    <div class="panel">
+      <h2>No Items Available</h2>
+
+      <p>
+        Every item on this purchase has already been
+        fully returned.
+      </p>
+    </div>
+  <% end %>
+</section>

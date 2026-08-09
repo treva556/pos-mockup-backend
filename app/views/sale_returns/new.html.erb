@@ -1,0 +1,295 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>Return Sale Items</h1>
+
+      <p>
+        Original receipt
+        <strong><%= @sale.sale_number %></strong>
+        ·
+        <%= @sale.sold_at.to_fs(:long) %>
+      </p>
+    </div>
+
+    <div class="form-actions">
+      <%= link_to "Back to Sale",
+                  sale_path(@sale),
+                  class: "button button--secondary" %>
+    </div>
+  </header>
+
+  <% if @error_message.present? %>
+    <div class="alert alert--danger">
+      <%= @error_message %>
+    </div>
+  <% end %>
+
+  <div class="panel">
+    <h2>Original Sale</h2>
+
+    <dl class="details-list">
+      <div>
+        <dt>Receipt</dt>
+        <dd><%= @sale.sale_number %></dd>
+      </div>
+
+      <div>
+        <dt>Branch</dt>
+        <dd><%= @sale.branch.name %></dd>
+      </div>
+
+      <div>
+        <dt>Customer</dt>
+        <dd>
+          <%= @sale.customer&.name ||
+                "Walk-in Customer" %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Original total</dt>
+        <dd>
+          KSh
+          <%= number_with_precision(
+                @sale.total,
+                precision: 2
+              ) %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Already returned</dt>
+        <dd>
+          KSh
+          <%= number_with_precision(
+                @sale.completed_return_total,
+                precision: 2
+              ) %>
+        </dd>
+      </div>
+    </dl>
+  </div>
+
+  <% if @returnable_lines.any? %>
+    <%= form_with url: sale_returns_path(@sale),
+                  scope: :sale_return,
+                  method: :post do |form| %>
+
+      <div class="panel">
+        <h2>Select Items</h2>
+
+        <p>
+          Tick only the items being returned.
+        </p>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Return</th>
+              <th>Item</th>
+              <th>Sold</th>
+              <th>Remaining returnable</th>
+              <th>Return quantity</th>
+              <th>Stock handling</th>
+              <th>Original batch</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <% @returnable_lines.each_with_index do |line, index| %>
+              <% prefix =
+                   "sale_return[lines][#{index}]" %>
+
+              <tr>
+                <td>
+                  <%= hidden_field_tag(
+                        "#{prefix}[selected]",
+                        "0"
+                      ) %>
+
+                  <%= check_box_tag(
+                        "#{prefix}[selected]",
+                        "1",
+                        false
+                      ) %>
+
+                  <%= hidden_field_tag(
+                        "#{prefix}[sale_line_id]",
+                        line.id
+                      ) %>
+                </td>
+
+                <td>
+                  <strong><%= line.item_name %></strong>
+
+                  <% if line.sku.present? %>
+                    <br>
+                    <small>SKU: <%= line.sku %></small>
+                  <% end %>
+                </td>
+
+                <td>
+                  <%= number_with_precision(
+                        line.quantity,
+                        precision: 4,
+                        strip_insignificant_zeros: true
+                      ) %>
+                  <%= line.unit_symbol %>
+                </td>
+
+                <td>
+                  <strong>
+                    <%= number_with_precision(
+                          line.returnable_quantity,
+                          precision: 4,
+                          strip_insignificant_zeros: true
+                        ) %>
+                    <%= line.unit_symbol %>
+                  </strong>
+                </td>
+
+                <td>
+                  <%= number_field_tag(
+                        "#{prefix}[quantity]",
+                        nil,
+                        min: 0,
+                        max:
+                          line.returnable_quantity,
+                        step:
+                          line.item
+                            .unit_of_measure
+                            .decimal_allowed? ? "0.0001" : "1"
+                      ) %>
+                </td>
+
+                <td>
+                  <% default_disposition =
+                       line.item.stockable? ?
+                         "restock" :
+                         "not_applicable" %>
+
+                  <%= select_tag(
+                        "#{prefix}[stock_disposition]",
+                        options_for_select(
+                          @disposition_options,
+                          default_disposition
+                        )
+                      ) %>
+                </td>
+
+                <td>
+                  <% batches =
+                       @batch_options_by_line[line] %>
+
+                  <% if batches.any? %>
+                    <%= select_tag(
+                          "#{prefix}[inventory_batch_id]",
+                          options_for_select(
+                            [
+                              [ "Select batch", "" ]
+                            ] +
+                              batches.map do |batch|
+                                label =
+                                  batch.batch_number.presence ||
+                                  "Batch ##{batch.id}"
+
+                                label +=
+                                  " · Exp #{batch.expires_on}"
+
+                                [
+                                  label,
+                                  batch.id
+                                ]
+                              end
+                          )
+                        ) %>
+                  <% elsif line.item.tracks_expiry? %>
+                    <strong>No original batch found</strong>
+                  <% else %>
+                    —
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="panel">
+        <h2>Return Details</h2>
+
+        <div class="form-field">
+          <%= form.label :reason_code,
+                         "Main reason" %>
+
+          <%= form.select :reason_code,
+                          options_for_select(
+                            @reason_options,
+                            params.dig(
+                              :sale_return,
+                              :reason_code
+                            ) || "other"
+                          ) %>
+        </div>
+
+        <div class="form-field">
+          <%= form.label :returned_at,
+                         "Returned at" %>
+
+          <%= form.datetime_local_field(
+                :returned_at,
+                value:
+                  params.dig(
+                    :sale_return,
+                    :returned_at
+                  ) ||
+                    Time.current.strftime(
+                      "%Y-%m-%dT%H:%M"
+                    )
+              ) %>
+        </div>
+
+        <div class="form-field">
+          <%= form.label :reason_details,
+                         "Reason details" %>
+
+          <%= form.text_area :reason_details,
+                             rows: 3 %>
+        </div>
+
+        <div class="form-field">
+          <%= form.label :notes %>
+
+          <%= form.text_area :notes,
+                             rows: 3 %>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <%= form.submit "Complete Return",
+                        class: "button button--primary",
+                        data: {
+                          turbo_confirm:
+                            "Complete this return? " \
+                            "Completed returns cannot be edited."
+                        } %>
+
+        <%= link_to "Cancel",
+                    sale_path(@sale),
+                    class: "button button--secondary" %>
+      </div>
+    <% end %>
+  <% else %>
+    <div class="panel">
+      <h2>No Items Available</h2>
+
+      <p>
+        Every item on this sale has already been fully returned.
+      </p>
+
+      <%= link_to "Back to Sale",
+                  sale_path(@sale),
+                  class: "button button--secondary" %>
+    </div>
+  <% end %>
+</section>

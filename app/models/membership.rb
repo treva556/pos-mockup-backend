@@ -126,6 +126,42 @@ class Membership < ApplicationRecord
       accountant?
   end
 
+  def sales_return_view?
+    sales_view?
+  end
+
+  def sales_return_management?
+    owner? ||
+      admin? ||
+      manager? ||
+      cashier?
+  end
+
+  def customer_refund_management?
+    owner? ||
+      admin? ||
+      manager? ||
+      accountant?
+  end
+
+  def purchase_return_view?
+    supplier_account_view?
+  end
+
+  def purchase_return_management?
+    owner? ||
+      admin? ||
+      manager? ||
+      stock_clerk?
+  end
+
+  def supplier_credit_management?
+    owner? ||
+      admin? ||
+      manager? ||
+      accountant?
+  end
+
   private
 
   def branch_belongs_to_organization

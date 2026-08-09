@@ -54,14 +54,20 @@ class PurchasesController < ApplicationController
       scope.reorder(nil).sum(:amount_paid).to_d
 
     @balance_due_total =
-      scope.reorder(nil).sum(:balance_due).to_d
+      scope
+        .reorder(nil)
+        .includes(:purchase_returns)
+        .sum do |purchase|
+          purchase.effective_balance_due
+        end
 
     @purchases =
       scope
         .includes(
           :branch,
           :supplier,
-          :recorded_by
+          :recorded_by,
+          :purchase_returns
         )
         .recent_first
         .limit(500)
@@ -90,7 +96,21 @@ class PurchasesController < ApplicationController
           ],
           purchase_lines: [
             :item,
-            :tax_rate
+            :tax_rate,
+            :inventory_batch
+          ],
+          purchase_returns: [
+            :recorded_by,
+            {
+              purchase_return_lines: [
+                :item,
+                :inventory_batch
+              ]
+            },
+            {
+              supplier_credits:
+                :recorded_by
+            }
           ]
         )
         .find(params[:id])
@@ -132,7 +152,8 @@ class PurchasesController < ApplicationController
 
     if @query.present?
       pattern =
-        "%#{ActiveRecord::Base.sanitize_sql_like(@query)}%"
+        "%#{ActiveRecord::Base
+          .sanitize_sql_like(@query)}%"
 
       scope =
         scope.where(
@@ -164,29 +185,53 @@ class PurchasesController < ApplicationController
     apply_status_filter(scope)
   end
 
-  def apply_status_filter(scope)
-    case @status
-    when "outstanding"
-      scope.where("purchases.balance_due > 0")
-    when "unpaid"
-      scope.where(payment_status: "unpaid")
-    when "partially_paid"
-      scope.where(
-        payment_status: "partially_paid"
-      )
-    when "paid"
-      scope.where(payment_status: "paid")
-    when "overdue"
+def apply_status_filter(scope)
+  case @status
+  when "outstanding"
+    with_outstanding_effective_balance(
       scope
-        .where("purchases.balance_due > 0")
-        .where(
-          "purchases.due_on < ?",
-          Date.current
-        )
-    else
+    )
+  when "unpaid"
+    scope.where(
+      payment_status: "unpaid"
+    )
+  when "partially_paid"
+    scope.where(
+      payment_status: "partially_paid"
+    )
+  when "paid"
+    scope.where(
+      payment_status: "paid"
+    )
+  when "overdue"
+    with_outstanding_effective_balance(
       scope
-    end
+    ).where(
+      "purchases.due_on < ?",
+      Date.current
+    )
+  else
+    scope
   end
+end
+
+def with_outstanding_effective_balance(scope)
+  scope.where(
+    <<~SQL.squish
+      purchases.balance_due >
+      COALESCE(
+        (
+          SELECT SUM(purchase_returns.total)
+          FROM purchase_returns
+          WHERE purchase_returns.purchase_id =
+                purchases.id
+            AND purchase_returns.status = 'completed'
+        ),
+        0
+      )
+    SQL
+  )
+end
 
   def available_branches
     scope =
@@ -198,7 +243,8 @@ class PurchasesController < ApplicationController
       current_membership.branch_id.blank?
 
     scope.where(
-      id: current_membership.branch_id
+      id:
+        current_membership.branch_id
     )
   end
 

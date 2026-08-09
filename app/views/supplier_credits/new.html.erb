@@ -1,0 +1,160 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>Record Supplier Credit Note</h1>
+
+      <p>
+        Return
+        <strong>
+          <%= @purchase_return.return_number %>
+        </strong>
+        ·
+        <%= @purchase.supplier.name %>
+      </p>
+    </div>
+
+    <div class="form-actions">
+      <%= link_to "Back to Return",
+                  purchase_return_path(
+                    @purchase_return
+                  ),
+                  class: "button button--secondary" %>
+    </div>
+  </header>
+
+  <% if @error_message.present? %>
+    <div class="alert alert--danger">
+      <%= @error_message %>
+    </div>
+  <% end %>
+
+  <div class="panel">
+    <h2>Credit Position</h2>
+
+    <dl class="details-list">
+      <div>
+        <dt>Return total</dt>
+        <dd>
+          <%= number_to_currency(
+                @purchase_return.total,
+                unit: "KSh "
+              ) %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Debt reduced</dt>
+        <dd>
+          <%= number_to_currency(
+                @purchase_return.debt_offset_amount,
+                unit: "KSh "
+              ) %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Supplier credit due</dt>
+        <dd>
+          <%= number_to_currency(
+                @purchase_return.supplier_credit_due,
+                unit: "KSh "
+              ) %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Credit already recorded</dt>
+        <dd>
+          <%= number_to_currency(
+                @purchase_return.supplier_credit_total,
+                unit: "KSh "
+              ) %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Credit still to record</dt>
+        <dd>
+          <strong>
+            <%= number_to_currency(
+                  @purchase_return.uncredited_balance,
+                  unit: "KSh "
+                ) %>
+          </strong>
+        </dd>
+      </div>
+    </dl>
+  </div>
+
+  <%= form_with url:
+        purchase_return_supplier_credits_path(
+          @purchase_return
+        ),
+        scope: :supplier_credit,
+        method: :post do |form| %>
+
+    <div class="panel">
+      <div class="form-field">
+        <%= form.label :credit_number,
+                       "Supplier credit note number" %>
+
+        <%= form.text_field(
+              :credit_number,
+              required: true
+            ) %>
+      </div>
+
+      <div class="form-field">
+        <%= form.label :issued_on,
+                       "Credit note date" %>
+
+        <%= form.date_field(
+              :issued_on,
+              value: Date.current,
+              required: true
+            ) %>
+      </div>
+
+      <div class="form-field">
+        <%= form.label :amount,
+                       "Credit amount" %>
+
+        <%= form.number_field(
+              :amount,
+              min: 0.01,
+              max:
+                @purchase_return
+                  .uncredited_balance,
+              step: 0.01,
+              required: true
+            ) %>
+      </div>
+
+      <div class="form-field">
+        <%= form.label :notes %>
+
+        <%= form.text_area(
+              :notes,
+              rows: 3
+            ) %>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <%= form.submit(
+            "Record Supplier Credit",
+            class: "button button--primary",
+            data: {
+              turbo_confirm:
+                "Record this supplier credit note?"
+            }
+          ) %>
+
+      <%= link_to "Cancel",
+                  purchase_return_path(
+                    @purchase_return
+                  ),
+                  class: "button button--secondary" %>
+    </div>
+  <% end %>
+</section>

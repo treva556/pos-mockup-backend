@@ -1,4 +1,6 @@
 class StockMovement < ApplicationRecord
+  include AuditImmutable
+
   INBOUND_TYPES = %w[
     opening
     adjustment_in
@@ -38,8 +40,7 @@ class StockMovement < ApplicationRecord
     sale_return: "sale_return",
     purchase_return: "purchase_return",
     transfer_in: "transfer_in",
-    transfer_out: "transfer_out",
-    purchase: "purchase"
+    transfer_out: "transfer_out"
   }, validate: true
 
   before_validation :normalize_details

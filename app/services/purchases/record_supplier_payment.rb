@@ -120,18 +120,21 @@ module Purchases
             "Payment amount cannot have more than two decimals"
     end
 
-    def validate_locked_purchase!
+   def validate_locked_purchase!
       unless purchase.received?
         raise Purchases::InvalidSupplierPaymentError,
               "Only received purchases can be paid"
       end
 
-      if purchase.balance_due.to_d.zero?
+      available_balance =
+        purchase.effective_balance_due
+
+      unless available_balance.positive?
         raise Purchases::InvalidSupplierPaymentError,
-              "This purchase is already fully paid"
+              "This purchase has no outstanding balance"
       end
 
-      return if amount <= purchase.balance_due.to_d
+      return if amount <= available_balance
 
       raise Purchases::InvalidSupplierPaymentError,
             "Payment cannot exceed the outstanding balance"

@@ -61,6 +61,24 @@ class Organization < ApplicationRecord
   has_many :inventory_batches,
           dependent: :restrict_with_error
 
+  has_many :sale_returns,
+         dependent: :restrict_with_error
+
+  has_many :sale_return_lines,
+                dependent: :restrict_with_error
+
+           has_many :customer_refunds,
+                dependent: :restrict_with_error
+
+        has_many :purchase_returns,
+                dependent: :restrict_with_error
+
+        has_many :purchase_return_lines,
+                dependent: :restrict_with_error
+
+        has_many :supplier_credits,
+                dependent: :restrict_with_error
+
   before_validation :normalize_business_details
 
   validates :name, presence: true

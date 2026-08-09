@@ -32,7 +32,11 @@ class SalesController < ApplicationController
       scope.sum(:amount_paid)
 
     @outstanding_total =
-      scope.sum(:balance_due)
+      scope
+        .includes(:sale_returns)
+        .sum do |sale|
+          sale.effective_balance_due
+        end
 
     @sales =
       scope.limit(200)
@@ -62,6 +66,10 @@ class SalesController < ApplicationController
             :payment_method,
             :money_account,
             :recorded_by
+          ],
+          sale_returns: [
+            :recorded_by,
+            :customer_refunds
           ]
         )
         .find(params[:id])

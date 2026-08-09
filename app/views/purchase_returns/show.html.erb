@@ -1,0 +1,329 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>Purchase Return</h1>
+
+      <p>
+        <strong>
+          <%= @purchase_return.return_number %>
+        </strong>
+        ·
+        <%= @purchase_return.returned_at.to_fs(:long) %>
+      </p>
+    </div>
+
+    <div class="form-actions">
+      <%= link_to "Original Purchase",
+                  purchase_path(@purchase),
+                  class: "button button--secondary" %>
+
+      <%= link_to "Printable Return Note",
+                  return_note_purchase_return_path(
+                    @purchase_return
+                  ),
+                  target: "_blank",
+                  rel: "noopener",
+                  class: "button button--secondary" %>
+
+      <% if @purchase_return
+              .uncredited_balance
+              .positive? &&
+            current_membership
+              .supplier_credit_management? %>
+        <%= link_to "Record Supplier Credit",
+                    new_purchase_return_supplier_credit_path(
+                      @purchase_return
+                    ),
+                    class: "button button--primary" %>
+      <% end %>
+
+      <%= link_to "Supplier Account",
+                  supplier_account_path(
+                    @purchase.supplier
+                  ),
+                  class: "button button--secondary" %>
+    </div>
+  </header>
+
+  <div class="panel">
+    <h2>Return Information</h2>
+
+    <dl class="details-list">
+      <div>
+        <dt>Return number</dt>
+        <dd>
+          <%= @purchase_return.return_number %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Original purchase</dt>
+        <dd>
+          <%= link_to(
+                @purchase.purchase_number,
+                purchase_path(@purchase)
+              ) %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Supplier</dt>
+        <dd><%= @purchase.supplier.name %></dd>
+      </div>
+
+      <div>
+        <dt>Branch</dt>
+        <dd><%= @purchase_return.branch.name %></dd>
+      </div>
+
+      <div>
+        <dt>Reason</dt>
+        <dd>
+          <%= @purchase_return
+                .reason_code
+                .titleize %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Supplier reference</dt>
+        <dd>
+          <%= @purchase_return
+                .supplier_document_number
+                .presence || "—" %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Recorded by</dt>
+        <dd>
+          <%= @purchase_return.recorded_by.name %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Status</dt>
+        <dd>
+          <strong>
+            <%= @purchase_return.status.titleize %>
+          </strong>
+        </dd>
+      </div>
+    </dl>
+
+    <% if @purchase_return.reason_details.present? %>
+      <p>
+        <strong>Reason details:</strong>
+        <%= @purchase_return.reason_details %>
+      </p>
+    <% end %>
+
+    <% if @purchase_return.notes.present? %>
+      <p>
+        <strong>Notes:</strong>
+        <%= @purchase_return.notes %>
+      </p>
+    <% end %>
+  </div>
+
+  <div class="panel">
+    <h2>Returned Items</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Quantity</th>
+          <th>Unit cost</th>
+          <th>Batch</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <% @purchase_return
+             .purchase_return_lines
+             .ordered
+             .each do |line| %>
+          <tr>
+            <td>
+              <strong>
+                <%= line.item_name %>
+              </strong>
+            </td>
+
+            <td>
+              <%= number_with_precision(
+                    line.quantity,
+                    precision: 4,
+                    strip_insignificant_zeros: true
+                  ) %>
+              <%= line.unit_symbol %>
+            </td>
+
+            <td>
+              <%= number_to_currency(
+                    line.unit_cost,
+                    unit: "KSh "
+                  ) %>
+            </td>
+
+            <td>
+              <% if line.inventory_batch.present? %>
+                <%= line
+                      .inventory_batch
+                      .batch_number
+                      .presence ||
+                      "Batch ##{line.inventory_batch.id}" %>
+              <% else %>
+                —
+              <% end %>
+            </td>
+
+            <td>
+              <strong>
+                <%= number_to_currency(
+                      line.line_total,
+                      unit: "KSh "
+                    ) %>
+              </strong>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h2>Financial Effect</h2>
+
+    <dl class="details-list">
+      <div>
+        <dt>Return total</dt>
+        <dd>
+          <strong>
+            <%= number_to_currency(
+                  @purchase_return.total,
+                  unit: "KSh "
+                ) %>
+          </strong>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Supplier debt reduced</dt>
+        <dd>
+          <%= number_to_currency(
+                @purchase_return.debt_offset_amount,
+                unit: "KSh "
+              ) %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Supplier credit due</dt>
+        <dd>
+          <%= number_to_currency(
+                @purchase_return.supplier_credit_due,
+                unit: "KSh "
+              ) %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Supplier credit recorded</dt>
+        <dd>
+          <%= number_to_currency(
+                @purchase_return.supplier_credit_total,
+                unit: "KSh "
+              ) %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Credit note still outstanding</dt>
+        <dd>
+          <strong>
+            <%= number_to_currency(
+                  @purchase_return.uncredited_balance,
+                  unit: "KSh "
+                ) %>
+          </strong>
+        </dd>
+      </div>
+    </dl>
+  </div>
+
+  <div class="panel">
+    <h2>Supplier Credit Notes</h2>
+
+    <% if @purchase_return.supplier_credits.any? %>
+      <table>
+        <thead>
+          <tr>
+            <th>Credit note</th>
+            <th>Date</th>
+            <th>Amount</th>
+            <th>Applied</th>
+            <th>Available</th>
+            <th>Status</th>
+            <th>Recorded by</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% @purchase_return
+               .supplier_credits
+               .recent_first
+               .each do |credit| %>
+            <tr>
+              <td>
+                <strong>
+                  <%= credit.credit_number %>
+                </strong>
+              </td>
+
+              <td>
+                <%= credit.issued_on.to_fs(:long) %>
+              </td>
+
+              <td>
+                <%= number_to_currency(
+                      credit.amount,
+                      unit: "KSh "
+                    ) %>
+              </td>
+
+              <td>
+                <%= number_to_currency(
+                      credit.applied_amount,
+                      unit: "KSh "
+                    ) %>
+              </td>
+
+              <td>
+                <%= number_to_currency(
+                      credit.available_amount,
+                      unit: "KSh "
+                    ) %>
+              </td>
+
+              <td>
+                <%= credit.status.titleize %>
+              </td>
+
+              <td>
+                <%= credit.recorded_by.name %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p>
+        No supplier credit note has been recorded for
+        this return.
+      </p>
+    <% end %>
+  </div>
+</section>

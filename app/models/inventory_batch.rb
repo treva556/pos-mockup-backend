@@ -9,6 +9,12 @@ class InventoryBatch < ApplicationRecord
   has_many :stock_movements,
            dependent: :restrict_with_error
 
+  has_many :sale_return_lines,
+          dependent: :restrict_with_error
+
+  has_many :purchase_return_lines,
+          dependent: :restrict_with_error
+
   enum :status,
        {
          active: "active",

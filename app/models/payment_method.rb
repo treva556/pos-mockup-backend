@@ -10,6 +10,9 @@ class PaymentMethod < ApplicationRecord
   has_many :purchase_payments,
             dependent: :restrict_with_error
 
+  has_many :customer_refunds,
+            dependent: :restrict_with_error
+
   enum :payment_type, {
     cash: "cash",
     mobile_money: "mobile_money",

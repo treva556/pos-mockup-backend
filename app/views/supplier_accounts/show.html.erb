@@ -4,7 +4,8 @@
       <h1><%= @supplier.name %> Account</h1>
 
       <p>
-        Purchases, payments and outstanding supplier balances.
+        Purchases, returns, payments, supplier credits
+        and outstanding balances.
       </p>
     </div>
 
@@ -13,13 +14,17 @@
                   supplier_path(@supplier),
                   class: "button button--secondary" %>
 
-      <%= link_to "Receive Purchase",
-                  new_purchasing_purchase_path,
-                  class: "button button--primary" %>
+      <% if current_membership.supplier_management? %>
+        <%= link_to "Receive Purchase",
+                    new_purchasing_purchase_path,
+                    class: "button button--primary" %>
+      <% end %>
     </div>
   </header>
 
   <div class="panel">
+    <h2>Supplier Position</h2>
+
     <dl class="details-list">
       <div>
         <dt>Total purchases</dt>
@@ -42,7 +47,17 @@
       </div>
 
       <div>
-        <dt>Outstanding</dt>
+        <dt>Total returns</dt>
+        <dd>
+          <%= number_to_currency(
+                @total_returns,
+                unit: "KSh "
+              ) %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Outstanding payable</dt>
         <dd>
           <strong>
             <%= number_to_currency(
@@ -54,11 +69,23 @@
       </div>
 
       <div>
-        <dt>Overdue</dt>
+        <dt>Overdue payable</dt>
         <dd>
           <strong>
             <%= number_to_currency(
                   @overdue_balance,
+                  unit: "KSh "
+                ) %>
+          </strong>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Available supplier credit</dt>
+        <dd>
+          <strong>
+            <%= number_to_currency(
+                  @available_credit_balance,
                   unit: "KSh "
                 ) %>
           </strong>
@@ -78,9 +105,10 @@
             <th>Branch</th>
             <th>Invoice date</th>
             <th>Due date</th>
-            <th>Total</th>
+            <th>Original total</th>
             <th>Paid</th>
-            <th>Balance</th>
+            <th>Returns</th>
+            <th>Effective balance</th>
             <th>Status</th>
           </tr>
         </thead>
@@ -89,18 +117,26 @@
           <% @purchases.each do |purchase| %>
             <tr>
               <td>
-                <%= link_to purchase.purchase_number,
-                            purchase_path(purchase) %>
-              </td>
-
-              <td><%= purchase.branch.name %></td>
-
-              <td>
-                <%= purchase.purchased_on.to_fs(:long) %>
+                <%= link_to(
+                      purchase.purchase_number,
+                      purchase_path(purchase)
+                    ) %>
               </td>
 
               <td>
-                <%= purchase.due_on&.to_fs(:long) || "—" %>
+                <%= purchase.branch.name %>
+              </td>
+
+              <td>
+                <%= purchase
+                      .purchased_on
+                      .to_fs(:long) %>
+              </td>
+
+              <td>
+                <%= purchase
+                      .due_on
+                      &.to_fs(:long) || "—" %>
               </td>
 
               <td>
@@ -119,16 +155,31 @@
 
               <td>
                 <%= number_to_currency(
-                      purchase.balance_due,
+                      purchase.completed_return_total,
                       unit: "KSh "
                     ) %>
               </td>
 
               <td>
+                <strong>
+                  <%= number_to_currency(
+                        purchase.effective_balance_due,
+                        unit: "KSh "
+                      ) %>
+                </strong>
+              </td>
+
+              <td>
                 <% if purchase.overdue? %>
                   <strong>Overdue</strong>
+                <% elsif purchase.outstanding? %>
+                  Outstanding
+                <% elsif purchase
+                           .supplier_credit_due
+                           .positive? %>
+                  Supplier credit
                 <% else %>
-                  <%= purchase.payment_status.titleize %>
+                  Settled
                 <% end %>
 
                 <% if purchase.outstanding? &&
@@ -136,10 +187,12 @@
                         .supplier_payment_management? %>
                   <br>
 
-                  <%= link_to "Record payment",
-                              new_purchase_payment_path(
-                                purchase
-                              ) %>
+                  <%= link_to(
+                        "Record payment",
+                        new_purchase_payment_path(
+                          purchase
+                        )
+                      ) %>
                 <% end %>
               </td>
             </tr>
@@ -147,7 +200,9 @@
         </tbody>
       </table>
     <% else %>
-      <p>No purchases have been recorded for this supplier.</p>
+      <p>
+        No purchases have been recorded for this supplier.
+      </p>
     <% end %>
   </div>
 </section>

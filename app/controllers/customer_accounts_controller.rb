@@ -16,7 +16,8 @@ class CustomerAccountsController <
         .completed
         .includes(
           :branch,
-          :cashier
+          :cashier,
+          :sale_returns
         )
 
     if current_membership.cashier? &&
@@ -29,13 +30,16 @@ class CustomerAccountsController <
     end
 
     @outstanding_balance =
-      base_scope.sum(:balance_due)
+      base_scope.sum do |sale|
+        sale.effective_balance_due
+      end
 
     @overdue_balance =
       base_scope
-        .where("balance_due > 0")
         .where("due_on < ?", Date.current)
-        .sum(:balance_due)
+        .sum do |sale|
+          sale.effective_balance_due
+        end
 
     @sales =
       base_scope.recent_first

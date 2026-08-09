@@ -33,9 +33,26 @@ class Customer < ApplicationRecord
               greater_than_or_equal_to: 0
             }
 
-  scope :active, -> { where(active: true) }
+ scope :active, -> { where(active: true) }
 
   scope :alphabetical, -> { order(:name) }
+
+  def outstanding_balance
+    outstanding_sales
+      .includes(:sale_returns)
+      .sum do |sale|
+        sale.effective_balance_due
+      end
+  end
+
+  def overdue_balance
+    outstanding_sales
+      .where("due_on < ?", Date.current)
+      .includes(:sale_returns)
+      .sum do |sale|
+        sale.effective_balance_due
+      end
+  end
 
   private
 
@@ -52,15 +69,5 @@ class Customer < ApplicationRecord
     sales
       .completed
       .where("balance_due > 0")
-  end
-
-  def outstanding_balance
-    outstanding_sales.sum(:balance_due)
-  end
-
-  def overdue_balance
-    outstanding_sales
-      .where("due_on < ?", Date.current)
-      .sum(:balance_due)
   end
 end
