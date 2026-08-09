@@ -14,7 +14,11 @@ class SupplierAccountsController <
       visible_purchases
         .where(supplier: @supplier)
         .received
-        .includes(:branch)
+        .includes(
+          :branch,
+          purchase_returns:
+            :supplier_credits
+        )
         .recent_first
 
     @total_purchases =
@@ -23,15 +27,38 @@ class SupplierAccountsController <
     @total_paid =
       @purchases.sum(:amount_paid).to_d
 
+    @total_returns =
+      @purchases.sum do |purchase|
+        purchase.completed_return_total
+      end
+
     @outstanding_balance =
-      @purchases.sum(:balance_due).to_d
+      @purchases.sum do |purchase|
+        purchase.effective_balance_due
+      end
 
     @overdue_balance =
       @purchases
-        .where("balance_due > 0")
-        .where("due_on < ?", Date.current)
-        .sum(:balance_due)
-        .to_d
+        .select(&:overdue?)
+        .sum do |purchase|
+          purchase.effective_balance_due
+        end
+
+    @available_credit_balance =
+      @purchases.sum do |purchase|
+        purchase
+          .purchase_returns
+          .select(&:completed?)
+          .sum do |purchase_return|
+            purchase_return
+              .supplier_credits
+              .select do |credit|
+                credit.available? ||
+                  credit.partially_applied?
+              end
+              .sum(&:available_amount)
+          end
+      end
   end
 
   private

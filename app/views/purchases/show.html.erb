@@ -11,23 +11,50 @@
     </div>
 
     <div class="form-actions">
-      <% if @purchase.outstanding? &&
+      <% returnable =
+           @purchase.purchase_lines.any? do |line|
+             line.returnable_quantity.positive?
+           end %>
+
+      <% if returnable &&
+            current_membership
+              .purchase_return_management? %>
+        <%= link_to "Return Items",
+                    new_purchase_return_path(
+                      @purchase
+                    ),
+                    class: "button button--primary" %>
+      <% end %>
+
+      <% if @purchase
+              .effective_balance_due
+              .positive? &&
             current_membership
               .supplier_payment_management? %>
         <%= link_to "Record Payment",
-                    new_purchase_payment_path(@purchase),
+                    new_purchase_payment_path(
+                      @purchase
+                    ),
                     class: "button button--primary" %>
       <% end %>
+
+      <%= link_to "Printable GRN",
+                  receipt_purchase_path(@purchase),
+                  target: "_blank",
+                  rel: "noopener",
+                  class: "button button--secondary" %>
 
       <% if current_membership.supplier_management? %>
         <%= link_to "Receive Another Purchase",
                     new_purchasing_purchase_path(
-                      branch_id: @purchase.branch_id
+                      branch_id:
+                        @purchase.branch_id
                     ),
                     class: "button button--secondary" %>
       <% end %>
 
-      <% if current_membership.supplier_account_view? %>
+      <% if current_membership
+              .supplier_account_view? %>
         <%= link_to "Supplier Account",
                     supplier_account_path(
                       @purchase.supplier
@@ -35,41 +62,10 @@
                     class: "button button--secondary" %>
       <% end %>
 
-     <div class="form-actions">
-        <% if @purchase.outstanding? &&
-                current_membership
-                .supplier_payment_management? %>
-            <%= link_to "Record Payment",
-                        new_purchase_payment_path(@purchase),
-                        class: "button button--primary" %>
-        <% end %>
-
-        <%= link_to "Printable GRN",
-                    receipt_purchase_path(@purchase),
-                    target: "_blank",
-                    rel: "noopener",
-                    class: "button button--secondary" %>
-
-        <% if current_membership.supplier_management? %>
-            <%= link_to "Receive Another Purchase",
-                        new_purchasing_purchase_path(
-                        branch_id: @purchase.branch_id
-                        ),
-                        class: "button button--secondary" %>
-        <% end %>
-
-        <% if current_membership.supplier_account_view? %>
-            <%= link_to "Supplier Account",
-                        supplier_account_path(
-                        @purchase.supplier
-                        ),
-                        class: "button button--secondary" %>
-        <% end %>
-
-        <%= link_to "Dashboard",
-                    dashboard_path,
-                    class: "button button--secondary" %>
-        </div>
+      <%= link_to "Dashboard",
+                  dashboard_path,
+                  class: "button button--secondary" %>
+    </div>
   </header>
 
   <div class="panel">
@@ -78,16 +74,12 @@
     <dl class="details-list">
       <div>
         <dt>Purchase number</dt>
-        <dd>
-          <%= @purchase.purchase_number %>
-        </dd>
+        <dd><%= @purchase.purchase_number %></dd>
       </div>
 
       <div>
         <dt>Supplier</dt>
-        <dd>
-          <%= @purchase.supplier.name %>
-        </dd>
+        <dd><%= @purchase.supplier.name %></dd>
       </div>
 
       <div>
@@ -101,9 +93,7 @@
 
       <div>
         <dt>Branch</dt>
-        <dd>
-          <%= @purchase.branch.name %>
-        </dd>
+        <dd><%= @purchase.branch.name %></dd>
       </div>
 
       <div>
@@ -126,21 +116,34 @@
 
       <div>
         <dt>Recorded by</dt>
+        <dd><%= @purchase.recorded_by.name %></dd>
+      </div>
+
+      <div>
+        <dt>Original payment status</dt>
         <dd>
-          <%= @purchase.recorded_by.name %>
+          <%= @purchase.payment_status.titleize %>
         </dd>
       </div>
 
       <div>
-        <dt>Payment status</dt>
+        <dt>Current supplier position</dt>
         <dd>
-          <% if @purchase.overdue? %>
-            <strong>Overdue</strong>
-          <% else %>
-            <%= @purchase
-                  .payment_status
-                  .titleize %>
-          <% end %>
+          <strong>
+            <% if @purchase.overdue? %>
+              Overdue
+            <% elsif @purchase
+                       .effective_balance_due
+                       .positive? %>
+              Outstanding
+            <% elsif @purchase
+                       .supplier_credit_due
+                       .positive? %>
+              Supplier credit
+            <% else %>
+              Settled
+            <% end %>
+          </strong>
         </dd>
       </div>
     </dl>
@@ -149,79 +152,84 @@
   <div class="panel">
     <h2>Received Items</h2>
 
-    <% if @purchase.purchase_lines.any? %>
-      <table>
-        <thead>
+    <table>
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Quantity</th>
+          <th>Returned</th>
+          <th>Unit cost</th>
+          <th>Discount</th>
+          <th>Tax included</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <% @purchase
+             .purchase_lines
+             .ordered
+             .each do |line| %>
           <tr>
-            <th>Item</th>
-            <th>Quantity</th>
-            <th>Unit cost</th>
-            <th>Discount</th>
-            <th>Tax included</th>
-            <th>Total</th>
+            <td>
+              <strong><%= line.item_name %></strong>
+            </td>
+
+            <td>
+              <%= number_with_precision(
+                    line.quantity,
+                    precision: 4,
+                    strip_insignificant_zeros: true
+                  ) %>
+              <%= line.unit_symbol %>
+            </td>
+
+            <td>
+              <%= number_with_precision(
+                    line.returned_quantity,
+                    precision: 4,
+                    strip_insignificant_zeros: true
+                  ) %>
+              <%= line.unit_symbol %>
+            </td>
+
+            <td>
+              <%= number_to_currency(
+                    line.unit_cost,
+                    unit: "KSh "
+                  ) %>
+            </td>
+
+            <td>
+              <%= number_to_currency(
+                    line.discount_amount,
+                    unit: "KSh "
+                  ) %>
+            </td>
+
+            <td>
+              <%= number_to_currency(
+                    line.tax_amount,
+                    unit: "KSh "
+                  ) %>
+            </td>
+
+            <td>
+              <strong>
+                <%= number_to_currency(
+                      line.line_total,
+                      unit: "KSh "
+                    ) %>
+              </strong>
+            </td>
           </tr>
-        </thead>
-
-        <tbody>
-          <% @purchase
-                .purchase_lines
-                .ordered
-                .each do |line| %>
-            <tr>
-              <td>
-                <%= line.item_name %>
-              </td>
-
-              <td>
-                <%= number_with_precision(
-                      line.quantity,
-                      precision: 4,
-                      strip_insignificant_zeros: true
-                    ) %>
-
-                <%= line.unit_symbol %>
-              </td>
-
-              <td>
-                <%= number_to_currency(
-                      line.unit_cost,
-                      unit: "KSh "
-                    ) %>
-              </td>
-
-              <td>
-                <%= number_to_currency(
-                      line.discount_amount,
-                      unit: "KSh "
-                    ) %>
-              </td>
-
-              <td>
-                <%= number_to_currency(
-                      line.tax_amount,
-                      unit: "KSh "
-                    ) %>
-              </td>
-
-              <td>
-                <strong>
-                  <%= number_to_currency(
-                        line.line_total,
-                        unit: "KSh "
-                      ) %>
-                </strong>
-              </td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
-    <% else %>
-      <p>No purchase items were recorded.</p>
-    <% end %>
+        <% end %>
+      </tbody>
+    </table>
   </div>
 
   <div class="panel">
-    <h2>Totals and Supplier Balance</h2>
+    <h2>Original Purchase Totals</h2>
 
     <dl class="details-list">
       <div>
@@ -255,7 +263,7 @@
       </div>
 
       <div>
-        <dt>Purchase total</dt>
+        <dt>Original purchase total</dt>
         <dd>
           <strong>
             <%= number_to_currency(
@@ -277,11 +285,59 @@
       </div>
 
       <div>
-        <dt>Supplier balance</dt>
+        <dt>Original supplier balance</dt>
+        <dd>
+          <%= number_to_currency(
+                @purchase.balance_due,
+                unit: "KSh "
+              ) %>
+        </dd>
+      </div>
+    </dl>
+  </div>
+
+  <div class="panel">
+    <h2>Position After Returns</h2>
+
+    <dl class="details-list">
+      <div>
+        <dt>Original supplier balance</dt>
+        <dd>
+          <%= number_to_currency(
+                @purchase.balance_due,
+                unit: "KSh "
+              ) %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Completed purchase returns</dt>
+        <dd>
+          - <%= number_to_currency(
+                 @purchase.completed_return_total,
+                 unit: "KSh "
+               ) %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Effective balance due</dt>
         <dd>
           <strong>
             <%= number_to_currency(
-                  @purchase.balance_due,
+                  @purchase.effective_balance_due,
+                  unit: "KSh "
+                ) %>
+          </strong>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Excess return / supplier credit</dt>
+        <dd>
+          <strong>
+            <%= number_to_currency(
+                  @purchase.supplier_credit_due,
                   unit: "KSh "
                 ) %>
           </strong>
@@ -289,27 +345,118 @@
       </div>
     </dl>
 
-    <% if @purchase.outstanding? &&
+    <% if @purchase
+            .effective_balance_due
+            .positive? &&
           current_membership
             .supplier_payment_management? %>
       <div class="form-actions">
         <%= link_to "Record Supplier Payment",
-                    new_purchase_payment_path(@purchase),
+                    new_purchase_payment_path(
+                      @purchase
+                    ),
                     class: "button button--primary" %>
       </div>
     <% end %>
   </div>
 
   <div class="panel">
-    <header class="page-header">
-      <div>
-        <h2>Supplier Payment History</h2>
+    <h2>Purchase Returns</h2>
 
-        <p>
-          Payments already made toward this purchase.
-        </p>
-      </div>
-    </header>
+    <% completed_returns =
+         @purchase
+           .purchase_returns
+           .select(&:completed?)
+           .sort_by(&:returned_at)
+           .reverse %>
+
+    <% if completed_returns.any? %>
+      <table>
+        <thead>
+          <tr>
+            <th>Return</th>
+            <th>Date</th>
+            <th>Reason</th>
+            <th>Total</th>
+            <th>Debt reduced</th>
+            <th>Credit due</th>
+            <th>Credit recorded</th>
+            <th></th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% completed_returns.each do |purchase_return| %>
+            <tr>
+              <td>
+                <strong>
+                  <%= purchase_return.return_number %>
+                </strong>
+              </td>
+
+              <td>
+                <%= purchase_return
+                      .returned_at
+                      .to_fs(:short) %>
+              </td>
+
+              <td>
+                <%= purchase_return
+                      .reason_code
+                      .titleize %>
+              </td>
+
+              <td>
+                <%= number_to_currency(
+                      purchase_return.total,
+                      unit: "KSh "
+                    ) %>
+              </td>
+
+              <td>
+                <%= number_to_currency(
+                      purchase_return
+                        .debt_offset_amount,
+                      unit: "KSh "
+                    ) %>
+              </td>
+
+              <td>
+                <%= number_to_currency(
+                      purchase_return
+                        .supplier_credit_due,
+                      unit: "KSh "
+                    ) %>
+              </td>
+
+              <td>
+                <%= number_to_currency(
+                      purchase_return
+                        .supplier_credit_total,
+                      unit: "KSh "
+                    ) %>
+              </td>
+
+              <td>
+                <%= link_to "View",
+                            purchase_return_path(
+                              purchase_return
+                            ) %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p>
+        No goods have been returned against this
+        purchase.
+      </p>
+    <% end %>
+  </div>
+
+  <div class="panel">
+    <h2>Supplier Payment History</h2>
 
     <% if @purchase.purchase_payments.any? %>
       <table>
@@ -326,14 +473,12 @@
 
         <tbody>
           <% @purchase
-                .purchase_payments
-                .recent_first
-                .each do |payment| %>
+               .purchase_payments
+               .recent_first
+               .each do |payment| %>
             <tr>
               <td>
-                <%= payment
-                      .paid_at
-                      .to_fs(:long) %>
+                <%= payment.paid_at.to_fs(:long) %>
               </td>
 
               <td>
@@ -375,8 +520,8 @@
       </table>
     <% else %>
       <p>
-        No supplier payments have been recorded for this
-        purchase.
+        No supplier payments have been recorded for
+        this purchase.
       </p>
     <% end %>
   </div>

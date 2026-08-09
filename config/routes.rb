@@ -1,188 +1,221 @@
-# routes.rb
 Rails.application.routes.draw do
   root "about#index"
 
   get "about", to: "about#index"
 
-  get "sign-up", to: "registrations#new", as: :sign_up
-  post "sign-up", to: "registrations#create"
+  get "sign-up",
+      to: "registrations#new",
+      as: :sign_up
 
-  get "login", to: "sessions#new", as: :login
-  post "login", to: "sessions#create"
+  post "sign-up",
+       to: "registrations#create"
 
-  delete "logout", to: "sessions#destroy", as: :logout
+  get "login",
+      to: "sessions#new",
+      as: :login
+
+  post "login",
+       to: "sessions#create"
+
+  delete "logout",
+         to: "sessions#destroy",
+         as: :logout
 
   namespace :onboarding do
-    resource :organization, only: %i[new create]
+    resource :organization,
+             only: %i[new create]
   end
 
-  resource :dashboard, only: :show
+  resource :dashboard,
+           only: :show
 
   namespace :settings do
-  resource :organization,
-           only: %i[edit update]
+    resource :organization,
+             only: %i[edit update]
   end
 
-  resources :branches, except: %i[show destroy] do
-    patch :select, on: :member
+  resources :branches,
+            except: %i[show destroy] do
+    patch :select,
+          on: :member
   end
 
   resources :team_members,
-          except: %i[show destroy]
+            except: %i[show destroy]
 
   namespace :account do
-     resource :password,
-           only: %i[edit update]
+    resource :password,
+             only: %i[edit update]
   end
 
   resources :customers do
-        member do
-        patch :toggle_status
-        end
+    member do
+      patch :toggle_status
+    end
 
-     resource :account,
-                only: :show,
-                controller: "customer_accounts"
-   end
+    resource :account,
+             only: :show,
+             controller: "customer_accounts"
+  end
 
-  resources :suppliers, except: :destroy do
-      patch :toggle_status, on: :member
+  resources :suppliers,
+            except: :destroy do
+    patch :toggle_status,
+          on: :member
+
+    resource :account,
+             only: :show,
+             controller: "supplier_accounts"
   end
 
   resources :product_categories,
-              except: %i[show destroy] do
-      patch :toggle_status, on: :member
+            except: %i[show destroy] do
+    patch :toggle_status,
+          on: :member
   end
 
   resources :unit_of_measures,
-              except: %i[show destroy] do
-      patch :toggle_status, on: :member
+            except: %i[show destroy] do
+    patch :toggle_status,
+          on: :member
   end
 
   resources :tax_rates,
-              except: %i[show destroy] do
-      patch :toggle_status, on: :member
+            except: %i[show destroy] do
+    patch :toggle_status,
+          on: :member
   end
 
-  resources :items, except: :destroy do
-      patch :toggle_status, on: :member
+  resources :items,
+            except: :destroy do
+    patch :toggle_status,
+          on: :member
   end
 
-  resources :money_accounts, except: :destroy do
-      patch :toggle_status, on: :member
+  resources :money_accounts,
+            except: :destroy do
+    patch :toggle_status,
+          on: :member
   end
 
-  resources :payment_methods, except: :destroy do
-      patch :toggle_status, on: :member
+  resources :payment_methods,
+            except: :destroy do
+    patch :toggle_status,
+          on: :member
   end
 
   resources :branch_payment_settings,
-                only: :index do
-        patch :update_defaults,
-              on: :collection
+            only: :index do
+    patch :update_defaults,
+          on: :collection
   end
 
   namespace :pos do
     resource :sale,
-            only: %i[new create]
+             only: %i[new create]
 
     resource :cart,
-            only: %i[update destroy]
+             only: %i[update destroy]
 
     resources :cart_items,
               only: %i[create update destroy],
               param: :item_id
 
-
     resource :checkout,
-         only: :show
+             only: :show
 
     resources :checkout_payments,
               only: %i[create update destroy],
               param: :entry_id
-   end
+  end
 
-   namespace :purchasing do
-        resource :purchase,
-                only: %i[new create]
+  namespace :purchasing do
+    resource :purchase,
+             only: %i[new create]
 
-        resource :cart,
-                only: %i[update destroy]
+    resource :cart,
+             only: %i[update destroy]
 
-        resources :cart_items,
-                only: %i[create update destroy],
-                param: :item_id
-   end
+    resources :cart_items,
+              only: %i[create update destroy],
+              param: :item_id
+  end
 
-   resources :purchases,
-                only: %i[index show] do
-        member do
-        get :receipt
-   end
+  resources :purchases,
+            only: %i[index show] do
+    member do
+      get :receipt
+    end
 
-        resources :payments,
-                only: %i[new create],
-                controller: "purchase_payments"
-   end
+    resources :payments,
+              only: %i[new create],
+              controller: "purchase_payments"
 
-   resources :sales,
-                only: %i[index show] do
-        member do
-        get :receipt
-        end
+    resources :returns,
+              only: %i[new create],
+              controller: "purchase_returns"
+  end
 
-        resources :payments,
-                only: %i[new create],
-                controller: "sale_payments"
+  resources :purchase_returns,
+            only: :show do
+    member do
+      get :return_note
+    end
 
-        resources :returns,
-                only: %i[new create],
-                controller: "sale_returns"
-        end
+    resources :supplier_credits,
+              only: %i[new create],
+              controller: "supplier_credits"
+  end
 
-        resources :sale_returns,
-                only: :show do
-        member do
-        get :return_note
-        end
+  resources :sales,
+            only: %i[index show] do
+    member do
+      get :receipt
+    end
 
-        resources :refunds,
-                only: %i[new create],
-                controller: "customer_refunds"
-     end
+    resources :payments,
+              only: %i[new create],
+              controller: "sale_payments"
 
-    resources :suppliers do
-        member do
-        patch :toggle_status
-        end
+    resources :returns,
+              only: %i[new create],
+              controller: "sale_returns"
+  end
 
-        resource :account,
-                only: :show,
-                controller: "supplier_accounts"
-     end
+  resources :sale_returns,
+            only: :show do
+    member do
+      get :return_note
+    end
 
-    resource :inventory_batch_assignment,
-         only: %i[new create]
+    resources :refunds,
+              only: %i[new create],
+              controller: "customer_refunds"
+  end
 
-    resources :inventory_batches,
-          only: :index
+  resource :inventory_batch_assignment,
+           only: %i[new create]
 
-    resources :inventory_adjustments,
-          only: %i[new create]
+  resources :inventory_batches,
+            only: :index
 
-    resources :money_transfers,
-          only: %i[index show new create]
+  resources :inventory_adjustments,
+            only: %i[new create]
 
-    resources :stock_transfers,
-          only: %i[index show new create]
+  resources :money_transfers,
+            only: %i[index show new create]
 
-  resources :stock_levels, only: :index do
+  resources :stock_transfers,
+            only: %i[index show new create]
+
+  resources :stock_levels,
+            only: :index do
     patch :update_reorder_level,
           on: :collection
   end
 
   resources :stock_movements,
-          only: %i[index show]
+            only: %i[index show]
 
   get "up" => "rails/health#show",
       as: :rails_health_check

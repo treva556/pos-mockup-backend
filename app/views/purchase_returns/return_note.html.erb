@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+
+    <title>
+      <%= @purchase_return.return_number %>
+    </title>
+
+    <style>
+      body {
+        margin: 24px;
+        color: #111;
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+      }
+
+      header {
+        margin-bottom: 24px;
+        text-align: center;
+      }
+
+      table {
+        width: 100%;
+        margin-top: 16px;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        padding: 8px;
+        border: 1px solid #999;
+        text-align: left;
+      }
+
+      .totals {
+        width: 380px;
+        max-width: 100%;
+        margin-top: 20px;
+        margin-left: auto;
+      }
+
+      .totals div {
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+        padding: 5px 0;
+      }
+
+      .print-actions {
+        margin-bottom: 20px;
+      }
+
+      @media print {
+        .print-actions {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="print-actions">
+      <button type="button"
+              onclick="window.print()">
+        Print
+      </button>
+
+      <%= link_to "Back",
+                  purchase_return_path(
+                    @purchase_return
+                  ) %>
+    </div>
+
+    <header>
+      <h1>
+        <%= current_organization.name %>
+      </h1>
+
+      <h2>Purchase Return Note</h2>
+
+      <p>
+        <strong>
+          <%= @purchase_return.return_number %>
+        </strong>
+      </p>
+    </header>
+
+    <table>
+      <tbody>
+        <tr>
+          <th>Supplier</th>
+          <td><%= @purchase.supplier.name %></td>
+
+          <th>Branch</th>
+          <td><%= @purchase.branch.name %></td>
+        </tr>
+
+        <tr>
+          <th>Original purchase</th>
+          <td><%= @purchase.purchase_number %></td>
+
+          <th>Supplier invoice</th>
+          <td>
+            <%= @purchase
+                  .supplier_invoice_number
+                  .presence || "—" %>
+          </td>
+        </tr>
+
+        <tr>
+          <th>Return date</th>
+          <td>
+            <%= @purchase_return
+                  .returned_at
+                  .to_fs(:long) %>
+          </td>
+
+          <th>Reason</th>
+          <td>
+            <%= @purchase_return
+                  .reason_code
+                  .titleize %>
+          </td>
+        </tr>
+
+        <tr>
+          <th>Supplier reference</th>
+          <td>
+            <%= @purchase_return
+                  .supplier_document_number
+                  .presence || "—" %>
+          </td>
+
+          <th>Recorded by</th>
+          <td>
+            <%= @purchase_return.recorded_by.name %>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Quantity</th>
+          <th>Unit cost</th>
+          <th>Batch</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <% @purchase_return
+             .purchase_return_lines
+             .ordered
+             .each do |line| %>
+          <tr>
+            <td><%= line.item_name %></td>
+
+            <td>
+              <%= number_with_precision(
+                    line.quantity,
+                    precision: 4,
+                    strip_insignificant_zeros: true
+                  ) %>
+              <%= line.unit_symbol %>
+            </td>
+
+            <td>
+              <%= number_to_currency(
+                    line.unit_cost,
+                    unit: "KSh "
+                  ) %>
+            </td>
+
+            <td>
+              <% if line.inventory_batch.present? %>
+                <%= line
+                      .inventory_batch
+                      .batch_number
+                      .presence ||
+                      "Batch ##{line.inventory_batch.id}" %>
+              <% else %>
+                —
+              <% end %>
+            </td>
+
+            <td>
+              <%= number_to_currency(
+                    line.line_total,
+                    unit: "KSh "
+                  ) %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+
+    <div class="totals">
+      <div>
+        <span>Return subtotal</span>
+
+        <span>
+          <%= number_to_currency(
+                @purchase_return.subtotal,
+                unit: "KSh "
+              ) %>
+        </span>
+      </div>
+
+      <div>
+        <span>Discount</span>
+
+        <span>
+          <%= number_to_currency(
+                @purchase_return.discount_total,
+                unit: "KSh "
+              ) %>
+        </span>
+      </div>
+
+      <div>
+        <span>Tax included</span>
+
+        <span>
+          <%= number_to_currency(
+                @purchase_return.tax_total,
+                unit: "KSh "
+              ) %>
+        </span>
+      </div>
+
+      <div>
+        <strong>Return total</strong>
+
+        <strong>
+          <%= number_to_currency(
+                @purchase_return.total,
+                unit: "KSh "
+              ) %>
+        </strong>
+      </div>
+
+      <div>
+        <span>Debt reduced</span>
+
+        <span>
+          <%= number_to_currency(
+                @purchase_return.debt_offset_amount,
+                unit: "KSh "
+              ) %>
+        </span>
+      </div>
+
+      <% if @purchase_return
+              .supplier_credit_due
+              .positive? %>
+        <div>
+          <strong>Supplier credit due</strong>
+
+          <strong>
+            <%= number_to_currency(
+                  @purchase_return.supplier_credit_due,
+                  unit: "KSh "
+                ) %>
+          </strong>
+        </div>
+      <% end %>
+    </div>
+
+    <% if @purchase_return.reason_details.present? %>
+      <h3>Reason details</h3>
+      <p><%= @purchase_return.reason_details %></p>
+    <% end %>
+
+    <% if @purchase_return.notes.present? %>
+      <h3>Notes</h3>
+      <p><%= @purchase_return.notes %></p>
+    <% end %>
+  </body>
+</html>
