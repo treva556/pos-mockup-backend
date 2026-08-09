@@ -116,6 +116,54 @@ class Sale < ApplicationRecord
         due_on < Date.current
   end
 
+  def completed_return_total
+    sale_returns
+      .completed
+      .sum(:total)
+      .to_d
+  end
+
+  def effective_balance_due
+    [
+      balance_due.to_d -
+        completed_return_total,
+      0.to_d
+    ].max
+  end
+
+  def return_refund_total
+    CustomerRefund
+      .joins(:sale_return)
+      .where(
+        sale_returns: {
+          sale_id: id,
+          status: "completed"
+        }
+      )
+      .sum(:amount)
+      .to_d
+  end
+
+  def refundable_return_total
+    [
+      completed_return_total -
+        balance_due.to_d,
+      0.to_d
+    ].max
+  end
+
+  def available_return_refund
+    [
+      refundable_return_total -
+        return_refund_total,
+      0.to_d
+    ].max
+  end
+
+  def effectively_paid?
+    effective_balance_due.zero?
+  end
+
   private
 
   def normalize_details

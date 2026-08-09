@@ -88,17 +88,27 @@ class SaleReturn < ApplicationRecord
     customer_refunds.sum(:amount).to_d
   end
 
-  def refundable_balance
-    [
-      total.to_d - refund_total,
-      0.to_d
-    ].max
-  end
+    def refundable_balance
+    return 0.to_d unless completed?
 
-  def refunded?
-    refundable_balance.zero? &&
-      total.to_d.positive?
-  end
+    own_remaining =
+        [
+        total.to_d -
+            refund_total,
+        0.to_d
+        ].max
+
+    [
+        own_remaining,
+        sale.available_return_refund
+    ].min
+    end
+
+    def refunded?
+    completed? &&
+        refund_total.positive? &&
+        refundable_balance.zero?
+    end
 
   private
 

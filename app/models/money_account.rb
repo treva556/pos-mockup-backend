@@ -85,7 +85,8 @@ class MoneyAccount < ApplicationRecord
 
   def current_balance
     balance_before_purchase_disbursements -
-      purchase_disbursements_total
+      purchase_disbursements_total -
+      customer_refunds_total
   end
 
   def purchase_disbursements_total
@@ -96,6 +97,12 @@ class MoneyAccount < ApplicationRecord
 
   def sale_receipts_total
     sale_payments.sum(:amount)
+  end
+
+  def customer_refunds_total
+    customer_refunds
+      .sum(:amount)
+      .to_d
   end
 
   private

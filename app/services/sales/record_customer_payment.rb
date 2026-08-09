@@ -165,12 +165,15 @@ module Sales
     end
 
     def validate_outstanding_balance!
-      unless sale.balance_due.positive?
+      available_balance =
+        sale.effective_balance_due
+
+      unless available_balance.positive?
         raise Sales::InvalidCustomerPaymentError,
-              "This sale is already fully paid"
+              "This sale has no outstanding balance"
       end
 
-      return if amount <= sale.balance_due
+      return if amount <= available_balance
 
       raise Sales::InvalidCustomerPaymentError,
             "Payment cannot exceed the outstanding balance"
