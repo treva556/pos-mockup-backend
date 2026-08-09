@@ -1,0 +1,168 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>Issue Customer Refund</h1>
+
+      <p>
+        Return
+        <strong><%= @sale_return.return_number %></strong>
+        ·
+        Original receipt
+        <strong><%= @sale.sale_number %></strong>
+      </p>
+    </div>
+
+    <div class="form-actions">
+      <%= link_to "Back to Return",
+                  sale_return_path(@sale_return),
+                  class: "button button--secondary" %>
+    </div>
+  </header>
+
+  <% if @error_message.present? %>
+    <div class="alert alert--danger">
+      <%= @error_message %>
+    </div>
+  <% end %>
+
+  <div class="panel">
+    <h2>Refund Position</h2>
+
+    <dl class="details-list">
+      <div>
+        <dt>Return total</dt>
+        <dd>
+          KSh
+          <%= number_with_precision(
+                @sale_return.total,
+                precision: 2
+              ) %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Already refunded</dt>
+        <dd>
+          KSh
+          <%= number_with_precision(
+                @sale_return.refund_total,
+                precision: 2
+              ) %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Maximum refund now</dt>
+        <dd>
+          <strong>
+            KSh
+            <%= number_with_precision(
+                  @sale_return.refundable_balance,
+                  precision: 2
+                ) %>
+          </strong>
+        </dd>
+      </div>
+    </dl>
+  </div>
+
+  <%= form_with url:
+        sale_return_refunds_path(
+          @sale_return
+        ),
+        scope: :customer_refund,
+        method: :post do |form| %>
+
+    <div class="panel">
+      <div class="form-field">
+        <%= form.label :amount %>
+
+        <%= form.number_field(
+              :amount,
+              min: 0.01,
+              max:
+                @sale_return.refundable_balance,
+              step: 0.01,
+              required: true
+            ) %>
+      </div>
+
+      <div class="form-field">
+        <%= form.label :payment_method_id,
+                       "Refund method" %>
+
+        <%= form.collection_select(
+              :payment_method_id,
+              @payment_methods,
+              :id,
+              :name,
+              {
+                prompt:
+                  "Select refund method"
+              },
+              required: true
+            ) %>
+      </div>
+
+      <div class="form-field">
+        <%= form.label :money_account_id,
+                       "Money account" %>
+
+        <%= form.collection_select(
+              :money_account_id,
+              @money_accounts,
+              :id,
+              :name,
+              {
+                prompt:
+                  "Select money account"
+              },
+              required: true
+            ) %>
+      </div>
+
+      <div class="form-field">
+        <%= form.label :refunded_at,
+                       "Refunded at" %>
+
+        <%= form.datetime_local_field(
+              :refunded_at,
+              value:
+                Time.current.strftime(
+                  "%Y-%m-%dT%H:%M"
+                )
+            ) %>
+      </div>
+
+      <div class="form-field">
+        <%= form.label :reference %>
+
+        <%= form.text_field :reference %>
+      </div>
+
+      <div class="form-field">
+        <%= form.label :notes %>
+
+        <%= form.text_area :notes,
+                           rows: 3 %>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <%= form.submit "Record Refund",
+                      class: "button button--primary",
+                      data: {
+                        turbo_confirm:
+                          "Record this refund? " \
+                          "This will reduce the selected " \
+                          "money account balance."
+                      } %>
+
+      <%= link_to "Cancel",
+                  sale_return_path(
+                    @sale_return
+                  ),
+                  class: "button button--secondary" %>
+    </div>
+  <% end %>
+</section>

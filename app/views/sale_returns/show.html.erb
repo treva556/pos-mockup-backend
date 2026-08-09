@@ -1,0 +1,286 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>Sales Return</h1>
+
+      <p>
+        <strong><%= @sale_return.return_number %></strong>
+        ·
+        <%= @sale_return.returned_at.to_fs(:long) %>
+      </p>
+    </div>
+
+    <div class="form-actions">
+      <%= link_to "Original Sale",
+                  sale_path(@sale),
+                  class: "button button--secondary" %>
+
+      <%= link_to "Printable Return Note",
+                  return_note_sale_return_path(
+                    @sale_return
+                  ),
+                  target: "_blank",
+                  rel: "noopener",
+                  class: "button button--secondary" %>
+
+      <% if @sale.available_return_refund.positive? &&
+            current_membership
+              .customer_refund_management? %>
+        <%= link_to "Issue Refund",
+                    new_sale_return_refund_path(
+                      @sale_return
+                    ),
+                    class: "button button--primary" %>
+      <% end %>
+    </div>
+  </header>
+
+  <div class="panel">
+    <h2>Return Information</h2>
+
+    <dl class="details-list">
+      <div>
+        <dt>Return number</dt>
+        <dd><%= @sale_return.return_number %></dd>
+      </div>
+
+      <div>
+        <dt>Original receipt</dt>
+        <dd><%= @sale.sale_number %></dd>
+      </div>
+
+      <div>
+        <dt>Branch</dt>
+        <dd><%= @sale_return.branch.name %></dd>
+      </div>
+
+      <div>
+        <dt>Recorded by</dt>
+        <dd><%= @sale_return.recorded_by.name %></dd>
+      </div>
+
+      <div>
+        <dt>Reason</dt>
+        <dd><%= @sale_return.reason_code.titleize %></dd>
+      </div>
+
+      <div>
+        <dt>Status</dt>
+        <dd>
+          <strong>
+            <%= @sale_return.status.titleize %>
+          </strong>
+        </dd>
+      </div>
+    </dl>
+
+    <% if @sale_return.reason_details.present? %>
+      <p>
+        <strong>Reason details:</strong>
+        <%= @sale_return.reason_details %>
+      </p>
+    <% end %>
+
+    <% if @sale_return.notes.present? %>
+      <p>
+        <strong>Notes:</strong>
+        <%= @sale_return.notes %>
+      </p>
+    <% end %>
+  </div>
+
+  <div class="panel">
+    <h2>Returned Items</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Quantity</th>
+          <th>Disposition</th>
+          <th>Batch</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <% @sale_return
+             .sale_return_lines
+             .ordered
+             .each do |line| %>
+          <tr>
+            <td>
+              <strong><%= line.item_name %></strong>
+            </td>
+
+            <td>
+              <%= number_with_precision(
+                    line.quantity,
+                    precision: 4,
+                    strip_insignificant_zeros: true
+                  ) %>
+              <%= line.unit_symbol %>
+            </td>
+
+            <td>
+              <%= line.stock_disposition.titleize %>
+            </td>
+
+            <td>
+              <% if line.inventory_batch.present? %>
+                <%= line.inventory_batch
+                      .batch_number
+                      .presence ||
+                      "Batch ##{line.inventory_batch.id}" %>
+              <% else %>
+                —
+              <% end %>
+            </td>
+
+            <td>
+              KSh
+              <%= number_with_precision(
+                    line.line_total,
+                    precision: 2
+                  ) %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h2>Totals</h2>
+
+    <dl class="details-list">
+      <div>
+        <dt>Subtotal</dt>
+        <dd>
+          KSh
+          <%= number_with_precision(
+                @sale_return.subtotal,
+                precision: 2
+              ) %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Discount</dt>
+        <dd>
+          KSh
+          <%= number_with_precision(
+                @sale_return.discount_total,
+                precision: 2
+              ) %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Tax included</dt>
+        <dd>
+          KSh
+          <%= number_with_precision(
+                @sale_return.tax_total,
+                precision: 2
+              ) %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Return total</dt>
+        <dd>
+          <strong>
+            KSh
+            <%= number_with_precision(
+                  @sale_return.total,
+                  precision: 2
+                ) %>
+          </strong>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Refunded</dt>
+        <dd>
+          KSh
+          <%= number_with_precision(
+                @sale_return.refund_total,
+                precision: 2
+              ) %>
+        </dd>
+      </div>
+
+      <div>
+        <dt>Currently refundable</dt>
+        <dd>
+          <strong>
+            KSh
+            <%= number_with_precision(
+                  @sale_return.refundable_balance,
+                  precision: 2
+                ) %>
+          </strong>
+        </dd>
+      </div>
+    </dl>
+  </div>
+
+  <div class="panel">
+    <h2>Refund History</h2>
+
+    <% if @sale_return.customer_refunds.any? %>
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Method</th>
+            <th>Account</th>
+            <th>Amount</th>
+            <th>Reference</th>
+            <th>Recorded by</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% @sale_return
+               .customer_refunds
+               .order(:refunded_at)
+               .each do |refund| %>
+            <tr>
+              <td>
+                <%= refund.refunded_at.to_fs(:short) %>
+              </td>
+
+              <td>
+                <%= refund.payment_method.name %>
+              </td>
+
+              <td>
+                <%= refund.money_account.name %>
+              </td>
+
+              <td>
+                KSh
+                <%= number_with_precision(
+                      refund.amount,
+                      precision: 2
+                    ) %>
+              </td>
+
+              <td>
+                <%= refund.reference.presence || "—" %>
+              </td>
+
+              <td>
+                <%= refund.recorded_by.name %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p>No cash refund has been recorded.</p>
+    <% end %>
+  </div>
+</section>

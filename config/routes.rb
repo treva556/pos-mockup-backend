@@ -125,16 +125,31 @@ Rails.application.routes.draw do
                 controller: "purchase_payments"
    end
 
-    resources :sales,
-              only: %i[index show] do
-      member do
+   resources :sales,
+                only: %i[index show] do
+        member do
         get :receipt
-      end
+        end
 
-      resources :payments,
+        resources :payments,
                 only: %i[new create],
                 controller: "sale_payments"
-    end
+
+        resources :returns,
+                only: %i[new create],
+                controller: "sale_returns"
+        end
+
+        resources :sale_returns,
+                only: :show do
+        member do
+        get :return_note
+        end
+
+        resources :refunds,
+                only: %i[new create],
+                controller: "customer_refunds"
+     end
 
     resources :suppliers do
         member do

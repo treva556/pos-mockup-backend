@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1">
+
+    <title>
+      Return <%= @sale_return.return_number %>
+    </title>
+
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 24px;
+        background: #f4f4f4;
+        color: #111;
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+      }
+
+      .receipt {
+        width: 80mm;
+        max-width: 100%;
+        margin: 0 auto;
+        padding: 16px;
+        background: white;
+      }
+
+      .receipt-header {
+        text-align: center;
+      }
+
+      .receipt-header h1 {
+        margin: 0 0 8px;
+        font-size: 20px;
+      }
+
+      .divider {
+        margin: 12px 0;
+        border-top: 1px dashed #222;
+      }
+
+      .receipt-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin: 5px 0;
+      }
+
+      .receipt-item {
+        margin: 10px 0;
+      }
+
+      .receipt-item-name {
+        font-weight: bold;
+      }
+
+      .receipt-total {
+        font-size: 17px;
+        font-weight: bold;
+      }
+
+      .screen-instructions {
+        width: 80mm;
+        max-width: 100%;
+        margin: 0 auto 16px;
+        padding: 12px;
+        background: white;
+        text-align: center;
+      }
+
+      @media print {
+        body {
+          padding: 0;
+          background: white;
+        }
+
+        .screen-instructions {
+          display: none;
+        }
+
+        .receipt {
+          width: 80mm;
+          margin: 0;
+          padding: 5mm;
+        }
+
+        @page {
+          size: 80mm auto;
+          margin: 0;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="screen-instructions">
+      Press <strong>Ctrl + P</strong>
+      to print this return note.
+    </div>
+
+    <main class="receipt">
+      <header class="receipt-header">
+        <h1><%= current_organization.name %></h1>
+        <strong>SALES RETURN NOTE</strong>
+
+        <% if @sale_return.branch.address.present? %>
+          <p><%= @sale_return.branch.address %></p>
+        <% end %>
+
+        <% if @sale_return.branch.phone.present? %>
+          <p>
+            Tel:
+            <%= @sale_return.branch.phone %>
+          </p>
+        <% end %>
+      </header>
+
+      <div class="divider"></div>
+
+      <div class="receipt-row">
+        <span>Return</span>
+        <strong>
+          <%= @sale_return.return_number %>
+        </strong>
+      </div>
+
+      <div class="receipt-row">
+        <span>Original receipt</span>
+        <span><%= @sale.sale_number %></span>
+      </div>
+
+      <div class="receipt-row">
+        <span>Date</span>
+        <span>
+          <%= @sale_return.returned_at.to_fs(:short) %>
+        </span>
+      </div>
+
+      <div class="receipt-row">
+        <span>Customer</span>
+        <span>
+          <%= @sale.customer&.name ||
+                "Walk-in Customer" %>
+        </span>
+      </div>
+
+      <div class="receipt-row">
+        <span>Reason</span>
+        <span>
+          <%= @sale_return.reason_code.titleize %>
+        </span>
+      </div>
+
+      <div class="divider"></div>
+
+      <% @sale_return
+           .sale_return_lines
+           .ordered
+           .each do |line| %>
+        <div class="receipt-item">
+          <div class="receipt-item-name">
+            <%= line.item_name %>
+          </div>
+
+          <div class="receipt-row">
+            <span>
+              <%= number_with_precision(
+                    line.quantity,
+                    precision: 4,
+                    strip_insignificant_zeros: true
+                  ) %>
+              <%= line.unit_symbol %>
+            </span>
+
+            <strong>
+              KSh
+              <%= number_with_precision(
+                    line.line_total,
+                    precision: 2
+                  ) %>
+            </strong>
+          </div>
+
+          <small>
+            <%= line.stock_disposition.titleize %>
+          </small>
+        </div>
+      <% end %>
+
+      <div class="divider"></div>
+
+      <div class="receipt-row receipt-total">
+        <span>Return total</span>
+
+        <span>
+          KSh
+          <%= number_with_precision(
+                @sale_return.total,
+                precision: 2
+              ) %>
+        </span>
+      </div>
+
+      <% if @sale_return.refund_total.positive? %>
+        <div class="receipt-row">
+          <span>Refunded</span>
+
+          <span>
+            KSh
+            <%= number_with_precision(
+                  @sale_return.refund_total,
+                  precision: 2
+                ) %>
+          </span>
+        </div>
+      <% end %>
+
+      <div class="divider"></div>
+
+      <p>
+        Recorded by:
+        <strong>
+          <%= @sale_return.recorded_by.name %>
+        </strong>
+      </p>
+    </main>
+  </body>
+</html>
