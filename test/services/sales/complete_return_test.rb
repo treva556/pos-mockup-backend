@@ -440,6 +440,157 @@ module Sales
                     .returned_quantity
     end
 
+    test "completed sale return audit records cannot be changed" do
+      sale =
+        create_paid_sale(
+          item: @item,
+          quantity: 2
+        )
+
+      sale_return =
+        complete_return(
+          sale: sale,
+          quantity: 1
+        )
+
+      return_line =
+        sale_return.sale_return_lines.first
+
+      movement =
+        sale_return.stock_movements.first
+
+      original_return_total =
+        sale_return.total
+
+      original_line_quantity =
+        return_line.quantity
+
+      original_movement_quantity =
+        movement.quantity_change
+
+      assert_not sale_return.update(
+        total: 1
+      )
+
+      assert_not return_line.update(
+        quantity: 99
+      )
+
+      assert_not movement.update(
+        quantity_change: 99
+      )
+
+      assert_equal(
+        original_return_total,
+        sale_return.reload.total
+      )
+
+      assert_equal(
+        original_line_quantity,
+        return_line.reload.quantity
+      )
+
+      assert_equal(
+        original_movement_quantity,
+        movement.reload.quantity_change
+      )
+    end
+
+    test "completed sale return audit records cannot be destroyed" do
+      sale =
+        create_paid_sale(
+          item: @item,
+          quantity: 2
+        )
+
+      sale_return =
+        complete_return(
+          sale: sale,
+          quantity: 1
+        )
+
+      return_line =
+        sale_return.sale_return_lines.first
+
+      movement =
+        sale_return.stock_movements.first
+
+      return_id =
+        sale_return.id
+
+      line_id =
+        return_line.id
+
+      movement_id =
+        movement.id
+
+      assert_not return_line.destroy
+      assert_not movement.destroy
+      assert_not sale_return.destroy
+
+      assert SaleReturn.exists?(return_id)
+      assert SaleReturnLine.exists?(line_id)
+      assert StockMovement.exists?(movement_id)
+    end
+
+    test "customer refund audit record cannot be changed or destroyed" do
+      sale =
+        create_paid_sale(
+          item: @item,
+          quantity: 2
+        )
+
+      sale_return =
+        complete_return(
+          sale: sale,
+          quantity: 1
+        )
+
+      refund =
+        CustomerRefund.create!(
+          organization: @organization,
+          sale_return: sale_return,
+          payment_method: @cash_method,
+          money_account: @cash_account,
+          recorded_by: @owner,
+          amount: 100,
+          refunded_at: Time.current,
+          reference: "AUDIT-REFUND-001"
+        )
+
+      original_amount =
+        refund.amount
+
+      original_reference =
+        refund.reference
+
+      assert_not refund.update(
+        amount: 1,
+        reference: "TAMPERED"
+      )
+
+      refund.reload
+
+      assert_equal(
+        original_amount,
+        refund.amount
+      )
+
+      assert_equal(
+        original_reference,
+        refund.reference
+      )
+
+      refund_id =
+        refund.id
+
+      assert_not refund.destroy
+
+      assert CustomerRefund.exists?(
+        refund_id
+      )
+    end
+
     private
 
     def create_paid_sale(

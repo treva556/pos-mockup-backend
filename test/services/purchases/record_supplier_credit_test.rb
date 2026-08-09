@@ -223,6 +223,123 @@ module Purchases
                      .available_credit_balance
     end
 
+    test "issued supplier credit financial identity cannot be changed" do
+      credit =
+        Purchases::RecordSupplierCredit.call(
+          organization: @organization,
+          purchase_return: @purchase_return,
+          recorded_by: @owner,
+          amount: 300,
+          credit_number: "CN-LOCKED-001",
+          issued_on: Date.current,
+          notes: "Original supplier credit"
+        )
+
+      assert_not credit.update(
+        amount: 999,
+        credit_number: "CN-TAMPERED",
+        notes: "Changed"
+      )
+
+      credit.reload
+
+      assert_equal 300.to_d,
+                   credit.amount
+
+      assert_equal "CN-LOCKED-001",
+                   credit.credit_number
+
+      assert_equal(
+        "Original supplier credit",
+        credit.notes
+      )
+    end
+
+    test "supplier credit application state can move forward" do
+      credit =
+        Purchases::RecordSupplierCredit.call(
+          organization: @organization,
+          purchase_return: @purchase_return,
+          recorded_by: @owner,
+          amount: 300,
+          credit_number: "CN-STATE-001",
+          issued_on: Date.current
+        )
+
+      assert credit.available?
+
+      assert credit.update(
+        applied_amount: 100,
+        status: "partially_applied"
+      )
+
+      credit.reload
+
+      assert_equal 100.to_d,
+                   credit.applied_amount
+
+      assert_equal 200.to_d,
+                   credit.available_amount
+
+      assert credit.partially_applied?
+
+      assert credit.update(
+        applied_amount: 300,
+        status: "applied"
+      )
+
+      credit.reload
+
+      assert_equal 300.to_d,
+                   credit.applied_amount
+
+      assert_equal 0.to_d,
+                   credit.available_amount
+
+      assert credit.applied?
+    end
+
+    test "supplier credit application state cannot move backward" do
+      credit =
+        Purchases::RecordSupplierCredit.call(
+          organization: @organization,
+          purchase_return: @purchase_return,
+          recorded_by: @owner,
+          amount: 300,
+          credit_number: "CN-STATE-002",
+          issued_on: Date.current
+        )
+
+      assert credit.update(
+        applied_amount: 150,
+        status: "partially_applied"
+      )
+
+      assert_not credit.update(
+        applied_amount: 100,
+        status: "partially_applied"
+      )
+
+      credit.reload
+
+      assert_equal 150.to_d,
+                   credit.applied_amount
+
+      assert credit.partially_applied?
+
+      assert_not credit.update(
+        applied_amount: 0,
+        status: "available"
+      )
+
+      credit.reload
+
+      assert_equal 150.to_d,
+                   credit.applied_amount
+
+      assert credit.partially_applied?
+    end
+
     private
 
     def create_received_purchase

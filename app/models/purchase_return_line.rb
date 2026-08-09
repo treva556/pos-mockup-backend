@@ -1,4 +1,6 @@
 class PurchaseReturnLine < ApplicationRecord
+  include AuditImmutable
+
   ITEM_TYPES = %w[
     product
     service
@@ -68,6 +70,12 @@ class PurchaseReturnLine < ApplicationRecord
         -> { order(:line_number) }
 
   private
+
+
+  def audit_record_immutable?
+    purchase_return&.completed?
+  end
+
 
   def normalize_details
     self.item_name =

@@ -1,4 +1,6 @@
 class CustomerRefund < ApplicationRecord
+  include AuditImmutable
+
   belongs_to :organization
   belongs_to :sale_return
   belongs_to :payment_method

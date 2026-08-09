@@ -1,4 +1,6 @@
 class StockMovement < ApplicationRecord
+  include AuditImmutable
+
   INBOUND_TYPES = %w[
     opening
     adjustment_in

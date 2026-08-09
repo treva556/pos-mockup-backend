@@ -395,6 +395,121 @@ module Purchases
       refute purchase.outstanding?
     end
 
+    test "completed purchase return audit records cannot be changed" do
+      purchase,
+        source_line, =
+        create_received_purchase(
+          item: @item,
+          quantity: 4,
+          unit_cost: 250
+        )
+
+      purchase_return =
+        complete_return(
+          purchase: purchase,
+          line: source_line,
+          quantity: 1
+        )
+
+      return_line =
+        purchase_return
+          .purchase_return_lines
+          .first
+
+      movement =
+        purchase_return
+          .stock_movements
+          .first
+
+      original_total =
+        purchase_return.total
+
+      original_quantity =
+        return_line.quantity
+
+      original_movement_quantity =
+        movement.quantity_change
+
+      assert_not purchase_return.update(
+        total: 1
+      )
+
+      assert_not return_line.update(
+        quantity: 99
+      )
+
+      assert_not movement.update(
+        quantity_change: -99
+      )
+
+      assert_equal(
+        original_total,
+        purchase_return.reload.total
+      )
+
+      assert_equal(
+        original_quantity,
+        return_line.reload.quantity
+      )
+
+      assert_equal(
+        original_movement_quantity,
+        movement.reload.quantity_change
+      )
+    end
+
+    test "completed purchase return audit records cannot be destroyed" do
+      purchase,
+        source_line, =
+        create_received_purchase(
+          item: @item,
+          quantity: 4,
+          unit_cost: 250
+        )
+
+      purchase_return =
+        complete_return(
+          purchase: purchase,
+          line: source_line,
+          quantity: 1
+        )
+
+      return_line =
+        purchase_return
+          .purchase_return_lines
+          .first
+
+      movement =
+        purchase_return
+          .stock_movements
+          .first
+
+      return_id =
+        purchase_return.id
+
+      line_id =
+        return_line.id
+
+      movement_id =
+        movement.id
+
+      assert_not return_line.destroy
+      assert_not movement.destroy
+      assert_not purchase_return.destroy
+
+      assert PurchaseReturn.exists?(
+        return_id
+      )
+
+      assert PurchaseReturnLine.exists?(
+        line_id
+      )
+
+      assert StockMovement.exists?(
+        movement_id
+      )
+    end
+
     private
 
     def create_received_purchase(

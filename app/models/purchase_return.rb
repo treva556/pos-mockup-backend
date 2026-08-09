@@ -1,4 +1,6 @@
 class PurchaseReturn < ApplicationRecord
+  include AuditImmutable
+
   STATUSES = {
     draft: "draft",
     completed: "completed",
@@ -137,6 +139,12 @@ class PurchaseReturn < ApplicationRecord
     end
 
   private
+
+
+  def audit_record_immutable?
+    status_in_database == "completed"
+  end
+
 
   def normalize_details
     self.return_number =

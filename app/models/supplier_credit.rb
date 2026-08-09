@@ -43,6 +43,12 @@ class SupplierCredit < ApplicationRecord
   validate :applied_amount_does_not_exceed_amount
   validate :issued_credit_has_document_details
   validate :status_matches_applied_amount
+  validate :issued_credit_identity_is_unchanged,
+           on: :update
+  validate :applied_amount_does_not_decrease,
+           on: :update
+  validate :status_transition_is_allowed,
+           on: :update
 
   scope :recent_first,
         -> { order(issued_on: :desc, created_at: :desc) }
@@ -65,6 +71,77 @@ class SupplierCredit < ApplicationRecord
   end
 
   private
+
+  def issued_credit_identity_is_unchanged
+    immutable_attributes = %w[
+      organization_id
+      purchase_return_id
+      recorded_by_id
+      amount
+      credit_number
+      issued_on
+      notes
+    ]
+
+    changed =
+      immutable_attributes.select do |attribute|
+        will_save_change_to_attribute?(attribute)
+      end
+
+    return if changed.empty?
+
+    errors.add(
+      :base,
+      "Issued supplier credit details cannot be changed"
+    )
+  end
+
+  def applied_amount_does_not_decrease
+    previous =
+      applied_amount_in_database
+
+    return if previous.blank?
+    return if applied_amount.blank?
+    return if applied_amount.to_d >=
+              previous.to_d
+
+    errors.add(
+      :applied_amount,
+      "cannot decrease once credit has been applied"
+    )
+  end
+
+  def status_transition_is_allowed
+    return unless will_save_change_to_status?
+
+    previous =
+      status_in_database
+
+    allowed = {
+      "pending" => %w[
+        available
+        cancelled
+      ],
+      "available" => %w[
+        partially_applied
+        applied
+      ],
+      "partially_applied" => %w[
+        applied
+      ],
+      "applied" => [],
+      "cancelled" => []
+    }
+
+    return if allowed
+      .fetch(previous, [])
+      .include?(status)
+
+    errors.add(
+      :status,
+      "cannot change from #{previous} to #{status}"
+    )
+  end
 
   def normalize_details
     self.credit_number =
