@@ -8,16 +8,22 @@ module Organizations
     end
 
     def initialize(user:, organization_attributes:)
-      @user = user
-      @organization_attributes = organization_attributes
+      @user =
+        user
+
+      @organization_attributes =
+        organization_attributes
     end
 
     def call
-      raise ArgumentError, "User is required" if user.blank?
+      raise ArgumentError,
+            "User is required" if user.blank?
 
       Organization.transaction do
         organization =
-          Organization.create!(organization_attributes)
+          Organization.create!(
+            organization_attributes
+          )
 
         organization.branches.create!(
           name: "Main Branch",
@@ -35,12 +41,19 @@ module Organizations
           branch: nil
         )
 
+        Accounting::ProvisionDefaultChart
+          .new(
+            organization: organization
+          )
+          .call
+
         organization
       end
     end
 
     private
 
-    attr_reader :user, :organization_attributes
+    attr_reader :user,
+                :organization_attributes
   end
 end

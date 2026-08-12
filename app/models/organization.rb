@@ -1,5 +1,11 @@
 class Organization < ApplicationRecord
   has_many :branches, dependent: :destroy
+
+has_many :ledger_accounts,
+         dependent: :restrict_with_error
+
+has_many :accounting_account_mappings,
+         dependent: :restrict_with_error
   has_many :memberships, dependent: :destroy
   has_many :users, through: :memberships
   has_many :customers,

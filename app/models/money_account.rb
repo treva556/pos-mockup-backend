@@ -2,6 +2,9 @@ class MoneyAccount < ApplicationRecord
   belongs_to :organization
   belongs_to :branch, optional: true
 
+belongs_to :ledger_account,
+           optional: true
+
   has_many :branch_payment_settings,
            dependent: :restrict_with_error
 
@@ -57,6 +60,7 @@ class MoneyAccount < ApplicationRecord
             numericality: true
 
   validate :branch_belongs_to_organization
+  validate :ledger_account_belongs_to_organization
   validate :opening_balance_date_is_present
 
   scope :active, -> { where(active: true) }
@@ -125,6 +129,19 @@ class MoneyAccount < ApplicationRecord
       "must belong to the same organization"
     )
   end
+
+def ledger_account_belongs_to_organization
+  return if ledger_account.blank?
+  return if organization.blank?
+
+  return if ledger_account.organization_id ==
+            organization_id
+
+  errors.add(
+    :ledger_account,
+    "must belong to the same organization"
+  )
+end
 
   def opening_balance_date_is_present
     return if opening_balance.to_d.zero?

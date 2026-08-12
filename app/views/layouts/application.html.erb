@@ -34,6 +34,11 @@
 
           <%= link_to "Dashboard", dashboard_path %>
 
+          <% if current_membership&.accounting_view? %>
+            <%= link_to "Accounting",
+                        accounting_ledger_accounts_path %>
+          <% end %>
+
           <% if current_membership&.organization_admin? %>
             <%= link_to "Company",
                         edit_settings_organization_path %>

@@ -1,0 +1,203 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>Chart of Accounts</h1>
+
+      <p>
+        View the accounts used to classify
+        the organization's financial activity.
+      </p>
+    </div>
+
+    <% if current_membership.accounting_management? %>
+      <div class="form-actions">
+        <%= link_to "New Account",
+                    new_accounting_ledger_account_path,
+                    class: "button button--primary" %>
+      </div>
+    <% end %>
+  </header>
+
+  <div class="panel">
+    <%= form_with(
+          url: accounting_ledger_accounts_path,
+          method: :get,
+          local: true
+        ) do |form| %>
+      <div class="filter-grid">
+        <div class="field">
+          <%= form.label :q,
+                         "Search" %>
+
+          <%= form.search_field(
+                :q,
+                value: @query,
+                placeholder:
+                  "Search account code or name"
+              ) %>
+        </div>
+
+        <div class="field">
+          <%= form.label :account_type,
+                         "Account type" %>
+
+          <%= form.select(
+                :account_type,
+                [
+                  ["All types", ""]
+                ] +
+                  LedgerAccount::ACCOUNT_TYPES.map do |key, value|
+                    [
+                      key.to_s.humanize,
+                      value
+                    ]
+                  end,
+                selected: @account_type
+              ) %>
+        </div>
+
+        <div class="field">
+          <%= form.label :status,
+                         "Status" %>
+
+          <%= form.select(
+                :status,
+                [
+                  ["Active", "active"],
+                  ["Inactive", "inactive"],
+                  ["All", "all"]
+                ],
+                selected: @status
+              ) %>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <%= form.submit "Search",
+                        class: "button button--primary" %>
+
+        <%= link_to "Clear",
+                    accounting_ledger_accounts_path,
+                    class: "button button--secondary" %>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="panel">
+    <% if @ledger_accounts.any? %>
+      <table>
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Account</th>
+            <th>Type</th>
+            <th>Normal balance</th>
+            <th>Report group</th>
+            <th>Posting</th>
+            <th>Classification</th>
+            <th>Status</th>
+
+            <% if current_membership.accounting_management? %>
+              <th>Actions</th>
+            <% end %>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% @ledger_accounts.each do |account| %>
+            <tr>
+              <td>
+                <strong>
+                  <%= account.code %>
+                </strong>
+              </td>
+
+              <td>
+                <% if account.parent.present? %>
+                  ↳
+                <% end %>
+
+                <%= account.name %>
+
+                <% if account.parent.present? %>
+                  <br>
+
+                  <small>
+                    Parent:
+                    <%= account.parent.code %>
+                    <%= account.parent.name %>
+                  </small>
+                <% end %>
+              </td>
+
+              <td>
+                <%= account.account_type.humanize %>
+              </td>
+
+              <td>
+                <%= account.normal_balance.humanize %>
+              </td>
+
+              <td>
+                <%= account.report_group.humanize %>
+              </td>
+
+              <td>
+                <%= account.postable? ?
+                      "Postable" :
+                      "Heading" %>
+              </td>
+
+              <td>
+                <%= account.system_account? ?
+                      "System" :
+                      "Custom" %>
+              </td>
+
+              <td>
+                <%= account.active? ?
+                      "Active" :
+                      "Inactive" %>
+              </td>
+
+              <% if current_membership.accounting_management? %>
+                <td>
+                  <% if account.system_account? %>
+                    Protected
+                  <% else %>
+                    <%= link_to "Edit",
+                                edit_accounting_ledger_account_path(
+                                  account
+                                ) %>
+
+                    <br>
+
+                    <%= button_to(
+                          account.active? ?
+                            "Disable" :
+                            "Enable",
+                          toggle_status_accounting_ledger_account_path(
+                            account
+                          ),
+                          method: :patch,
+                          form: {
+                            data: {
+                              turbo_confirm:
+                                account.active? ?
+                                  "Disable this ledger account?" :
+                                  "Enable this ledger account?"
+                            }
+                          }
+                        ) %>
+                  <% end %>
+                </td>
+              <% end %>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p>No ledger accounts found.</p>
+    <% end %>
+  </div>
+</section>

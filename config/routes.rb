@@ -217,6 +217,15 @@ Rails.application.routes.draw do
   resources :stock_movements,
             only: %i[index show]
 
+  namespace :accounting do
+    resources :ledger_accounts,
+              path: "chart-of-accounts",
+              except: %i[show destroy] do
+      patch :toggle_status,
+            on: :member
+    end
+  end
+
   get "up" => "rails/health#show",
       as: :rails_health_check
 end

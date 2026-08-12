@@ -139,6 +139,22 @@ end
     end
     end
 
+    def require_accounting_view!
+      return if current_membership&.accounting_view?
+
+      redirect_to dashboard_path,
+                  alert:
+                    "Your role cannot view accounting records."
+    end
+
+    def require_accounting_management!
+      return if current_membership&.accounting_management?
+
+      redirect_to accounting_ledger_accounts_path,
+                  alert:
+                    "Your role cannot manage accounting setup."
+    end
+
     def require_money_setup_management!
     return if current_membership&.money_setup_management?
 
