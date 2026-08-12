@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_12_184547) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_12_201410) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -168,6 +168,59 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_12_184547) do
     t.check_constraint "item_type::text = ANY (ARRAY['product'::character varying, 'service'::character varying]::text[])", name: "items_valid_item_type"
     t.check_constraint "purchase_cost >= 0::numeric", name: "items_purchase_cost_nonnegative"
     t.check_constraint "selling_price >= 0::numeric", name: "items_selling_price_nonnegative"
+  end
+
+  create_table "journal_entries", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "created_by_id", null: false
+    t.string "description"
+    t.date "entry_date", null: false
+    t.string "entry_number", null: false
+    t.bigint "organization_id", null: false
+    t.datetime "posted_at"
+    t.bigint "reversal_of_id"
+    t.datetime "reversed_at"
+    t.integer "sequence_number"
+    t.bigint "source_id"
+    t.string "source_type"
+    t.string "status", default: "draft", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_by_id"], name: "index_journal_entries_on_created_by_id"
+    t.index ["organization_id", "entry_date"], name: "index_journal_entries_on_org_and_date"
+    t.index ["organization_id", "entry_number"], name: "index_journal_entries_on_org_and_number", unique: true
+    t.index ["organization_id", "sequence_number"], name: "index_journal_entries_on_org_and_sequence", unique: true
+    t.index ["organization_id", "source_type", "source_id"], name: "index_journal_entries_on_unique_source", unique: true, where: "((source_type IS NOT NULL) AND (source_id IS NOT NULL))"
+    t.index ["organization_id", "status"], name: "index_journal_entries_on_org_and_status"
+    t.index ["organization_id"], name: "index_journal_entries_on_organization_id"
+    t.index ["reversal_of_id"], name: "index_journal_entries_on_reversal_of_id"
+    t.index ["reversal_of_id"], name: "index_journal_entries_on_unique_reversal", unique: true, where: "(reversal_of_id IS NOT NULL)"
+    t.index ["source_type", "source_id"], name: "index_journal_entries_on_source"
+    t.check_constraint "sequence_number IS NULL OR sequence_number > 0", name: "journal_entries_positive_sequence"
+    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying, 'posted'::character varying, 'reversed'::character varying]::text[])", name: "journal_entries_status_check"
+  end
+
+  create_table "journal_lines", force: :cascade do |t|
+    t.bigint "branch_id"
+    t.datetime "created_at", null: false
+    t.decimal "credit", precision: 15, scale: 2, default: "0.0", null: false
+    t.decimal "debit", precision: 15, scale: 2, default: "0.0", null: false
+    t.string "description"
+    t.bigint "journal_entry_id", null: false
+    t.bigint "ledger_account_id", null: false
+    t.integer "line_number", null: false
+    t.bigint "organization_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["branch_id"], name: "index_journal_lines_on_branch_id"
+    t.index ["journal_entry_id", "line_number"], name: "index_journal_lines_on_entry_and_line", unique: true
+    t.index ["journal_entry_id"], name: "index_journal_lines_on_journal_entry_id"
+    t.index ["ledger_account_id"], name: "index_journal_lines_on_ledger_account_id"
+    t.index ["organization_id", "branch_id"], name: "index_journal_lines_on_org_and_branch"
+    t.index ["organization_id", "ledger_account_id"], name: "index_journal_lines_on_org_and_account"
+    t.index ["organization_id"], name: "index_journal_lines_on_organization_id"
+    t.check_constraint "credit >= 0::numeric", name: "journal_lines_nonnegative_credit"
+    t.check_constraint "debit > 0::numeric AND credit = 0::numeric OR credit > 0::numeric AND debit = 0::numeric", name: "journal_lines_one_sided_amount"
+    t.check_constraint "debit >= 0::numeric", name: "journal_lines_nonnegative_debit"
+    t.check_constraint "line_number > 0", name: "journal_lines_positive_line_number"
   end
 
   create_table "ledger_accounts", force: :cascade do |t|
@@ -842,6 +895,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_12_184547) do
   add_foreign_key "items", "product_categories"
   add_foreign_key "items", "tax_rates"
   add_foreign_key "items", "unit_of_measures"
+  add_foreign_key "journal_entries", "journal_entries", column: "reversal_of_id"
+  add_foreign_key "journal_entries", "organizations"
+  add_foreign_key "journal_entries", "users", column: "created_by_id"
+  add_foreign_key "journal_lines", "branches"
+  add_foreign_key "journal_lines", "journal_entries"
+  add_foreign_key "journal_lines", "ledger_accounts"
+  add_foreign_key "journal_lines", "organizations"
   add_foreign_key "ledger_accounts", "ledger_accounts", column: "parent_id"
   add_foreign_key "ledger_accounts", "organizations"
   add_foreign_key "memberships", "branches"

@@ -73,6 +73,9 @@ class LedgerAccount < ApplicationRecord
   has_many :accounting_account_mappings,
            dependent: :restrict_with_error
 
+  has_many :journal_lines,
+           dependent: :restrict_with_error
+
   enum :account_type,
        ACCOUNT_TYPES,
        prefix: true,
