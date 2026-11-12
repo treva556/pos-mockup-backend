@@ -50,6 +50,10 @@ module Purchases
 
         refresh_purchase_totals!
 
+        post_accounting!(
+          payment
+        )
+
         payment
       end
     end
@@ -173,6 +177,15 @@ module Purchases
             amount_paid: amount_paid,
             balance_due: balance_due
           )
+      )
+    end
+
+    def post_accounting!(payment)
+      return unless organization.accounting_enabled?
+
+      Purchases::PostSupplierPaymentAccounting.call(
+        organization: organization,
+        payment: payment
       )
     end
 

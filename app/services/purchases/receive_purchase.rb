@@ -32,17 +32,19 @@ module Purchases
           )
 
         purchase_lines =
-        create_lines!(
+          create_lines!(
             purchase: purchase,
-            calculated_lines:
-            calculation.lines
-        )
+            calculated_lines: calculation.lines
+          )
 
         receive_stock!(
-        purchase: purchase,
-        calculated_lines:
-            calculation.lines,
-        purchase_lines: purchase_lines
+          purchase: purchase,
+          calculated_lines: calculation.lines,
+          purchase_lines: purchase_lines
+        )
+
+        post_accounting!(
+          purchase
         )
 
         purchase
@@ -84,20 +86,19 @@ module Purchases
 
       if cart.due_on.blank?
         raise Purchases::ReceivingError,
-                "Select the supplier payment due date"
+              "Select the supplier payment due date"
       end
 
-      if cart.due_on < cart.purchased_on
-        raise Purchases::ReceivingError,
-                "Supplier payment due date cannot be before " \
-                "the invoice date"
-      end
+      return unless cart.due_on < cart.purchased_on
+
+      raise Purchases::ReceivingError,
+            "Supplier payment due date cannot be before " \
+            "the invoice date"
     end
 
     def validate_branch!
       unless branch&.persisted? &&
-             branch.organization_id ==
-               organization.id
+             branch.organization_id == organization.id
         raise Purchases::ReceivingError,
               "The purchase branch is invalid"
       end
@@ -123,8 +124,7 @@ module Purchases
       end
 
       return if membership.branch_id.blank?
-      return if membership.branch_id ==
-                branch.id
+      return if membership.branch_id == branch.id
 
       raise Purchases::ReceivingError,
             "The user cannot receive stock for this branch"
@@ -132,12 +132,10 @@ module Purchases
 
     def validate_cart!
       valid_organization =
-        cart.organization.id ==
-          organization.id
+        cart.organization.id == organization.id
 
       valid_branch =
-        cart.branch.id ==
-          branch.id
+        cart.branch.id == branch.id
 
       return if valid_organization &&
                 valid_branch
@@ -155,11 +153,11 @@ module Purchases
         supplier: supplier,
         recorded_by: recorded_by,
         purchase_number:
-            Purchases::NextPurchaseNumber.call(
+          Purchases::NextPurchaseNumber.call(
             branch: branch
-            ),
+          ),
         supplier_invoice_number:
-            cart.supplier_invoice_number,
+          cart.supplier_invoice_number,
         status: "received",
         payment_status: "unpaid",
         purchased_on: cart.purchased_on,
@@ -167,167 +165,183 @@ module Purchases
         received_at: received_at,
         prices_include_tax: true,
         subtotal:
-            money(calculation.subtotal),
+          money(calculation.subtotal),
         discount_total:
-            money(calculation.discount_total),
+          money(calculation.discount_total),
         tax_total:
-            money(calculation.tax_total),
+          money(calculation.tax_total),
         total:
-            money(calculation.total),
+          money(calculation.total),
         amount_paid: 0,
         balance_due:
-            money(calculation.total),
+          money(calculation.total),
         notes: cart.notes
-        )
+      )
     end
 
     def create_lines!(
-        purchase:,
-        calculated_lines:
+      purchase:,
+      calculated_lines:
+    )
+      calculated_lines.map do |line|
+        purchase.purchase_lines.create!(
+          organization: organization,
+          item: line[:item],
+          tax_rate: line[:tax_rate],
+          line_number: line[:line_number],
+          item_name: line[:item_name],
+          sku: line[:sku],
+          barcode: line[:barcode],
+          item_type: line[:item_type],
+          unit_name: line[:unit_name],
+          unit_symbol: line[:unit_symbol],
+          quantity: line[:quantity],
+          unit_cost: line[:unit_cost],
+          gross_amount:
+            line[:gross_amount],
+          discount_amount:
+            line[:discount_amount],
+          tax_percentage:
+            line[:tax_percentage],
+          tax_amount:
+            line[:tax_amount],
+          line_total:
+            line[:line_total]
         )
-        calculated_lines.map do |line|
-            purchase.purchase_lines.create!(
-            organization: organization,
-            item: line[:item],
-            tax_rate: line[:tax_rate],
-            line_number: line[:line_number],
-            item_name: line[:item_name],
-            sku: line[:sku],
-            barcode: line[:barcode],
-            item_type: line[:item_type],
-            unit_name: line[:unit_name],
-            unit_symbol: line[:unit_symbol],
-            quantity: line[:quantity],
-            unit_cost: line[:unit_cost],
-            gross_amount:
-                line[:gross_amount],
-            discount_amount:
-                line[:discount_amount],
-            tax_percentage:
-                line[:tax_percentage],
-            tax_amount:
-                line[:tax_amount],
-            line_total:
-                line[:line_total]
-            )
-        end
+      end
     end
 
     def receive_stock!(
-        purchase:,
-        calculated_lines:,
-        purchase_lines:
-        )
-        calculated_lines
-            .zip(purchase_lines)
-            .each do |line, purchase_line|
-            item = line[:item]
+      purchase:,
+      calculated_lines:,
+      purchase_lines:
+    )
+      calculated_lines
+        .zip(purchase_lines)
+        .each do |line, purchase_line|
+          item = line[:item]
 
-            batch =
-                create_inventory_batch!(
-                purchase_line: purchase_line,
-                line: line
-                )
-
-            Inventory::PostMovement.call(
-                organization: organization,
-                branch: branch,
-                item: item,
-                recorded_by: recorded_by,
-                movement_type: "purchase",
-                quantity_change:
-                line[:quantity],
-                occurred_at: received_at,
-                reference:
-                cart.supplier_invoice_number.presence ||
-                    purchase.purchase_number,
-                notes:
-                "Stock received from #{purchase.supplier.name}",
-                source: purchase,
-                inventory_batch: batch
+          batch =
+            create_inventory_batch!(
+              purchase_line: purchase_line,
+              line: line
             )
 
-            update_latest_purchase_cost!(
-                item: item,
-                unit_cost: line[:unit_cost]
-            )
-         end
-     end
+          Inventory::PostMovement.call(
+            organization: organization,
+            branch: branch,
+            item: item,
+            recorded_by: recorded_by,
+            movement_type: "purchase",
+            quantity_change:
+              line[:quantity],
+            occurred_at: received_at,
+            reference:
+              cart.supplier_invoice_number.presence ||
+              purchase.purchase_number,
+            notes:
+              "Stock received from #{purchase.supplier.name}",
+            source: purchase,
+            inventory_batch: batch
+          )
+
+          update_latest_purchase_cost!(
+            item: item,
+            purchase_line: purchase_line
+          )
+        end
+    end
 
     def update_latest_purchase_cost!(
       item:,
-      unit_cost:
+      purchase_line:
     )
+      inventory_unit_cost =
+        Purchases::NetInventoryUnitCost.call(
+          purchase_line: purchase_line
+        )
+
       item.with_lock do
         item.update!(
           purchase_cost:
-            money(unit_cost)
+            inventory_unit_cost
         )
       end
     end
 
     def create_inventory_batch!(
-        purchase_line:,
-        line:
-        )
-        item = line[:item]
+      purchase_line:,
+      line:
+    )
+      item = line[:item]
 
-        return unless item.tracks_expiry?
+      return unless item.tracks_expiry?
 
-        cart_line =
-            cart.lines.find do |candidate|
-            candidate.item.id == item.id
-            end
+      cart_line =
+        cart.lines.find do |candidate|
+          candidate.item.id == item.id
+        end
 
-        validate_expiry_information!(
-            item: item,
-            cart_line: cart_line
-        )
+      validate_expiry_information!(
+        item: item,
+        cart_line: cart_line
+      )
 
-        organization.inventory_batches.create!(
-            branch: branch,
-            item: item,
-            purchase_line: purchase_line,
-            batch_number:
-            cart_line.batch_number,
-            manufactured_on:
-            cart_line.manufactured_on,
-            expires_on:
-            cart_line.expires_on,
-            quantity_received:
-            line[:quantity],
-            quantity_remaining:
-            line[:quantity],
-            unit_cost:
-            money(line[:unit_cost]),
-            received_at: received_at,
-            status: "active"
-        )
+      organization.inventory_batches.create!(
+        branch: branch,
+        item: item,
+        purchase_line: purchase_line,
+        batch_number:
+          cart_line.batch_number,
+        manufactured_on:
+          cart_line.manufactured_on,
+        expires_on:
+          cart_line.expires_on,
+        quantity_received:
+          line[:quantity],
+        quantity_remaining:
+          line[:quantity],
+        unit_cost:
+          Purchases::NetInventoryUnitCost.call(
+            purchase_line: purchase_line
+          ),
+        received_at: received_at,
+        status: "active"
+      )
     end
 
-        def validate_expiry_information!(
-        item:,
-        cart_line:
-        )
-        if cart_line.blank? ||
-            cart_line.expires_on.blank?
-            raise Purchases::ReceivingError,
-                "Enter an expiry date for #{item.name}"
-        end
-
-        if cart_line.expires_on <
-            received_at.to_date
-            raise Purchases::ReceivingError,
-                "#{item.name} expiry date cannot be in the past"
-        end
-
-        return if cart_line.manufactured_on.blank?
-        return if cart_line.manufactured_on <=
-                    cart_line.expires_on
-
+    def validate_expiry_information!(
+      item:,
+      cart_line:
+    )
+      if cart_line.blank? ||
+         cart_line.expires_on.blank?
         raise Purchases::ReceivingError,
-                "#{item.name} manufacture date cannot be after its expiry date"
-        end
+              "Enter an expiry date for #{item.name}"
+      end
+
+      if cart_line.expires_on <
+         received_at.to_date
+        raise Purchases::ReceivingError,
+              "#{item.name} expiry date cannot be in the past"
+      end
+
+      return if cart_line.manufactured_on.blank?
+      return if cart_line.manufactured_on <=
+                cart_line.expires_on
+
+      raise Purchases::ReceivingError,
+            "#{item.name} manufacture date cannot be after its expiry date"
+    end
+
+    def post_accounting!(purchase)
+      return unless organization.accounting_enabled?
+
+      Purchases::PostPurchaseAccounting.call(
+        organization: organization,
+        purchase: purchase
+      )
+    end
 
     def money(value)
       value.to_d.round(2)

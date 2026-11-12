@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_12_201410) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_12_204613) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -307,6 +307,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_12_201410) do
   end
 
   create_table "organizations", force: :cascade do |t|
+    t.boolean "accounting_enabled", default: false, null: false
     t.boolean "active", default: true, null: false
     t.text "address"
     t.string "country_code", default: "KE", null: false

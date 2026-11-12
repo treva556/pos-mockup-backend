@@ -79,6 +79,10 @@ module Sales
             sale_return
           )
 
+          post_accounting!(
+            sale_return
+          )
+
           sale_return.reload
         end
       end
@@ -879,6 +883,14 @@ module Sales
 
     def money(value)
       value.to_d.round(2)
+    end
+    def post_accounting!(sale_return)
+      return unless organization.accounting_enabled?
+
+      Sales::PostSaleReturnAccounting.call(
+        organization: organization,
+        sale_return: sale_return
+      )
     end
   end
 end

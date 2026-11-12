@@ -49,7 +49,14 @@ module Sales
             validate_refundable_amount!
             validate_account_balance!
 
-            create_refund!
+            refund =
+              create_refund!
+
+            post_accounting!(
+              refund
+            )
+
+            refund
           end
         end
       end
@@ -232,6 +239,14 @@ module Sales
 
     def money(value)
       value.to_d.round(2)
+    end
+    def post_accounting!(refund)
+      return unless organization.accounting_enabled?
+
+      Sales::PostCustomerRefundAccounting.call(
+        organization: organization,
+        refund: refund
+      )
     end
   end
 end

@@ -67,6 +67,10 @@ module Sales
           calculated_lines: calculation.lines
         )
 
+        post_accounting!(
+          sale
+        )
+
         sale
       end
     end
@@ -350,6 +354,15 @@ module Sales
           source: sale
         )
       end
+    end
+
+    def post_accounting!(sale)
+      return unless organization.accounting_enabled?
+
+      Sales::PostSaleAccounting.call(
+        organization: organization,
+        sale: sale
+      )
     end
 
     def money(value)

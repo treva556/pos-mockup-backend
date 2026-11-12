@@ -61,6 +61,10 @@ module Sales
 
           update_sale_totals!
 
+          post_accounting!(
+            payment
+          )
+
           payment
         end
       end
@@ -215,6 +219,15 @@ module Sales
             amount_paid: new_amount_paid,
             balance_due: new_balance
           )
+      )
+    end
+
+    def post_accounting!(payment)
+      return unless organization.accounting_enabled?
+
+      Sales::PostCustomerPaymentAccounting.call(
+        organization: organization,
+        payment: payment
       )
     end
 
