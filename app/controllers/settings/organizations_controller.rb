@@ -37,7 +37,8 @@ module Settings
         :country_code,
         :currency_code,
         :time_zone,
-        :receipt_footer
+        :receipt_footer,
+        :accounting_enabled
       )
     end
   end

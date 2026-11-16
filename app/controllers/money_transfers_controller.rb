@@ -42,29 +42,49 @@ class MoneyTransfersController < ApplicationController
       )
   end
 
-  def create
-    @money_transfer =
-      current_organization
-        .money_transfers
-        .new(transfer_attributes)
+ def create
+  @money_transfer =
+    MoneyTransfers::CreateTransfer.call(
+      organization:
+        current_organization,
+      recorded_by:
+        current_user,
+      from_money_account:
+        selected_from_account,
+      to_money_account:
+        selected_to_account,
+      attributes:
+        transfer_attributes
+    )
 
-    @money_transfer.recorded_by = current_user
+  redirect_to @money_transfer,
+              notice:
+                "Money transfer was recorded."
+rescue MoneyTransfers::TransferError => error
+  @money_transfer =
+    current_organization
+      .money_transfers
+      .new(
+        transfer_attributes
+      )
 
-    @money_transfer.from_money_account =
-      selected_from_account
+  @money_transfer.recorded_by =
+    current_user
 
-    @money_transfer.to_money_account =
-      selected_to_account
+  @money_transfer.from_money_account =
+    selected_from_account
 
-    if @money_transfer.save
-      redirect_to @money_transfer,
-                  notice:
-                    "Money transfer was recorded."
-    else
-      render :new,
-             status: :unprocessable_entity
-    end
-  end
+  @money_transfer.to_money_account =
+    selected_to_account
+
+  @money_transfer.errors.add(
+    :base,
+    error.message
+  )
+
+  render :new,
+         status: :unprocessable_entity
+end
 
   private
 

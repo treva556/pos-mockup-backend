@@ -144,15 +144,51 @@ class MoneyAccountsController < ApplicationController
   end
 
   def load_form_options
-    scope = current_organization.branches
+    branch_scope =
+      current_organization.branches
 
-    selected_id = @money_account&.branch_id
+    selected_branch_id =
+      @money_account&.branch_id
 
     @branches =
-      scope
+      branch_scope
         .where(active: true)
-        .or(scope.where(id: selected_id))
+        .or(
+          branch_scope.where(
+            id: selected_branch_id
+          )
+        )
         .order(:name)
+
+    cash_heading =
+      current_organization
+        .ledger_accounts
+        .find_by(
+          code: "1010"
+        )
+
+    ledger_scope =
+      current_organization
+        .ledger_accounts
+        .where(
+          account_type: "asset",
+          postable: true,
+          parent_id:
+            cash_heading&.id
+        )
+
+    selected_ledger_id =
+      @money_account&.ledger_account_id
+
+    @ledger_accounts =
+      ledger_scope
+        .where(active: true)
+        .or(
+          ledger_scope.where(
+            id: selected_ledger_id
+          )
+        )
+        .ordered
   end
 
   def disabling_used_account?
@@ -169,6 +205,7 @@ class MoneyAccountsController < ApplicationController
       :account_type,
       :account_number,
       :branch_id,
+      :ledger_account_id,
       :opening_balance,
       :opening_balance_date,
       :can_receive,

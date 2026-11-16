@@ -66,6 +66,10 @@ module Purchases
           purchase_return
         )
 
+        post_accounting!(
+          purchase_return
+        )
+
         purchase_return
       end
     rescue ActiveRecord::RecordInvalid => error
@@ -618,6 +622,14 @@ module Purchases
 
     def money(value)
       value.to_d.round(2)
+    end
+    def post_accounting!(purchase_return)
+      return unless organization.accounting_enabled?
+
+      Purchases::PostPurchaseReturnAccounting.call(
+        organization: organization,
+        purchase_return: purchase_return
+      )
     end
   end
 end

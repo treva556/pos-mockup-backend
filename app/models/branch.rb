@@ -15,6 +15,9 @@ class Branch < ApplicationRecord
   has_many :stock_movements,
          dependent: :restrict_with_error
 
+  has_many :journal_lines,
+           dependent: :restrict_with_error
+
   has_many :outgoing_stock_transfers,
          class_name: "StockTransfer",
          foreign_key: :from_branch_id,

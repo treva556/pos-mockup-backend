@@ -121,19 +121,13 @@
 
     <% if @items.any? %>
       <table>
-       <thead>
-        <tr>
+        <thead>
+          <tr>
             <th>Item</th>
             <th>Quantity</th>
             <th>Unit cost</th>
-            <th>Discount</th>
-            <th>Batch</th>
-            <th>Manufactured</th>
-            <th>Expiry</th>
-            <th>Total</th>
-            <th></th>
-            <th></th>
-        </tr>
+            <th>Action</th>
+          </tr>
         </thead>
 
         <tbody>
@@ -143,22 +137,16 @@
                 <strong><%= item.name %></strong>
 
                 <% if item.sku.present? %>
-                    <br>
-                    <small>SKU: <%= item.sku %></small>
+                  <br>
+                  <small>SKU: <%= item.sku %></small>
                 <% end %>
 
                 <% if item.tracks_expiry? %>
-                    <br>
-                    <small>Batch and expiry required</small>
+                  <br>
+                  <small>
+                    Batch and expiry required after adding
+                  </small>
                 <% end %>
-                </td>
-
-              <td>
-                KSh
-                <%= number_with_precision(
-                      item.purchase_cost,
-                      precision: 2
-                    ) %>
               </td>
 
               <%= form_with(

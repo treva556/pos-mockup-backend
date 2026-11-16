@@ -10,9 +10,21 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_06_225728) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_12_204613) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "accounting_account_mappings", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "ledger_account_id", null: false
+    t.bigint "organization_id", null: false
+    t.string "role", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ledger_account_id"], name: "index_accounting_account_mappings_on_ledger_account_id"
+    t.index ["organization_id", "role"], name: "index_accounting_mappings_on_org_and_role", unique: true
+    t.index ["organization_id"], name: "index_accounting_account_mappings_on_organization_id"
+    t.check_constraint "role::text = ANY (ARRAY['accounts_receivable'::character varying, 'inventory'::character varying, 'supplier_credit_receivable'::character varying, 'accounts_payable'::character varying, 'customer_refund_payable'::character varying, 'sales_revenue'::character varying, 'sales_returns'::character varying, 'cost_of_goods_sold'::character varying, 'input_tax'::character varying, 'output_tax'::character varying, 'retained_earnings'::character varying, 'opening_balance_equity'::character varying, 'inventory_adjustment_gain'::character varying, 'inventory_adjustment_loss'::character varying]::text[])", name: "accounting_account_mappings_role_check"
+  end
 
   create_table "branch_payment_settings", force: :cascade do |t|
     t.bigint "branch_id", null: false
@@ -158,6 +170,81 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_06_225728) do
     t.check_constraint "selling_price >= 0::numeric", name: "items_selling_price_nonnegative"
   end
 
+  create_table "journal_entries", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "created_by_id", null: false
+    t.string "description"
+    t.date "entry_date", null: false
+    t.string "entry_number", null: false
+    t.bigint "organization_id", null: false
+    t.datetime "posted_at"
+    t.bigint "reversal_of_id"
+    t.datetime "reversed_at"
+    t.integer "sequence_number"
+    t.bigint "source_id"
+    t.string "source_type"
+    t.string "status", default: "draft", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_by_id"], name: "index_journal_entries_on_created_by_id"
+    t.index ["organization_id", "entry_date"], name: "index_journal_entries_on_org_and_date"
+    t.index ["organization_id", "entry_number"], name: "index_journal_entries_on_org_and_number", unique: true
+    t.index ["organization_id", "sequence_number"], name: "index_journal_entries_on_org_and_sequence", unique: true
+    t.index ["organization_id", "source_type", "source_id"], name: "index_journal_entries_on_unique_source", unique: true, where: "((source_type IS NOT NULL) AND (source_id IS NOT NULL))"
+    t.index ["organization_id", "status"], name: "index_journal_entries_on_org_and_status"
+    t.index ["organization_id"], name: "index_journal_entries_on_organization_id"
+    t.index ["reversal_of_id"], name: "index_journal_entries_on_reversal_of_id"
+    t.index ["reversal_of_id"], name: "index_journal_entries_on_unique_reversal", unique: true, where: "(reversal_of_id IS NOT NULL)"
+    t.index ["source_type", "source_id"], name: "index_journal_entries_on_source"
+    t.check_constraint "sequence_number IS NULL OR sequence_number > 0", name: "journal_entries_positive_sequence"
+    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying, 'posted'::character varying, 'reversed'::character varying]::text[])", name: "journal_entries_status_check"
+  end
+
+  create_table "journal_lines", force: :cascade do |t|
+    t.bigint "branch_id"
+    t.datetime "created_at", null: false
+    t.decimal "credit", precision: 15, scale: 2, default: "0.0", null: false
+    t.decimal "debit", precision: 15, scale: 2, default: "0.0", null: false
+    t.string "description"
+    t.bigint "journal_entry_id", null: false
+    t.bigint "ledger_account_id", null: false
+    t.integer "line_number", null: false
+    t.bigint "organization_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["branch_id"], name: "index_journal_lines_on_branch_id"
+    t.index ["journal_entry_id", "line_number"], name: "index_journal_lines_on_entry_and_line", unique: true
+    t.index ["journal_entry_id"], name: "index_journal_lines_on_journal_entry_id"
+    t.index ["ledger_account_id"], name: "index_journal_lines_on_ledger_account_id"
+    t.index ["organization_id", "branch_id"], name: "index_journal_lines_on_org_and_branch"
+    t.index ["organization_id", "ledger_account_id"], name: "index_journal_lines_on_org_and_account"
+    t.index ["organization_id"], name: "index_journal_lines_on_organization_id"
+    t.check_constraint "credit >= 0::numeric", name: "journal_lines_nonnegative_credit"
+    t.check_constraint "debit > 0::numeric AND credit = 0::numeric OR credit > 0::numeric AND debit = 0::numeric", name: "journal_lines_one_sided_amount"
+    t.check_constraint "debit >= 0::numeric", name: "journal_lines_nonnegative_debit"
+    t.check_constraint "line_number > 0", name: "journal_lines_positive_line_number"
+  end
+
+  create_table "ledger_accounts", force: :cascade do |t|
+    t.string "account_type", null: false
+    t.boolean "active", default: true, null: false
+    t.string "code", null: false
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.string "normal_balance", null: false
+    t.bigint "organization_id", null: false
+    t.bigint "parent_id"
+    t.boolean "postable", default: true, null: false
+    t.string "report_group", null: false
+    t.boolean "system_account", default: false, null: false
+    t.datetime "updated_at", null: false
+    t.index ["organization_id", "account_type"], name: "index_ledger_accounts_on_org_and_type"
+    t.index ["organization_id", "code"], name: "index_ledger_accounts_on_org_and_code", unique: true
+    t.index ["organization_id"], name: "index_ledger_accounts_on_organization_id"
+    t.index ["parent_id"], name: "index_ledger_accounts_on_parent_id"
+    t.check_constraint "account_type::text = ANY (ARRAY['asset'::character varying, 'liability'::character varying, 'equity'::character varying, 'revenue'::character varying, 'expense'::character varying]::text[])", name: "ledger_accounts_account_type_check"
+    t.check_constraint "normal_balance::text = ANY (ARRAY['debit'::character varying, 'credit'::character varying]::text[])", name: "ledger_accounts_normal_balance_check"
+    t.check_constraint "report_group::text = ANY (ARRAY['current_asset'::character varying, 'non_current_asset'::character varying, 'contra_asset'::character varying, 'current_liability'::character varying, 'non_current_liability'::character varying, 'equity'::character varying, 'revenue'::character varying, 'contra_revenue'::character varying, 'cost_of_sales'::character varying, 'operating_expense'::character varying, 'other_income'::character varying, 'other_expense'::character varying]::text[])", name: "ledger_accounts_report_group_check"
+  end
+
   create_table "memberships", force: :cascade do |t|
     t.boolean "active", default: true, null: false
     t.bigint "branch_id"
@@ -180,6 +267,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_06_225728) do
     t.boolean "can_pay", default: true, null: false
     t.boolean "can_receive", default: true, null: false
     t.datetime "created_at", null: false
+    t.bigint "ledger_account_id"
     t.string "name", null: false
     t.text "notes"
     t.decimal "opening_balance", precision: 15, scale: 2, default: "0.0", null: false
@@ -187,6 +275,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_06_225728) do
     t.bigint "organization_id", null: false
     t.datetime "updated_at", null: false
     t.index ["branch_id"], name: "index_money_accounts_on_branch_id"
+    t.index ["ledger_account_id"], name: "index_money_accounts_on_ledger_account_id"
     t.index ["organization_id", "account_number"], name: "index_money_accounts_on_org_and_number", unique: true, where: "(account_number IS NOT NULL)"
     t.index ["organization_id", "account_type"], name: "index_money_accounts_on_organization_id_and_account_type"
     t.index ["organization_id", "active"], name: "index_money_accounts_on_organization_id_and_active"
@@ -218,6 +307,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_06_225728) do
   end
 
   create_table "organizations", force: :cascade do |t|
+    t.boolean "accounting_enabled", default: false, null: false
     t.boolean "active", default: true, null: false
     t.text "address"
     t.string "country_code", default: "KE", null: false
@@ -785,6 +875,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_06_225728) do
     t.index ["email"], name: "index_users_on_email", unique: true
   end
 
+  add_foreign_key "accounting_account_mappings", "ledger_accounts"
+  add_foreign_key "accounting_account_mappings", "organizations"
   add_foreign_key "branch_payment_settings", "branches"
   add_foreign_key "branch_payment_settings", "money_accounts"
   add_foreign_key "branch_payment_settings", "organizations"
@@ -804,10 +896,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_06_225728) do
   add_foreign_key "items", "product_categories"
   add_foreign_key "items", "tax_rates"
   add_foreign_key "items", "unit_of_measures"
+  add_foreign_key "journal_entries", "journal_entries", column: "reversal_of_id"
+  add_foreign_key "journal_entries", "organizations"
+  add_foreign_key "journal_entries", "users", column: "created_by_id"
+  add_foreign_key "journal_lines", "branches"
+  add_foreign_key "journal_lines", "journal_entries"
+  add_foreign_key "journal_lines", "ledger_accounts"
+  add_foreign_key "journal_lines", "organizations"
+  add_foreign_key "ledger_accounts", "ledger_accounts", column: "parent_id"
+  add_foreign_key "ledger_accounts", "organizations"
   add_foreign_key "memberships", "branches"
   add_foreign_key "memberships", "organizations"
   add_foreign_key "memberships", "users"
   add_foreign_key "money_accounts", "branches"
+  add_foreign_key "money_accounts", "ledger_accounts"
   add_foreign_key "money_accounts", "organizations"
   add_foreign_key "money_transfers", "money_accounts", column: "from_money_account_id"
   add_foreign_key "money_transfers", "money_accounts", column: "to_money_account_id"

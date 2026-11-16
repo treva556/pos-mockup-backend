@@ -59,6 +59,29 @@
     </div>
 
     <div class="field">
+      <%= form.label :ledger_account_id,
+                     "Ledger account" %>
+
+      <%= form.collection_select(
+            :ledger_account_id,
+            @ledger_accounts,
+            :id,
+            ->(account) {
+              "#{account.code} - #{account.name}"
+            },
+            {
+              include_blank:
+                "Select ledger account"
+            }
+          ) %>
+
+      <small class="field-help">
+        Links this money account to the General Ledger.
+        Required when accounting is enabled.
+      </small>
+    </div>
+
+    <div class="field">
       <%= form.label :account_number,
                      "Account or reference number" %>
 

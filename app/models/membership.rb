@@ -162,6 +162,19 @@ class Membership < ApplicationRecord
       accountant?
   end
 
+  def accounting_view?
+    owner? ||
+      admin? ||
+      manager? ||
+      accountant?
+  end
+
+  def accounting_management?
+    owner? ||
+      admin? ||
+      accountant?
+  end
+
   private
 
   def branch_belongs_to_organization

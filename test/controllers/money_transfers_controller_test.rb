@@ -26,29 +26,105 @@ class MoneyTransfersControllerTest <
   end
 
   test "creates transfer for current organization and user" do
-    assert_difference("MoneyTransfer.count", 1) do
-      post money_transfers_path,
-           params: {
-             money_transfer: {
-               from_money_account_id: @source.id,
-               to_money_account_id: @destination.id,
-               amount: 250,
-               transferred_at: Time.current,
-               reference: "TEST-TRANSFER"
+    source_ledger =
+      @organization
+        .ledger_accounts
+        .create!(
+          code: "1111",
+          name: "Source Cash",
+          account_type: "asset",
+          normal_balance: "debit",
+          report_group: "current_asset",
+          active: true,
+          postable: true
+        )
+
+    destination_ledger =
+      @organization
+        .ledger_accounts
+        .create!(
+          code: "1112",
+          name: "Destination Cash",
+          account_type: "asset",
+          normal_balance: "debit",
+          report_group: "current_asset",
+          active: true,
+          postable: true
+        )
+
+    @source.update!(
+      ledger_account:
+        source_ledger
+    )
+
+    @destination.update!(
+      ledger_account:
+        destination_ledger
+    )
+
+    assert_difference(
+      "MoneyTransfer.count",
+      1
+    ) do
+      assert_difference(
+        "JournalEntry.count",
+        1
+      ) do
+        post money_transfers_path,
+             params: {
+               money_transfer: {
+                 from_money_account_id:
+                   @source.id,
+                 to_money_account_id:
+                   @destination.id,
+                 amount: 250,
+                 transferred_at:
+                   Time.current,
+                 reference:
+                   "TEST-TRANSFER"
+               }
              }
-           }
+      end
     end
 
     transfer =
-      @organization.money_transfers.order(:id).last
+      @organization
+        .money_transfers
+        .order(:id)
+        .last
 
-    assert_equal @owner, transfer.recorded_by
-    assert_equal @organization, transfer.organization
-    assert_equal 750.to_d, @source.current_balance
+    assert_equal @owner,
+                 transfer.recorded_by
+
+    assert_equal @organization,
+                 transfer.organization
+
+    assert_equal 750.to_d,
+                 @source.current_balance
+
     assert_equal 250.to_d,
                  @destination.current_balance
 
-    assert_redirected_to money_transfer_path(transfer)
+    journal =
+      @organization
+        .journal_entries
+        .find_by!(
+          source: transfer
+        )
+
+    assert journal.status_posted?
+
+    assert_equal 250.to_d,
+                 journal.total_debits
+
+    assert_equal 250.to_d,
+                 journal.total_credits
+
+    assert_redirected_to(
+      money_transfer_path(
+        transfer
+      )
+    )
   end
 
   test "cannot submit another organizations account" do

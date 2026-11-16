@@ -1,0 +1,122 @@
+<%= form_with(
+      model: [:accounting, ledger_account]
+    ) do |form| %>
+  <% if ledger_account.errors.any? %>
+    <section>
+      <h2>
+        <%= pluralize(
+              ledger_account.errors.count,
+              "error"
+            ) %>
+        prevented this account from being saved
+      </h2>
+
+      <ul>
+        <% ledger_account.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+
+  <div>
+    <%= form.label :code,
+                   "Account code" %>
+
+    <%= form.text_field :code,
+                        required: true,
+                        autofocus: true %>
+  </div>
+
+  <div>
+    <%= form.label :name %>
+
+    <%= form.text_field :name,
+                        required: true %>
+  </div>
+
+  <div>
+    <%= form.label :account_type,
+                   "Account type" %>
+
+    <%= form.select(
+          :account_type,
+          LedgerAccount::ACCOUNT_TYPES.map do |key, value|
+            [
+              key.to_s.humanize,
+              value
+            ]
+          end
+        ) %>
+  </div>
+
+  <div>
+    <%= form.label :normal_balance,
+                   "Normal balance" %>
+
+    <%= form.select(
+          :normal_balance,
+          LedgerAccount::NORMAL_BALANCES.map do |key, value|
+            [
+              key.to_s.humanize,
+              value
+            ]
+          end
+        ) %>
+  </div>
+
+  <div>
+    <%= form.label :report_group,
+                   "Financial report group" %>
+
+    <%= form.select(
+          :report_group,
+          LedgerAccount::REPORT_GROUPS.map do |key, value|
+            [
+              key.to_s.humanize,
+              value
+            ]
+          end
+        ) %>
+  </div>
+
+  <div>
+    <%= form.label :parent_id,
+                   "Parent account" %>
+
+    <% parent_options =
+         @parent_accounts.map do |account|
+           [
+             "#{account.code} — #{account.name}",
+             account.id
+           ]
+         end %>
+
+    <%= form.select(
+          :parent_id,
+          [
+            ["No parent", ""]
+          ] + parent_options
+        ) %>
+
+    <p>
+      Parent accounts must be active heading accounts
+      of the same account type.
+    </p>
+  </div>
+
+  <div>
+    <%= form.check_box :postable %>
+
+    <%= form.label :postable,
+                   "Allow journal postings to this account" %>
+  </div>
+
+  <div class="form-actions">
+    <%= form.submit class: "button button--primary" %>
+
+    <%= link_to "Cancel",
+                accounting_ledger_accounts_path,
+                class: "button button--secondary" %>
+  </div>
+<% end %>
