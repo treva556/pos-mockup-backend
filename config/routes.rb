@@ -224,6 +224,10 @@ Rails.application.routes.draw do
       patch :toggle_status,
             on: :member
     end
+
+    resources :journal_entries,
+              path: "journal-entries",
+              only: %i[index show]
   end
 
   get "up" => "rails/health#show",

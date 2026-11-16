@@ -152,6 +152,30 @@
 
       <section class="form-section">
         <div class="form-section-heading">
+          <h2>Accounting</h2>
+
+          <p>
+            Enable automatic accounting journals for
+            sales, purchases, payments, returns and
+            money transfers.
+          </p>
+        </div>
+
+        <div class="checkbox-group">
+          <%= form.check_box :accounting_enabled %>
+
+          <%= form.label :accounting_enabled,
+                         "Enable accounting for this organization" %>
+        </div>
+
+        <small class="form-help">
+          Money accounts must be linked to valid ledger accounts
+          before accounting transactions can be posted.
+        </small>
+      </section>
+
+      <section class="form-section">
+        <div class="form-section-heading">
           <h2>Receipt settings</h2>
 
           <p>

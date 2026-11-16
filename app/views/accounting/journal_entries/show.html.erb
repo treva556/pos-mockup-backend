@@ -1,0 +1,213 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>
+        Journal Entry
+        <%= @journal_entry.entry_number %>
+      </h1>
+
+      <p>
+        <%= @journal_entry.description.presence ||
+              "Accounting journal entry" %>
+      </p>
+    </div>
+
+    <div class="form-actions">
+      <%= link_to "Back to Journals",
+                  accounting_journal_entries_path,
+                  class: "button button--secondary" %>
+
+      <%= link_to "Chart of Accounts",
+                  accounting_ledger_accounts_path,
+                  class: "button button--secondary" %>
+    </div>
+  </header>
+
+  <div class="panel">
+    <table>
+      <tbody>
+        <tr>
+          <th>Entry number</th>
+          <td>
+            <%= @journal_entry.entry_number %>
+          </td>
+        </tr>
+
+        <tr>
+          <th>Date</th>
+          <td>
+            <%= @journal_entry.entry_date
+                  .strftime("%d %B %Y") %>
+          </td>
+        </tr>
+
+        <tr>
+          <th>Status</th>
+          <td>
+            <strong>
+              <%= @journal_entry.status.upcase %>
+            </strong>
+          </td>
+        </tr>
+
+        <tr>
+          <th>Created by</th>
+          <td>
+            <%= @journal_entry.created_by.name %>
+          </td>
+        </tr>
+
+        <tr>
+          <th>Source</th>
+          <td>
+            <% if @journal_entry.source.present? %>
+              <%= @journal_entry.source_type.to_s
+                    .underscore
+                    .humanize %>
+              #<%= @journal_entry.source_id %>
+            <% else %>
+              Manual journal
+            <% end %>
+          </td>
+        </tr>
+
+        <% if @journal_entry.reversal_of.present? %>
+          <tr>
+            <th>Reversal of</th>
+            <td>
+              <%= link_to(
+                    @journal_entry
+                      .reversal_of
+                      .entry_number,
+                    accounting_journal_entry_path(
+                      @journal_entry.reversal_of
+                    )
+                  ) %>
+            </td>
+          </tr>
+        <% end %>
+
+        <% if @journal_entry.reversal_entry.present? %>
+          <tr>
+            <th>Reversed by</th>
+            <td>
+              <%= link_to(
+                    @journal_entry
+                      .reversal_entry
+                      .entry_number,
+                    accounting_journal_entry_path(
+                      @journal_entry.reversal_entry
+                    )
+                  ) %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h2>Journal Lines</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Account</th>
+          <th>Branch</th>
+          <th>Description</th>
+          <th>Debit</th>
+          <th>Credit</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <% @journal_lines.each do |line| %>
+          <tr>
+            <td>
+              <%= line.line_number %>
+            </td>
+
+            <td>
+              <strong>
+                <%= line.ledger_account.code %>
+              </strong>
+              <br>
+              <%= line.ledger_account.name %>
+            </td>
+
+            <td>
+              <%= line.branch&.name ||
+                    "Organization-wide" %>
+            </td>
+
+            <td>
+              <%= line.description.presence ||
+                    "—" %>
+            </td>
+
+            <td>
+              <% if line.debit.to_d.positive? %>
+                <%= number_to_currency(
+                      line.debit,
+                      unit: "KSh ",
+                      precision: 2
+                    ) %>
+              <% else %>
+                —
+              <% end %>
+            </td>
+
+            <td>
+              <% if line.credit.to_d.positive? %>
+                <%= number_to_currency(
+                      line.credit,
+                      unit: "KSh ",
+                      precision: 2
+                    ) %>
+              <% else %>
+                —
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+
+      <tfoot>
+        <tr>
+          <th colspan="4">
+            Total
+          </th>
+
+          <th>
+            <%= number_to_currency(
+                  @journal_entry.total_debits,
+                  unit: "KSh ",
+                  precision: 2
+                ) %>
+          </th>
+
+          <th>
+            <%= number_to_currency(
+                  @journal_entry.total_credits,
+                  unit: "KSh ",
+                  precision: 2
+                ) %>
+          </th>
+        </tr>
+      </tfoot>
+    </table>
+
+    <% if @journal_entry.balanced? %>
+      <p>
+        <strong>Balanced journal.</strong>
+      </p>
+    <% else %>
+      <p>
+        <strong>
+          Warning: this journal is not balanced.
+        </strong>
+      </p>
+    <% end %>
+  </div>
+</section>

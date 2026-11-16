@@ -9,13 +9,17 @@
       </p>
     </div>
 
-    <% if current_membership.accounting_management? %>
-      <div class="form-actions">
+    <div class="form-actions">
+      <%= link_to "Journal Entries",
+                  accounting_journal_entries_path,
+                  class: "button button--secondary" %>
+
+      <% if current_membership.accounting_management? %>
         <%= link_to "New Account",
                     new_accounting_ledger_account_path,
                     class: "button button--primary" %>
-      </div>
-    <% end %>
+      <% end %>
+    </div>
   </header>
 
   <div class="panel">
