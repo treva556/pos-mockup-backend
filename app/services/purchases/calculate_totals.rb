@@ -94,7 +94,7 @@ module Purchases
       tax_rate = item.tax_rate
 
       tax_percentage =
-        tax_rate&.percentage.to_d
+        tax_rate&.rate.to_d
 
       tax_amount =
         inclusive_tax(
