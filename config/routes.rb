@@ -227,7 +227,7 @@ Rails.application.routes.draw do
 
     resources :journal_entries,
               path: "journal-entries",
-              only: %i[index show]
+              only: %i[ index show new create ]
   end
 
   get "up" => "rails/health#show",
