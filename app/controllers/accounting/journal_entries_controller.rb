@@ -7,10 +7,10 @@ module Accounting
                   only: %i[index show]
 
     before_action :require_accounting_management!,
-                  only: %i[new create]
+              only: %i[ new create reverse ]
 
     before_action :set_journal_entry,
-                  only: :show
+              only: %i[ show reverse ]
 
     before_action :load_manual_journal_options,
                   only: %i[new create]
@@ -72,6 +72,34 @@ module Accounting
             :branch
           )
           .ordered
+    end
+
+    def reverse
+      reversal_entry =
+        Accounting::ReverseJournalEntry.call(
+          journal_entry:
+            @journal_entry,
+          reversed_by:
+            current_user,
+          reversal_date:
+            Date.current
+        )
+
+      redirect_to(
+        accounting_journal_entry_path(
+          reversal_entry
+        ),
+        notice:
+          "#{@journal_entry.entry_number} was reversed successfully."
+      )
+    rescue Accounting::ReverseJournalEntry::ReversalError => error
+      redirect_to(
+        accounting_journal_entry_path(
+          @journal_entry
+        ),
+        alert:
+          error.message
+      )
     end
 
     def new

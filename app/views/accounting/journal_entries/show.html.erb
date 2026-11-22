@@ -13,6 +13,25 @@
     </div>
 
     <div class="form-actions">
+      <% if @journal_entry.status_posted? &&
+            @journal_entry.reversal_of.blank? &&
+            @journal_entry.reversal_entry.blank? %>
+        <%= button_to(
+              "Reverse Journal",
+              reverse_accounting_journal_entry_path(
+                @journal_entry
+              ),
+              method: :post,
+              class: "button button--secondary",
+              form: {
+                data: {
+                  turbo_confirm:
+                    "Reverse this journal? A new opposite journal entry will be posted."
+                }
+              }
+            ) %>
+      <% end %>
+
       <%= link_to "Back to Journals",
                   accounting_journal_entries_path,
                   class: "button button--secondary" %>

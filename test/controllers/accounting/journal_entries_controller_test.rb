@@ -390,6 +390,148 @@ class Accounting::JournalEntriesControllerTest <
     assert_response :not_found
   end
 
+  test "reverses posted journal" do
+    journal =
+      create_journal(
+        description:
+          "Journal to reverse"
+      )
+
+    assert_difference(
+      -> {
+        @organization
+          .journal_entries
+          .count
+      },
+      1
+    ) do
+      post reverse_accounting_journal_entry_path(
+        journal
+      )
+    end
+
+    journal.reload
+
+    reversal =
+      journal.reversal_entry
+
+    assert journal.status_reversed?
+    assert_not_nil reversal
+    assert reversal.status_posted?
+
+    assert_equal journal.total_debits,
+                 reversal.total_credits
+
+    assert_equal journal.total_credits,
+                 reversal.total_debits
+
+    assert_redirected_to(
+      accounting_journal_entry_path(
+        reversal
+      )
+    )
+  end
+
+  test "cannot reverse journal twice" do
+    journal =
+      create_journal(
+        description:
+          "Reverse once"
+      )
+
+    post reverse_accounting_journal_entry_path(
+      journal
+    )
+
+    journal.reload
+
+    assert_no_difference(
+      -> {
+        @organization
+          .journal_entries
+          .count
+      }
+    ) do
+      post reverse_accounting_journal_entry_path(
+        journal
+      )
+    end
+
+    assert_redirected_to(
+      accounting_journal_entry_path(
+        journal
+      )
+    )
+  end
+
+  test "cannot reverse another organizations journal" do
+    other_owner =
+      create_user
+
+    other_organization =
+      provision_organization_for(
+        other_owner
+      )
+
+    foreign_receivable =
+      other_organization
+        .ledger_accounts
+        .find_by!(
+          code: "1100"
+        )
+
+    foreign_revenue =
+      other_organization
+        .ledger_accounts
+        .find_by!(
+          code: "4010"
+        )
+
+    foreign_journal =
+      Accounting::CreateJournalEntry.call(
+        organization:
+          other_organization,
+        created_by:
+          other_owner,
+        entry_date:
+          Date.current,
+        description:
+          "Foreign reversal attempt",
+        lines: [
+          {
+            ledger_account:
+              foreign_receivable,
+            branch:
+              other_organization.main_branch,
+            debit: 500,
+            credit: 0
+          },
+          {
+            ledger_account:
+              foreign_revenue,
+            branch:
+              other_organization.main_branch,
+            debit: 0,
+            credit: 500
+          }
+        ]
+      )
+
+    assert_no_difference(
+      -> {
+        other_organization
+          .journal_entries
+          .count
+      }
+    ) do
+      post reverse_accounting_journal_entry_path(
+        foreign_journal
+      )
+    end
+
+    assert_response :not_found
+  end
+
   private
 
   def create_journal(

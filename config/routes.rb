@@ -227,7 +227,10 @@ Rails.application.routes.draw do
 
     resources :journal_entries,
               path: "journal-entries",
-              only: %i[ index show new create ]
+              only: %i[ index show new create ] do
+      post :reverse,
+           on: :member
+    end
   end
 
   get "up" => "rails/health#show",
