@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_22_114430) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_22_171325) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -124,6 +124,35 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_114430) do
     t.index ["organization_id", "kra_pin"], name: "index_customers_on_org_and_kra_pin", unique: true, where: "(kra_pin IS NOT NULL)"
     t.index ["organization_id", "name"], name: "index_customers_on_organization_id_and_name"
     t.index ["organization_id"], name: "index_customers_on_organization_id"
+  end
+
+  create_table "expenses", force: :cascade do |t|
+    t.decimal "amount", precision: 15, scale: 2, null: false
+    t.bigint "branch_id"
+    t.datetime "created_at", null: false
+    t.bigint "expense_account_id", null: false
+    t.date "expense_date", null: false
+    t.bigint "money_account_id", null: false
+    t.text "notes"
+    t.bigint "organization_id", null: false
+    t.string "payee"
+    t.bigint "recorded_by_id", null: false
+    t.string "reference"
+    t.datetime "reversed_at"
+    t.bigint "reversed_by_id"
+    t.string "status", default: "posted", null: false
+    t.datetime "updated_at", null: false
+    t.index ["branch_id"], name: "index_expenses_on_branch_id"
+    t.index ["expense_account_id"], name: "index_expenses_on_expense_account_id"
+    t.index ["money_account_id"], name: "index_expenses_on_money_account_id"
+    t.index ["organization_id", "expense_account_id"], name: "index_expenses_on_org_and_expense_account"
+    t.index ["organization_id", "expense_date"], name: "index_expenses_on_organization_id_and_expense_date"
+    t.index ["organization_id", "status"], name: "index_expenses_on_organization_id_and_status"
+    t.index ["organization_id"], name: "index_expenses_on_organization_id"
+    t.index ["recorded_by_id"], name: "index_expenses_on_recorded_by_id"
+    t.index ["reversed_by_id"], name: "index_expenses_on_reversed_by_id"
+    t.check_constraint "amount > 0::numeric", name: "expenses_positive_amount"
+    t.check_constraint "status::text = ANY (ARRAY['posted'::character varying, 'reversed'::character varying]::text[])", name: "expenses_valid_status"
   end
 
   create_table "inventory_batches", force: :cascade do |t|
@@ -908,6 +937,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_114430) do
   add_foreign_key "customer_refunds", "sale_returns"
   add_foreign_key "customer_refunds", "users", column: "recorded_by_id"
   add_foreign_key "customers", "organizations"
+  add_foreign_key "expenses", "branches"
+  add_foreign_key "expenses", "ledger_accounts", column: "expense_account_id"
+  add_foreign_key "expenses", "money_accounts"
+  add_foreign_key "expenses", "organizations"
+  add_foreign_key "expenses", "users", column: "recorded_by_id"
+  add_foreign_key "expenses", "users", column: "reversed_by_id"
   add_foreign_key "inventory_batches", "branches"
   add_foreign_key "inventory_batches", "items"
   add_foreign_key "inventory_batches", "organizations"

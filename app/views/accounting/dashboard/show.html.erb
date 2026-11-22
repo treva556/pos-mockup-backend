@@ -1,0 +1,125 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>Accounting</h1>
+
+      <p>
+        Manage daily accounting activities,
+        financial reports, and accounting controls.
+      </p>
+    </div>
+  </header>
+
+  <div class="panel">
+    <h2>Daily Accounting</h2>
+
+    <div class="accounting-dashboard-grid">
+      <%= link_to(
+            accounting_expenses_path,
+            class: "accounting-dashboard-card"
+          ) do %>
+        <strong>Expenses</strong>
+
+        <span>
+          Record and review business expenses.
+        </span>
+      <% end %>
+
+      <%= link_to(
+            accounting_journal_entries_path,
+            class: "accounting-dashboard-card"
+          ) do %>
+        <strong>Journal Entries</strong>
+
+        <span>
+          Review automatic journals and create
+          manual accounting entries.
+        </span>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Financial Reports</h2>
+
+    <div class="accounting-dashboard-grid">
+      <%= link_to(
+            accounting_profit_and_loss_path,
+            class: "accounting-dashboard-card"
+          ) do %>
+        <strong>Profit & Loss</strong>
+
+        <span>
+          Review revenue, costs, expenses,
+          and business profitability.
+        </span>
+      <% end %>
+
+      <%= link_to(
+            accounting_balance_sheet_path,
+            class: "accounting-dashboard-card"
+          ) do %>
+        <strong>Balance Sheet</strong>
+
+        <span>
+          Review assets, liabilities,
+          equity, and financial position.
+        </span>
+      <% end %>
+
+      <%= link_to(
+            accounting_general_ledger_path,
+            class: "accounting-dashboard-card"
+          ) do %>
+        <strong>General Ledger</strong>
+
+        <span>
+          Inspect the detailed activity
+          and running balance of an account.
+        </span>
+      <% end %>
+
+      <%= link_to(
+            accounting_trial_balance_path,
+            class: "accounting-dashboard-card"
+          ) do %>
+        <strong>Trial Balance</strong>
+
+        <span>
+          Review account balances and verify
+          total debits equal total credits.
+        </span>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Setup & Controls</h2>
+
+    <div class="accounting-dashboard-grid">
+      <%= link_to(
+            accounting_ledger_accounts_path,
+            class: "accounting-dashboard-card"
+          ) do %>
+        <strong>Chart of Accounts</strong>
+
+        <span>
+          Manage the ledger accounts used
+          throughout the accounting system.
+        </span>
+      <% end %>
+
+      <%= link_to(
+            accounting_accounting_periods_path,
+            class: "accounting-dashboard-card"
+          ) do %>
+        <strong>Accounting Periods</strong>
+
+        <span>
+          Manage accounting periods
+          and lock completed periods.
+        </span>
+      <% end %>
+    </div>
+  </div>
+</section>
