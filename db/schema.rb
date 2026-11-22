@@ -10,10 +10,9 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_16_191218) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_22_114430) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
- 
 
   create_table "accounting_account_mappings", force: :cascade do |t|
     t.datetime "created_at", null: false
@@ -25,6 +24,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_16_191218) do
     t.index ["organization_id", "role"], name: "index_accounting_mappings_on_org_and_role", unique: true
     t.index ["organization_id"], name: "index_accounting_account_mappings_on_organization_id"
     t.check_constraint "role::text = ANY (ARRAY['accounts_receivable'::character varying, 'inventory'::character varying, 'supplier_credit_receivable'::character varying, 'accounts_payable'::character varying, 'customer_refund_payable'::character varying, 'sales_revenue'::character varying, 'sales_returns'::character varying, 'cost_of_goods_sold'::character varying, 'input_tax'::character varying, 'output_tax'::character varying, 'retained_earnings'::character varying, 'opening_balance_equity'::character varying, 'inventory_adjustment_gain'::character varying, 'inventory_adjustment_loss'::character varying]::text[])", name: "accounting_account_mappings_role_check"
+  end
+
+  create_table "accounting_periods", force: :cascade do |t|
+    t.datetime "closed_at"
+    t.bigint "closed_by_id"
+    t.datetime "created_at", null: false
+    t.date "ends_on", null: false
+    t.string "name", null: false
+    t.bigint "organization_id", null: false
+    t.date "starts_on", null: false
+    t.string "status", default: "open", null: false
+    t.datetime "updated_at", null: false
+    t.index ["closed_by_id"], name: "index_accounting_periods_on_closed_by_id"
+    t.index ["organization_id", "starts_on", "ends_on"], name: "index_accounting_periods_on_org_and_dates"
+    t.index ["organization_id", "status"], name: "index_accounting_periods_on_org_and_status"
+    t.index ["organization_id"], name: "index_accounting_periods_on_organization_id"
+    t.check_constraint "starts_on <= ends_on", name: "accounting_periods_valid_date_range"
+    t.check_constraint "status::text = ANY (ARRAY['open'::character varying, 'closed'::character varying]::text[])", name: "accounting_periods_valid_status"
   end
 
   create_table "branch_payment_settings", force: :cascade do |t|
@@ -878,6 +895,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_16_191218) do
 
   add_foreign_key "accounting_account_mappings", "ledger_accounts"
   add_foreign_key "accounting_account_mappings", "organizations"
+  add_foreign_key "accounting_periods", "organizations"
+  add_foreign_key "accounting_periods", "users", column: "closed_by_id"
   add_foreign_key "branch_payment_settings", "branches"
   add_foreign_key "branch_payment_settings", "money_accounts"
   add_foreign_key "branch_payment_settings", "organizations"

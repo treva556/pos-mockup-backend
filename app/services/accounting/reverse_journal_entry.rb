@@ -93,11 +93,32 @@ module Accounting
               "Reversing user must be an active organization member"
       end
 
+      validate_reversal_period!
+
       return unless reversal_date <
                     journal_entry.entry_date
 
       raise ReversalError,
             "Reversal date cannot be before the original entry date"
+    end
+
+    def validate_reversal_period!
+      closed_period =
+        journal_entry
+          .organization
+          .accounting_periods
+          .where(
+            status: "closed"
+          )
+          .containing_date(
+            reversal_date
+          )
+          .first
+
+      return unless closed_period
+
+      raise ReversalError,
+            "Accounting period #{closed_period.name} is closed"
     end
 
     def active_organization_member?

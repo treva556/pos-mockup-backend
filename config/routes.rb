@@ -231,6 +231,13 @@ Rails.application.routes.draw do
       post :reverse,
            on: :member
     end
+
+    resources :accounting_periods,
+              path: "periods",
+              only: %i[ index new create ] do
+      post :close,
+           on: :member
+    end
   end
 
   get "up" => "rails/health#show",

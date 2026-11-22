@@ -198,3 +198,78 @@ class Accounting::ReverseJournalEntryTest <
     assert_nil @entry.reversal_entry
   end
 end
+
+class Accounting::ReverseJournalEntryClosedPeriodTest <
+  ActiveSupport::TestCase
+  setup do
+    @owner =
+      create_user
+
+    @organization =
+      provision_organization_for(
+        @owner
+      )
+
+    @branch =
+      @organization.main_branch
+
+    @receivable =
+      @organization
+        .ledger_accounts
+        .find_by!(
+          code: "1100"
+        )
+
+    @revenue =
+      @organization
+        .ledger_accounts
+        .find_by!(
+          code: "4010"
+        )
+
+    @journal =
+      Accounting::CreateJournalEntry.call(
+        organization: @organization,
+        created_by: @owner,
+        entry_date: Date.new(2026, 11, 10),
+        description: "Journal to reverse",
+        lines: [
+          {
+            ledger_account: @receivable,
+            branch: @branch,
+            debit: 200,
+            credit: 0
+          },
+          {
+            ledger_account: @revenue,
+            branch: @branch,
+            debit: 0,
+            credit: 200
+          }
+        ]
+      )
+  end
+
+  test "blocks reversal inside closed accounting period" do
+    @organization
+      .accounting_periods
+      .create!(
+        name: "November 2026",
+        starts_on: Date.new(2026, 11, 1),
+        ends_on: Date.new(2026, 11, 30),
+        status: "closed",
+        closed_at: Time.current,
+        closed_by: @owner
+      )
+
+    assert_raises(
+      Accounting::ReverseJournalEntry::ReversalError
+    ) do
+      Accounting::ReverseJournalEntry.call(
+        journal_entry: @journal,
+        reversed_by: @owner,
+        reversal_date: Date.new(2026, 11, 20)
+      )
+    end
+  end
+end

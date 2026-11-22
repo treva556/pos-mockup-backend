@@ -12,6 +12,9 @@ has_many :journal_entries,
 has_many :journal_lines,
          dependent: :restrict_with_error
 
+has_many :accounting_periods,
+         dependent: :restrict_with_error
+
   has_many :memberships, dependent: :destroy
   has_many :users, through: :memberships
   has_many :customers,

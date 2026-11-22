@@ -58,6 +58,8 @@ module Accounting
     end
 
     def call
+      validate_accounting_period!
+
       JournalEntry.transaction do
         journal_entry =
           create_entry_with_number!
@@ -77,6 +79,25 @@ module Accounting
     end
 
     private
+
+    def validate_accounting_period!
+      closed_period =
+        organization
+          .accounting_periods
+          .where(
+            status: "closed"
+          )
+          .containing_date(
+            entry_date
+          )
+          .first
+
+      return unless closed_period
+
+      raise Accounting::PostJournalEntry::PostingError,
+            "Accounting period #{closed_period.name} is closed"
+    end
+
 
     attr_reader :organization,
                 :created_by,
