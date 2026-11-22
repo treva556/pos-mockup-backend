@@ -19,7 +19,7 @@ class AccountingNavigationTest <
     assert_response :success
 
     assert_select(
-      "a[href='#{accounting_ledger_accounts_path}']",
+      "a[href='#{accounting_root_path}']",
       text: "Accounting"
     )
   end
@@ -53,7 +53,7 @@ class AccountingNavigationTest <
     assert_response :success
 
     assert_select(
-      "a[href='#{accounting_ledger_accounts_path}']",
+      "a[href='#{accounting_root_path}']",
       count: 0
     )
   end
