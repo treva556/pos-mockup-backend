@@ -1,0 +1,342 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>General Ledger</h1>
+
+      <p>
+        Review detailed accounting activity and running balances.
+      </p>
+    </div>
+
+    <div class="form-actions">
+      <%= link_to(
+            "Expenses",
+            accounting_expenses_path,
+            class: "button button--secondary"
+          ) %>
+
+      <%= link_to(
+            "Trial Balance",
+            accounting_trial_balance_path,
+            class: "button button--secondary"
+          ) %>
+
+      <%= link_to(
+            "Journal Entries",
+            accounting_journal_entries_path,
+            class: "button button--secondary"
+          ) %>
+
+      <%= link_to(
+            "Chart of Accounts",
+            accounting_ledger_accounts_path,
+            class: "button button--secondary"
+          ) %>
+    </div>
+  </header>
+
+  <div class="panel">
+    <%= form_with(
+          url: accounting_general_ledger_path,
+          method: :get,
+          local: true
+        ) do |form| %>
+
+      <div class="filter-grid">
+        <div class="field">
+          <%= form.label(
+                :ledger_account_id,
+                "Account"
+              ) %>
+
+          <%= form.select(
+                :ledger_account_id,
+                @ledger_accounts.map {
+                  |account|
+                  [
+                    "#{account.code} - #{account.name}",
+                    account.id
+                  ]
+                },
+                selected:
+                  @ledger_account&.id
+              ) %>
+        </div>
+
+        <div class="field">
+          <%= form.label(
+                :branch_id,
+                "Branch"
+              ) %>
+
+          <%= form.select(
+                :branch_id,
+                [
+                  [
+                    "All branches",
+                    ""
+                  ]
+                ] +
+                  @branches.map {
+                    |branch|
+                    [
+                      branch.name,
+                      branch.id
+                    ]
+                  },
+                selected:
+                  @branch&.id
+              ) %>
+        </div>
+
+        <div class="field">
+          <%= form.label(
+                :from_date,
+                "From"
+              ) %>
+
+          <%= form.date_field(
+                :from_date,
+                value:
+                  @from_date
+              ) %>
+        </div>
+
+        <div class="field">
+          <%= form.label(
+                :to_date,
+                "To"
+              ) %>
+
+          <%= form.date_field(
+                :to_date,
+                value:
+                  @to_date
+              ) %>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <%= form.submit(
+              "Run Report",
+              class: "button button--primary"
+            ) %>
+
+        <%= link_to(
+              "Clear",
+              accounting_general_ledger_path,
+              class: "button button--secondary"
+            ) %>
+      </div>
+    <% end %>
+  </div>
+
+  <% if @report_error.present? %>
+    <div class="panel">
+      <strong>
+        General Ledger could not be generated.
+      </strong>
+
+      <p>
+        <%= @report_error %>
+      </p>
+    </div>
+  <% elsif @general_ledger.present? %>
+    <div class="panel">
+      <h2>
+        <%= @ledger_account.code %>
+        -
+        <%= @ledger_account.name %>
+      </h2>
+
+      <dl class="details-list">
+        <div>
+          <dt>Period</dt>
+          <dd>
+            <%= @from_date.strftime("%d %b %Y") %>
+            —
+            <%= @to_date.strftime("%d %b %Y") %>
+          </dd>
+        </div>
+
+        <div>
+          <dt>Branch</dt>
+          <dd>
+            <%= @branch&.name ||
+                  "All branches" %>
+          </dd>
+        </div>
+
+        <div>
+          <dt>Opening balance</dt>
+          <dd>
+            <%= number_to_currency(
+                  @general_ledger.opening_balance,
+                  unit: "KSh ",
+                  precision: 2
+                ) %>
+          </dd>
+        </div>
+
+        <div>
+          <dt>Period debits</dt>
+          <dd>
+            <%= number_to_currency(
+                  @general_ledger.total_debits,
+                  unit: "KSh ",
+                  precision: 2
+                ) %>
+          </dd>
+        </div>
+
+        <div>
+          <dt>Period credits</dt>
+          <dd>
+            <%= number_to_currency(
+                  @general_ledger.total_credits,
+                  unit: "KSh ",
+                  precision: 2
+                ) %>
+          </dd>
+        </div>
+
+        <div>
+          <dt>Closing balance</dt>
+          <dd>
+            <strong>
+              <%= number_to_currency(
+                    @general_ledger.closing_balance,
+                    unit: "KSh ",
+                    precision: 2
+                  ) %>
+            </strong>
+          </dd>
+        </div>
+      </dl>
+    </div>
+
+    <div class="panel">
+      <h2>Ledger Activity</h2>
+
+      <% if @general_ledger.lines.any? %>
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Journal</th>
+              <th>Description</th>
+              <th>Branch</th>
+              <th>Debit</th>
+              <th>Credit</th>
+              <th>Running balance</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <% @general_ledger.lines.each do |line| %>
+              <tr>
+                <td>
+                  <%= line.entry_date
+                        .strftime("%d %b %Y") %>
+                </td>
+
+                <td>
+                  <%= link_to(
+                        line.entry_number,
+                        accounting_journal_entry_path(
+                          line.journal_entry
+                        )
+                      ) %>
+                </td>
+
+                <td>
+                  <%= line.description.presence ||
+                        "—" %>
+                </td>
+
+                <td>
+                  <%= line.branch&.name ||
+                        "Organization-wide" %>
+                </td>
+
+                <td>
+                  <% if line.debit.positive? %>
+                    <%= number_to_currency(
+                          line.debit,
+                          unit: "KSh ",
+                          precision: 2
+                        ) %>
+                  <% else %>
+                    —
+                  <% end %>
+                </td>
+
+                <td>
+                  <% if line.credit.positive? %>
+                    <%= number_to_currency(
+                          line.credit,
+                          unit: "KSh ",
+                          precision: 2
+                        ) %>
+                  <% else %>
+                    —
+                  <% end %>
+                </td>
+
+                <td>
+                  <%= number_to_currency(
+                        line.running_balance,
+                        unit: "KSh ",
+                        precision: 2
+                      ) %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+
+          <tfoot>
+            <tr>
+              <th colspan="4">
+                Period totals
+              </th>
+
+              <th>
+                <%= number_to_currency(
+                      @general_ledger.total_debits,
+                      unit: "KSh ",
+                      precision: 2
+                    ) %>
+              </th>
+
+              <th>
+                <%= number_to_currency(
+                      @general_ledger.total_credits,
+                      unit: "KSh ",
+                      precision: 2
+                    ) %>
+              </th>
+
+              <th>
+                <%= number_to_currency(
+                      @general_ledger.closing_balance,
+                      unit: "KSh ",
+                      precision: 2
+                    ) %>
+              </th>
+            </tr>
+          </tfoot>
+        </table>
+      <% else %>
+        <p>
+          No ledger activity was found for this period.
+        </p>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="panel">
+      <p>
+        No postable ledger accounts are available.
+      </p>
+    </div>
+  <% end %>
+</section>

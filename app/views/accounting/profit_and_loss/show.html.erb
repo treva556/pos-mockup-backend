@@ -1,0 +1,352 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>Profit & Loss</h1>
+
+      <p>
+        Review revenue, costs, expenses,
+        and profitability for a selected period.
+      </p>
+    </div>
+
+    <div class="form-actions">
+      <%= link_to(
+            "Balance Sheet",
+            accounting_balance_sheet_path,
+            class: "button button--secondary"
+          ) %>
+
+      <%= link_to(
+            "Expenses",
+            accounting_expenses_path,
+            class: "button button--secondary"
+          ) %>
+
+      <%= link_to(
+            "General Ledger",
+            accounting_general_ledger_path,
+            class: "button button--secondary"
+          ) %>
+
+      <%= link_to(
+            "Trial Balance",
+            accounting_trial_balance_path,
+            class: "button button--secondary"
+          ) %>
+    </div>
+  </header>
+
+  <div class="panel">
+    <%= form_with(
+          url: accounting_profit_and_loss_path,
+          method: :get,
+          local: true
+        ) do |form| %>
+
+      <div class="filter-grid">
+        <div class="field">
+          <%= form.label(
+                :from_date,
+                "From"
+              ) %>
+
+          <%= form.date_field(
+                :from_date,
+                value: @from_date
+              ) %>
+        </div>
+
+        <div class="field">
+          <%= form.label(
+                :to_date,
+                "To"
+              ) %>
+
+          <%= form.date_field(
+                :to_date,
+                value: @to_date
+              ) %>
+        </div>
+
+        <div class="field">
+          <%= form.label(
+                :branch_id,
+                "Branch"
+              ) %>
+
+          <%= form.select(
+                :branch_id,
+                [
+                  [
+                    "All branches",
+                    ""
+                  ]
+                ] +
+                  @branches.map {
+                    |branch|
+                    [
+                      branch.name,
+                      branch.id
+                    ]
+                  },
+                selected:
+                  @branch&.id
+              ) %>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <%= form.submit(
+              "Run Report",
+              class: "button button--primary"
+            ) %>
+
+        <%= link_to(
+              "Clear",
+              accounting_profit_and_loss_path,
+              class: "button button--secondary"
+            ) %>
+      </div>
+    <% end %>
+  </div>
+
+  <% if @report_error.present? %>
+    <div class="panel">
+      <strong>
+        Profit & Loss could not be generated.
+      </strong>
+
+      <p>
+        <%= @report_error %>
+      </p>
+    </div>
+
+  <% elsif @profit_and_loss.present? %>
+    <div class="panel">
+      <dl class="details-list">
+        <div>
+          <dt>Period</dt>
+          <dd>
+            <%= @from_date.strftime("%d %b %Y") %>
+            —
+            <%= @to_date.strftime("%d %b %Y") %>
+          </dd>
+        </div>
+
+        <div>
+          <dt>Branch</dt>
+          <dd>
+            <%= @branch&.name ||
+                  "All branches" %>
+          </dd>
+        </div>
+
+        <div>
+          <dt>Net Result</dt>
+          <dd>
+            <strong>
+              <%= @profit_and_loss.net_profit >= 0 ?
+                    "PROFIT" :
+                    "LOSS" %>
+            </strong>
+          </dd>
+        </div>
+      </dl>
+    </div>
+
+    <div class="panel">
+      <h2>Revenue</h2>
+
+      <table>
+        <tbody>
+          <% @profit_and_loss.revenue_rows.each do |row| %>
+            <tr>
+              <td>
+                <%= row.ledger_account.code %>
+                -
+                <%= row.ledger_account.name %>
+              </td>
+
+              <td>
+                <%= number_to_currency(
+                      row.amount,
+                      unit: "KSh ",
+                      precision: 2
+                    ) %>
+              </td>
+            </tr>
+          <% end %>
+
+          <tr>
+            <th>Total Revenue</th>
+            <th>
+              <%= number_to_currency(
+                    @profit_and_loss.total_revenue,
+                    unit: "KSh ",
+                    precision: 2
+                  ) %>
+            </th>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="panel">
+      <h2>Cost of Sales</h2>
+
+      <table>
+        <tbody>
+          <% @profit_and_loss.cost_of_sales_rows.each do |row| %>
+            <tr>
+              <td>
+                <%= row.ledger_account.code %>
+                -
+                <%= row.ledger_account.name %>
+              </td>
+
+              <td>
+                <%= number_to_currency(
+                      row.amount,
+                      unit: "KSh ",
+                      precision: 2
+                    ) %>
+              </td>
+            </tr>
+          <% end %>
+
+          <tr>
+            <th>Total Cost of Sales</th>
+            <th>
+              <%= number_to_currency(
+                    @profit_and_loss.total_cost_of_sales,
+                    unit: "KSh ",
+                    precision: 2
+                  ) %>
+            </th>
+          </tr>
+
+          <tr>
+            <th>Gross Profit</th>
+            <th>
+              <%= number_to_currency(
+                    @profit_and_loss.gross_profit,
+                    unit: "KSh ",
+                    precision: 2
+                  ) %>
+            </th>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="panel">
+      <h2>Operating Expenses</h2>
+
+      <table>
+        <tbody>
+          <% @profit_and_loss.operating_expense_rows.each do |row| %>
+            <tr>
+              <td>
+                <%= row.ledger_account.code %>
+                -
+                <%= row.ledger_account.name %>
+              </td>
+
+              <td>
+                <%= number_to_currency(
+                      row.amount,
+                      unit: "KSh ",
+                      precision: 2
+                    ) %>
+              </td>
+            </tr>
+          <% end %>
+
+          <tr>
+            <th>Total Operating Expenses</th>
+            <th>
+              <%= number_to_currency(
+                    @profit_and_loss.total_operating_expenses,
+                    unit: "KSh ",
+                    precision: 2
+                  ) %>
+            </th>
+          </tr>
+
+          <tr>
+            <th>Operating Profit</th>
+            <th>
+              <%= number_to_currency(
+                    @profit_and_loss.operating_profit,
+                    unit: "KSh ",
+                    precision: 2
+                  ) %>
+            </th>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <% if @profit_and_loss.other_income_rows.any? ||
+          @profit_and_loss.other_expense_rows.any? %>
+      <div class="panel">
+        <h2>Other Income & Expenses</h2>
+
+        <table>
+          <tbody>
+            <% @profit_and_loss.other_income_rows.each do |row| %>
+              <tr>
+                <td>
+                  <%= row.ledger_account.name %>
+                </td>
+
+                <td>
+                  <%= number_to_currency(
+                        row.amount,
+                        unit: "KSh ",
+                        precision: 2
+                      ) %>
+                </td>
+              </tr>
+            <% end %>
+
+            <% @profit_and_loss.other_expense_rows.each do |row| %>
+              <tr>
+                <td>
+                  <%= row.ledger_account.name %>
+                </td>
+
+                <td>
+                  -
+                  <%= number_to_currency(
+                        row.amount,
+                        unit: "KSh ",
+                        precision: 2
+                      ) %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
+
+    <div class="panel">
+      <h2>
+        <%= @profit_and_loss.net_profit >= 0 ?
+              "Net Profit" :
+              "Net Loss" %>
+      </h2>
+
+      <p>
+        <strong>
+          <%= number_to_currency(
+                @profit_and_loss.net_profit.abs,
+                unit: "KSh ",
+                precision: 2
+              ) %>
+        </strong>
+      </p>
+    </div>
+  <% end %>
+</section>

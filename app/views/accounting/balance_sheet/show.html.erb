@@ -1,0 +1,367 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>Balance Sheet</h1>
+
+      <p>
+        Review assets, liabilities, and equity
+        as of a selected date.
+      </p>
+    </div>
+
+    <div class="form-actions">
+      <%= link_to(
+            "Profit & Loss",
+            accounting_profit_and_loss_path,
+            class: "button button--secondary"
+          ) %>
+
+      <%= link_to(
+            "Trial Balance",
+            accounting_trial_balance_path,
+            class: "button button--secondary"
+          ) %>
+
+      <%= link_to(
+            "General Ledger",
+            accounting_general_ledger_path,
+            class: "button button--secondary"
+          ) %>
+    </div>
+  </header>
+
+  <div class="panel">
+    <%= form_with(
+          url: accounting_balance_sheet_path,
+          method: :get,
+          local: true
+        ) do |form| %>
+
+      <div class="filter-grid">
+        <div class="field">
+          <%= form.label(
+                :as_of_date,
+                "As of date"
+              ) %>
+
+          <%= form.date_field(
+                :as_of_date,
+                value: @as_of_date
+              ) %>
+        </div>
+
+        <div class="field">
+          <%= form.label(
+                :branch_id,
+                "Branch"
+              ) %>
+
+          <%= form.select(
+                :branch_id,
+                [
+                  [
+                    "All branches",
+                    ""
+                  ]
+                ] +
+                  @branches.map {
+                    |branch|
+                    [
+                      branch.name,
+                      branch.id
+                    ]
+                  },
+                selected:
+                  @branch&.id
+              ) %>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <%= form.submit(
+              "Run Report",
+              class: "button button--primary"
+            ) %>
+
+        <%= link_to(
+              "Clear",
+              accounting_balance_sheet_path,
+              class: "button button--secondary"
+            ) %>
+      </div>
+    <% end %>
+  </div>
+
+  <% if @report_error.present? %>
+    <div class="panel">
+      <strong>
+        Balance Sheet could not be generated.
+      </strong>
+
+      <p>
+        <%= @report_error %>
+      </p>
+    </div>
+
+  <% elsif @balance_sheet.present? %>
+    <div class="panel">
+      <dl class="details-list">
+        <div>
+          <dt>As of</dt>
+          <dd>
+            <%= @as_of_date.strftime("%d %b %Y") %>
+          </dd>
+        </div>
+
+        <div>
+          <dt>Branch</dt>
+          <dd>
+            <%= @branch&.name || "All branches" %>
+          </dd>
+        </div>
+
+        <div>
+          <dt>Status</dt>
+          <dd>
+            <strong>
+              <%= @balance_sheet.balanced ?
+                    "BALANCED" :
+                    "OUT OF BALANCE" %>
+            </strong>
+          </dd>
+        </div>
+      </dl>
+    </div>
+
+    <div class="panel">
+      <h2>Assets</h2>
+
+      <table>
+        <tbody>
+          <% @balance_sheet.current_asset_rows.each do |row| %>
+            <tr>
+              <td>
+                <%= row.ledger_account.code %>
+                -
+                <%= row.ledger_account.name %>
+              </td>
+
+              <td>
+                <%= number_to_currency(
+                      row.amount,
+                      unit: "KSh ",
+                      precision: 2
+                    ) %>
+              </td>
+            </tr>
+          <% end %>
+
+          <% @balance_sheet.non_current_asset_rows.each do |row| %>
+            <tr>
+              <td>
+                <%= row.ledger_account.code %>
+                -
+                <%= row.ledger_account.name %>
+              </td>
+
+              <td>
+                <%= number_to_currency(
+                      row.amount,
+                      unit: "KSh ",
+                      precision: 2
+                    ) %>
+              </td>
+            </tr>
+          <% end %>
+
+          <% @balance_sheet.contra_asset_rows.each do |row| %>
+            <tr>
+              <td>
+                <%= row.ledger_account.code %>
+                -
+                <%= row.ledger_account.name %>
+              </td>
+
+              <td>
+                -
+                <%= number_to_currency(
+                      row.amount,
+                      unit: "KSh ",
+                      precision: 2
+                    ) %>
+              </td>
+            </tr>
+          <% end %>
+
+          <tr>
+            <th>Total Assets</th>
+            <th>
+              <%= number_to_currency(
+                    @balance_sheet.total_assets,
+                    unit: "KSh ",
+                    precision: 2
+                  ) %>
+            </th>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="panel">
+      <h2>Liabilities</h2>
+
+      <table>
+        <tbody>
+          <% @balance_sheet.current_liability_rows.each do |row| %>
+            <tr>
+              <td>
+                <%= row.ledger_account.code %>
+                -
+                <%= row.ledger_account.name %>
+              </td>
+
+              <td>
+                <%= number_to_currency(
+                      row.amount,
+                      unit: "KSh ",
+                      precision: 2
+                    ) %>
+              </td>
+            </tr>
+          <% end %>
+
+          <% @balance_sheet.non_current_liability_rows.each do |row| %>
+            <tr>
+              <td>
+                <%= row.ledger_account.code %>
+                -
+                <%= row.ledger_account.name %>
+              </td>
+
+              <td>
+                <%= number_to_currency(
+                      row.amount,
+                      unit: "KSh ",
+                      precision: 2
+                    ) %>
+              </td>
+            </tr>
+          <% end %>
+
+          <tr>
+            <th>Total Liabilities</th>
+            <th>
+              <%= number_to_currency(
+                    @balance_sheet.total_liabilities,
+                    unit: "KSh ",
+                    precision: 2
+                  ) %>
+            </th>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="panel">
+      <h2>Equity</h2>
+
+      <table>
+        <tbody>
+          <% @balance_sheet.equity_rows.each do |row| %>
+            <tr>
+              <td>
+                <%= row.ledger_account.code %>
+                -
+                <%= row.ledger_account.name %>
+              </td>
+
+              <td>
+                <%= number_to_currency(
+                      row.amount,
+                      unit: "KSh ",
+                      precision: 2
+                    ) %>
+              </td>
+            </tr>
+          <% end %>
+
+          <tr>
+            <td>
+              Current Earnings
+            </td>
+
+            <td>
+              <%= number_to_currency(
+                    @balance_sheet.current_earnings,
+                    unit: "KSh ",
+                    precision: 2
+                  ) %>
+            </td>
+          </tr>
+
+          <tr>
+            <th>Total Equity</th>
+            <th>
+              <%= number_to_currency(
+                    @balance_sheet.total_equity,
+                    unit: "KSh ",
+                    precision: 2
+                  ) %>
+            </th>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="panel">
+      <h2>Accounting Equation</h2>
+
+      <table>
+        <tbody>
+          <tr>
+            <td>Total Assets</td>
+            <td>
+              <%= number_to_currency(
+                    @balance_sheet.total_assets,
+                    unit: "KSh ",
+                    precision: 2
+                  ) %>
+            </td>
+          </tr>
+
+          <tr>
+            <td>Total Liabilities + Equity</td>
+            <td>
+              <%= number_to_currency(
+                    @balance_sheet.total_liabilities_and_equity,
+                    unit: "KSh ",
+                    precision: 2
+                  ) %>
+            </td>
+          </tr>
+
+          <tr>
+            <th>Difference</th>
+            <th>
+              <%= number_to_currency(
+                    @balance_sheet.difference,
+                    unit: "KSh ",
+                    precision: 2
+                  ) %>
+            </th>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        <strong>
+          <% if @balance_sheet.balanced %>
+            Balance Sheet is balanced.
+          <% else %>
+            Warning: Balance Sheet is out of balance.
+          <% end %>
+        </strong>
+      </p>
+    </div>
+  <% end %>
+</section>

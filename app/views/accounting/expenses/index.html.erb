@@ -1,0 +1,118 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>Expenses</h1>
+
+      <p>
+        Record and review operating expenses paid
+        from cash, bank, M-Pesa, or other money accounts.
+      </p>
+    </div>
+
+    <div class="form-actions">
+      <%= link_to(
+            "Record Expense",
+            new_accounting_expense_path,
+            class: "button button--primary"
+          ) %>
+
+      <%= link_to(
+            "Profit & Loss",
+            accounting_profit_and_loss_path,
+            class: "button button--secondary"
+          ) %>
+
+      <%= link_to(
+            "Balance Sheet",
+            accounting_balance_sheet_path,
+            class: "button button--secondary"
+          ) %>
+
+      <%= link_to(
+            "General Ledger",
+            accounting_general_ledger_path,
+            class: "button button--secondary"
+          ) %>
+
+      <%= link_to(
+            "Trial Balance",
+            accounting_trial_balance_path,
+            class: "button button--secondary"
+          ) %>
+    </div>
+  </header>
+
+  <div class="panel">
+    <% if @expenses.any? %>
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Category</th>
+            <th>Payee</th>
+            <th>Paid From</th>
+            <th>Branch</th>
+            <th>Reference</th>
+            <th>Amount</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% @expenses.each do |expense| %>
+            <tr>
+              <td>
+                <%= expense.expense_date
+                      .strftime("%d %b %Y") %>
+              </td>
+
+              <td>
+                <strong>
+                 <%= link_to(
+                      expense.expense_account.name,
+                      accounting_expense_path(expense)
+                    ) %>
+                </strong>
+              </td>
+
+              <td>
+                <%= expense.payee.presence || "—" %>
+              </td>
+
+              <td>
+                <%= expense.money_account.name %>
+              </td>
+
+              <td>
+                <%= expense.branch&.name || "—" %>
+              </td>
+
+              <td>
+                <%= expense.reference.presence || "—" %>
+              </td>
+
+              <td>
+                <strong>
+                  <%= number_to_currency(
+                        expense.amount,
+                        unit: "KSh ",
+                        precision: 2
+                      ) %>
+                </strong>
+              </td>
+              <td>
+                <strong>
+                  <%= expense.status.humanize %>
+                </strong>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p>
+        No expenses have been recorded yet.
+      </p>
+    <% end %>
+  </div>
+</section>

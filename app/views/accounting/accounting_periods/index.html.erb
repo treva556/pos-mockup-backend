@@ -1,0 +1,110 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>Accounting Periods</h1>
+
+      <p>
+        Control which accounting dates remain open for posting.
+      </p>
+    </div>
+
+    <div class="form-actions">
+      <%= link_to(
+            "New Accounting Period",
+            new_accounting_accounting_period_path,
+            class: "button button--primary"
+          ) %>
+
+      <%= link_to(
+            "Journal Entries",
+            accounting_journal_entries_path,
+            class: "button button--secondary"
+          ) %>
+    </div>
+  </header>
+
+  <div class="panel">
+    <% if @accounting_periods.any? %>
+      <table>
+        <thead>
+          <tr>
+            <th>Period</th>
+            <th>Starts</th>
+            <th>Ends</th>
+            <th>Status</th>
+            <th>Closed by</th>
+            <th>Closed at</th>
+            <th></th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% @accounting_periods.each do |period| %>
+            <tr>
+              <td>
+                <strong>
+                  <%= period.name %>
+                </strong>
+              </td>
+
+              <td>
+                <%= period.starts_on
+                      .strftime("%d %B %Y") %>
+              </td>
+
+              <td>
+                <%= period.ends_on
+                      .strftime("%d %B %Y") %>
+              </td>
+
+              <td>
+                <strong>
+                  <%= period.status.upcase %>
+                </strong>
+              </td>
+
+              <td>
+                <%= period.closed_by&.name ||
+                      "—" %>
+              </td>
+
+              <td>
+                <% if period.closed_at.present? %>
+                  <%= period.closed_at
+                        .strftime("%d %B %Y %H:%M") %>
+                <% else %>
+                  —
+                <% end %>
+              </td>
+
+              <td>
+                <% if period.status_open? %>
+                  <%= button_to(
+                        "Close Period",
+                        close_accounting_accounting_period_path(
+                          period
+                        ),
+                        method: :post,
+                        class: "button button--secondary",
+                        form: {
+                          data: {
+                            turbo_confirm:
+                              "Close #{period.name}? New accounting entries dated inside this period will be blocked."
+                          }
+                        }
+                      ) %>
+                <% else %>
+                  Closed
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p>
+        No accounting periods have been created yet.
+      </p>
+    <% end %>
+  </div>
+</section>

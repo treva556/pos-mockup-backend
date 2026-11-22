@@ -1,0 +1,19 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  organization: one
+  name: MyString
+  starts_on: 2026-11-22
+  ends_on: 2026-11-22
+  status: MyString
+  closed_at: 2026-11-22 14:44:30
+  closed_by: one
+
+two:
+  organization: two
+  name: MyString
+  starts_on: 2026-11-22
+  ends_on: 2026-11-22
+  status: MyString
+  closed_at: 2026-11-22 14:44:30
+  closed_by: two

@@ -218,16 +218,54 @@ Rails.application.routes.draw do
             only: %i[index show]
 
   namespace :accounting do
+    root to: "dashboard#show"
+
     resources :ledger_accounts,
               path: "chart-of-accounts",
               except: %i[show destroy] do
       patch :toggle_status,
             on: :member
     end
-
     resources :journal_entries,
               path: "journal-entries",
-              only: %i[index show]
+              only: %i[ index show new create ] do
+      post :reverse,
+           on: :member
+    end
+
+    resources :accounting_periods,
+              path: "periods",
+              only: %i[ index new create ] do
+      post :close,
+           on: :member
+    end
+
+    get "general-ledger",
+        to: "general_ledger#show",
+        as: :general_ledger
+
+    resources :expenses,
+                only: %i[
+                index
+                show
+                new
+                create
+                ] do
+        post :reverse,
+        on: :member
+    end
+
+    get "balance-sheet",
+        to: "balance_sheet#show",
+        as: :balance_sheet
+
+    get "profit-and-loss",
+        to: "profit_and_loss#show",
+        as: :profit_and_loss
+
+    get "trial-balance",
+        to: "trial_balance#show",
+        as: :trial_balance
   end
 
   get "up" => "rails/health#show",

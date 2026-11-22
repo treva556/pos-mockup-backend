@@ -1,0 +1,25 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  organization: one
+  branch: one
+  expense_account: one
+  money_account: one
+  recorded_by: one
+  expense_date: 2026-11-22
+  amount: 9.99
+  payee: MyString
+  reference: MyString
+  notes: MyText
+
+two:
+  organization: two
+  branch: two
+  expense_account: two
+  money_account: two
+  recorded_by: two
+  expense_date: 2026-11-22
+  amount: 9.99
+  payee: MyString
+  reference: MyString
+  notes: MyText

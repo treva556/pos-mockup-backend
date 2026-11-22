@@ -62,6 +62,18 @@ class User < ApplicationRecord
             inverse_of: :recorded_by,
             dependent: :restrict_with_error
 
+  has_many :recorded_expenses,
+            class_name: "Expense",
+            foreign_key: :recorded_by_id,
+            inverse_of: :recorded_by,
+            dependent: :restrict_with_error
+
+    has_many :reversed_expenses,
+            class_name: "Expense",
+            foreign_key: :reversed_by_id,
+            inverse_of: :reversed_by,
+            dependent: :restrict_with_error
+
   enum :platform_role, {
     regular: "regular",
     support: "support",

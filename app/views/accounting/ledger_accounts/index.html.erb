@@ -10,7 +10,13 @@
     </div>
 
     <div class="form-actions">
-      <%= link_to "Journal Entries",
+            <%= link_to(
+            "General Ledger",
+            accounting_general_ledger_path,
+            class: "button button--secondary"
+          ) %>
+
+<%= link_to "Journal Entries",
                   accounting_journal_entries_path,
                   class: "button button--secondary" %>
 

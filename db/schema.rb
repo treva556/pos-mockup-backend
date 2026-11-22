@@ -10,10 +10,9 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_16_191218) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_22_171325) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
- 
 
   create_table "accounting_account_mappings", force: :cascade do |t|
     t.datetime "created_at", null: false
@@ -25,6 +24,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_16_191218) do
     t.index ["organization_id", "role"], name: "index_accounting_mappings_on_org_and_role", unique: true
     t.index ["organization_id"], name: "index_accounting_account_mappings_on_organization_id"
     t.check_constraint "role::text = ANY (ARRAY['accounts_receivable'::character varying, 'inventory'::character varying, 'supplier_credit_receivable'::character varying, 'accounts_payable'::character varying, 'customer_refund_payable'::character varying, 'sales_revenue'::character varying, 'sales_returns'::character varying, 'cost_of_goods_sold'::character varying, 'input_tax'::character varying, 'output_tax'::character varying, 'retained_earnings'::character varying, 'opening_balance_equity'::character varying, 'inventory_adjustment_gain'::character varying, 'inventory_adjustment_loss'::character varying]::text[])", name: "accounting_account_mappings_role_check"
+  end
+
+  create_table "accounting_periods", force: :cascade do |t|
+    t.datetime "closed_at"
+    t.bigint "closed_by_id"
+    t.datetime "created_at", null: false
+    t.date "ends_on", null: false
+    t.string "name", null: false
+    t.bigint "organization_id", null: false
+    t.date "starts_on", null: false
+    t.string "status", default: "open", null: false
+    t.datetime "updated_at", null: false
+    t.index ["closed_by_id"], name: "index_accounting_periods_on_closed_by_id"
+    t.index ["organization_id", "starts_on", "ends_on"], name: "index_accounting_periods_on_org_and_dates"
+    t.index ["organization_id", "status"], name: "index_accounting_periods_on_org_and_status"
+    t.index ["organization_id"], name: "index_accounting_periods_on_organization_id"
+    t.check_constraint "starts_on <= ends_on", name: "accounting_periods_valid_date_range"
+    t.check_constraint "status::text = ANY (ARRAY['open'::character varying, 'closed'::character varying]::text[])", name: "accounting_periods_valid_status"
   end
 
   create_table "branch_payment_settings", force: :cascade do |t|
@@ -107,6 +124,35 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_16_191218) do
     t.index ["organization_id", "kra_pin"], name: "index_customers_on_org_and_kra_pin", unique: true, where: "(kra_pin IS NOT NULL)"
     t.index ["organization_id", "name"], name: "index_customers_on_organization_id_and_name"
     t.index ["organization_id"], name: "index_customers_on_organization_id"
+  end
+
+  create_table "expenses", force: :cascade do |t|
+    t.decimal "amount", precision: 15, scale: 2, null: false
+    t.bigint "branch_id"
+    t.datetime "created_at", null: false
+    t.bigint "expense_account_id", null: false
+    t.date "expense_date", null: false
+    t.bigint "money_account_id", null: false
+    t.text "notes"
+    t.bigint "organization_id", null: false
+    t.string "payee"
+    t.bigint "recorded_by_id", null: false
+    t.string "reference"
+    t.datetime "reversed_at"
+    t.bigint "reversed_by_id"
+    t.string "status", default: "posted", null: false
+    t.datetime "updated_at", null: false
+    t.index ["branch_id"], name: "index_expenses_on_branch_id"
+    t.index ["expense_account_id"], name: "index_expenses_on_expense_account_id"
+    t.index ["money_account_id"], name: "index_expenses_on_money_account_id"
+    t.index ["organization_id", "expense_account_id"], name: "index_expenses_on_org_and_expense_account"
+    t.index ["organization_id", "expense_date"], name: "index_expenses_on_organization_id_and_expense_date"
+    t.index ["organization_id", "status"], name: "index_expenses_on_organization_id_and_status"
+    t.index ["organization_id"], name: "index_expenses_on_organization_id"
+    t.index ["recorded_by_id"], name: "index_expenses_on_recorded_by_id"
+    t.index ["reversed_by_id"], name: "index_expenses_on_reversed_by_id"
+    t.check_constraint "amount > 0::numeric", name: "expenses_positive_amount"
+    t.check_constraint "status::text = ANY (ARRAY['posted'::character varying, 'reversed'::character varying]::text[])", name: "expenses_valid_status"
   end
 
   create_table "inventory_batches", force: :cascade do |t|
@@ -878,6 +924,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_16_191218) do
 
   add_foreign_key "accounting_account_mappings", "ledger_accounts"
   add_foreign_key "accounting_account_mappings", "organizations"
+  add_foreign_key "accounting_periods", "organizations"
+  add_foreign_key "accounting_periods", "users", column: "closed_by_id"
   add_foreign_key "branch_payment_settings", "branches"
   add_foreign_key "branch_payment_settings", "money_accounts"
   add_foreign_key "branch_payment_settings", "organizations"
@@ -889,6 +937,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_16_191218) do
   add_foreign_key "customer_refunds", "sale_returns"
   add_foreign_key "customer_refunds", "users", column: "recorded_by_id"
   add_foreign_key "customers", "organizations"
+  add_foreign_key "expenses", "branches"
+  add_foreign_key "expenses", "ledger_accounts", column: "expense_account_id"
+  add_foreign_key "expenses", "money_accounts"
+  add_foreign_key "expenses", "organizations"
+  add_foreign_key "expenses", "users", column: "recorded_by_id"
+  add_foreign_key "expenses", "users", column: "reversed_by_id"
   add_foreign_key "inventory_batches", "branches"
   add_foreign_key "inventory_batches", "items"
   add_foreign_key "inventory_batches", "organizations"

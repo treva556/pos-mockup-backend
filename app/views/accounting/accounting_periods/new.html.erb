@@ -1,0 +1,102 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>New Accounting Period</h1>
+
+      <p>
+        Define a date range for accounting control.
+      </p>
+    </div>
+
+    <%= link_to(
+          "Accounting Periods",
+          accounting_accounting_periods_path,
+          class: "button button--secondary"
+        ) %>
+  </header>
+
+  <div class="panel">
+    <% if @accounting_period.errors.any? %>
+      <div>
+        <strong>
+          Accounting period could not be created.
+        </strong>
+
+        <ul>
+          <% @accounting_period
+               .errors
+               .full_messages
+               .each do |message| %>
+            <li>
+              <%= message %>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <%= form_with(
+          model:
+            [
+              :accounting,
+              @accounting_period
+            ],
+          class: "record-form"
+        ) do |form| %>
+
+      <div class="form-grid">
+        <div class="field field--full">
+          <%= form.label(
+                :name,
+                "Period name"
+              ) %>
+
+          <%= form.text_field(
+                :name,
+                required: true,
+                maxlength: 100,
+                placeholder:
+                  "November 2026"
+              ) %>
+        </div>
+
+        <div class="field">
+          <%= form.label(
+                :starts_on,
+                "Start date"
+              ) %>
+
+          <%= form.date_field(
+                :starts_on,
+                required: true
+              ) %>
+        </div>
+
+        <div class="field">
+          <%= form.label(
+                :ends_on,
+                "End date"
+              ) %>
+
+          <%= form.date_field(
+                :ends_on,
+                required: true
+              ) %>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <%= form.submit(
+              "Create Period",
+              class: "button button--primary"
+            ) %>
+
+        <%= link_to(
+              "Cancel",
+              accounting_accounting_periods_path,
+              class: "button button--secondary"
+            ) %>
+      </div>
+    <% end %>
+  </div>
+</section>

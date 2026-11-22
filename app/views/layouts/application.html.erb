@@ -36,7 +36,7 @@
 
           <% if current_membership&.accounting_view? %>
             <%= link_to "Accounting",
-                        accounting_ledger_accounts_path %>
+            accounting_root_path %>
           <% end %>
 
           <% if current_membership&.organization_admin? %>

@@ -29,6 +29,9 @@ belongs_to :ledger_account,
   has_many :customer_refunds,
             dependent: :restrict_with_error
 
+  has_many :expenses,
+         dependent: :restrict_with_error
+
   enum :account_type, {
     cash: "cash",
     petty_cash: "petty_cash",
@@ -90,7 +93,8 @@ belongs_to :ledger_account,
   def current_balance
     balance_before_purchase_disbursements -
       purchase_disbursements_total -
-      customer_refunds_total
+      customer_refunds_total -
+      expense_total
   end
 
   def purchase_disbursements_total
@@ -105,6 +109,13 @@ belongs_to :ledger_account,
 
   def customer_refunds_total
     customer_refunds
+      .sum(:amount)
+      .to_d
+  end
+
+  def expense_total
+    expenses
+      .where(status: "posted")
       .sum(:amount)
       .to_d
   end

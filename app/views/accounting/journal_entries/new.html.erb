@@ -1,0 +1,528 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <h1>New Manual Journal</h1>
+
+      <p>
+        Record a balanced accounting adjustment.
+      </p>
+    </div>
+
+    <%= link_to(
+          "Journal Entries",
+          accounting_journal_entries_path,
+          class: "button button--secondary"
+        ) %>
+  </header>
+
+  <% if @manual_journal_errors.present? %>
+    <div class="panel">
+      <strong>Journal could not be posted.</strong>
+
+      <ul>
+        <% @manual_journal_errors.each do |error| %>
+          <li><%= error %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="panel">
+    <%= form_with(
+          url: accounting_journal_entries_path,
+          scope: :manual_journal,
+          method: :post,
+          local: true,
+          class: "record-form",
+          data: {
+            manual_journal_form: true
+          }
+        ) do |form| %>
+
+      <div class="form-grid">
+        <div class="field">
+          <%= form.label(
+                :entry_date,
+                "Journal date"
+              ) %>
+
+          <%= form.date_field(
+                :entry_date,
+                value:
+                  @manual_journal["entry_date"],
+                required: true
+              ) %>
+        </div>
+
+        <div class="field field--full">
+          <%= form.label(
+                :description,
+                "Description"
+              ) %>
+
+          <%= form.text_field(
+                :description,
+                value:
+                  @manual_journal["description"],
+                maxlength: 250,
+                placeholder:
+                  "Reason for this journal entry"
+              ) %>
+        </div>
+      </div>
+
+      <div class="page-header">
+        <div>
+          <h2>Journal Lines</h2>
+
+          <p>
+            Total debits must equal total credits.
+            Enter an amount on only one side of each line.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          class="button button--secondary"
+          data-add-journal-line
+        >
+          Add Line
+        </button>
+      </div>
+
+      <% lines =
+           @manual_journal
+             .fetch(
+               "lines",
+               {}
+             ) %>
+
+      <% lines =
+           lines.values if lines.respond_to?(:values) &&
+                           !lines.is_a?(Array) %>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Account</th>
+            <th>Branch</th>
+            <th>Description</th>
+            <th>Debit</th>
+            <th>Credit</th>
+            <th></th>
+          </tr>
+        </thead>
+
+        <tbody data-journal-lines>
+          <% lines.each_with_index do |line, index| %>
+            <tr data-journal-line>
+              <td>
+                <%= select_tag(
+                      "manual_journal[lines][#{index}][ledger_account_id]",
+                      options_for_select(
+                        @ledger_accounts.map {
+                          |account|
+                          [
+                            "#{account.code} - #{account.name}",
+                            account.id
+                          ]
+                        },
+                        line["ledger_account_id"]
+                      ),
+                      include_blank:
+                        "Select account"
+                    ) %>
+              </td>
+
+              <td>
+                <%= select_tag(
+                      "manual_journal[lines][#{index}][branch_id]",
+                      options_for_select(
+                        @branches.map {
+                          |branch|
+                          [
+                            branch.name,
+                            branch.id
+                          ]
+                        },
+                        line["branch_id"]
+                      ),
+                      include_blank:
+                        "No branch"
+                    ) %>
+              </td>
+
+              <td>
+                <%= text_field_tag(
+                      "manual_journal[lines][#{index}][description]",
+                      line["description"],
+                      maxlength: 250
+                    ) %>
+              </td>
+
+              <td>
+                <%= number_field_tag(
+                      "manual_journal[lines][#{index}][debit]",
+                      line["debit"],
+                      min: 0,
+                      step: 0.01,
+                      data: {
+                        journal_debit: true
+                      }
+                    ) %>
+              </td>
+
+              <td>
+                <%= number_field_tag(
+                      "manual_journal[lines][#{index}][credit]",
+                      line["credit"],
+                      min: 0,
+                      step: 0.01,
+                      data: {
+                        journal_credit: true
+                      }
+                    ) %>
+              </td>
+
+              <td>
+                <button
+                  type="button"
+                  class="button button--secondary"
+                  data-remove-journal-line
+                >
+                  Remove
+                </button>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+
+        <tfoot>
+          <tr>
+            <th colspan="3">Totals</th>
+
+            <th data-journal-debit-total>
+              KSh 0.00
+            </th>
+
+            <th data-journal-credit-total>
+              KSh 0.00
+            </th>
+
+            <th></th>
+          </tr>
+        </tfoot>
+      </table>
+
+      <p data-journal-balance-status>
+        Enter journal amounts.
+      </p>
+
+      <div class="form-actions">
+        <%= form.submit(
+              "Post Journal",
+              class: "button button--primary",
+              data: {
+                turbo_confirm:
+                  "Post this journal entry? Posted journals cannot be edited."
+              }
+            ) %>
+
+        <%= link_to(
+              "Cancel",
+              accounting_journal_entries_path,
+              class: "button button--secondary"
+            ) %>
+      </div>
+    <% end %>
+  </div>
+
+  <template data-journal-line-template>
+    <tr data-journal-line>
+      <td>
+        <%= select_tag(
+              "manual_journal[lines][__INDEX__][ledger_account_id]",
+              options_for_select(
+                @ledger_accounts.map {
+                  |account|
+                  [
+                    "#{account.code} - #{account.name}",
+                    account.id
+                  ]
+                }
+              ),
+              include_blank:
+                "Select account"
+            ) %>
+      </td>
+
+      <td>
+        <%= select_tag(
+              "manual_journal[lines][__INDEX__][branch_id]",
+              options_for_select(
+                @branches.map {
+                  |branch|
+                  [
+                    branch.name,
+                    branch.id
+                  ]
+                }
+              ),
+              include_blank:
+                "No branch"
+            ) %>
+      </td>
+
+      <td>
+        <%= text_field_tag(
+              "manual_journal[lines][__INDEX__][description]",
+              nil,
+              maxlength: 250
+            ) %>
+      </td>
+
+      <td>
+        <%= number_field_tag(
+              "manual_journal[lines][__INDEX__][debit]",
+              nil,
+              min: 0,
+              step: 0.01,
+              data: {
+                journal_debit: true
+              }
+            ) %>
+      </td>
+
+      <td>
+        <%= number_field_tag(
+              "manual_journal[lines][__INDEX__][credit]",
+              nil,
+              min: 0,
+              step: 0.01,
+              data: {
+                journal_credit: true
+              }
+            ) %>
+      </td>
+
+      <td>
+        <button
+          type="button"
+          class="button button--secondary"
+          data-remove-journal-line
+        >
+          Remove
+        </button>
+      </td>
+    </tr>
+  </template>
+</section>
+
+<script>
+  (() => {
+    const initializeManualJournal = () => {
+      const form =
+        document.querySelector(
+          "[data-manual-journal-form]"
+        );
+
+      if (!form) return;
+
+      if (
+        form.dataset.dynamicJournalReady ===
+        "true"
+      ) {
+        return;
+      }
+
+      form.dataset.dynamicJournalReady =
+        "true";
+
+      const linesBody =
+        document.querySelector(
+          "[data-journal-lines]"
+        );
+
+      const template =
+        document.querySelector(
+          "[data-journal-line-template]"
+        );
+
+      const addButton =
+        document.querySelector(
+          "[data-add-journal-line]"
+        );
+
+      const debitTotal =
+        document.querySelector(
+          "[data-journal-debit-total]"
+        );
+
+      const creditTotal =
+        document.querySelector(
+          "[data-journal-credit-total]"
+        );
+
+      const balanceStatus =
+        document.querySelector(
+          "[data-journal-balance-status]"
+        );
+
+      let nextIndex =
+        linesBody.querySelectorAll(
+          "[data-journal-line]"
+        ).length;
+
+      const amountValue = (input) => {
+        const value =
+          parseFloat(input.value);
+
+        return Number.isFinite(value) ?
+          value :
+          0;
+      };
+
+      const updateTotals = () => {
+        let debits = 0;
+        let credits = 0;
+
+        linesBody
+          .querySelectorAll(
+            "[data-journal-debit]"
+          )
+          .forEach((input) => {
+            debits += amountValue(input);
+          });
+
+        linesBody
+          .querySelectorAll(
+            "[data-journal-credit]"
+          )
+          .forEach((input) => {
+            credits += amountValue(input);
+          });
+
+        debitTotal.textContent =
+          `KSh ${debits.toFixed(2)}`;
+
+        creditTotal.textContent =
+          `KSh ${credits.toFixed(2)}`;
+
+        if (
+          debits > 0 &&
+          debits === credits
+        ) {
+          balanceStatus.textContent =
+            "Journal is balanced.";
+        } else if (
+          debits === 0 &&
+          credits === 0
+        ) {
+          balanceStatus.textContent =
+            "Enter journal amounts.";
+        } else {
+          balanceStatus.textContent =
+            `Out of balance by KSh ${Math.abs(
+              debits - credits
+            ).toFixed(2)}.`;
+        }
+      };
+
+      const updateRemoveButtons = () => {
+        const rows =
+          linesBody.querySelectorAll(
+            "[data-journal-line]"
+          );
+
+        rows.forEach((row) => {
+          const button =
+            row.querySelector(
+              "[data-remove-journal-line]"
+            );
+
+          if (button) {
+            button.disabled =
+              rows.length <= 2;
+          }
+        });
+      };
+
+      addButton.addEventListener(
+        "click",
+        () => {
+          const html =
+            template.innerHTML
+              .split("__INDEX__")
+              .join(nextIndex.toString());
+
+          linesBody.insertAdjacentHTML(
+            "beforeend",
+            html
+          );
+
+          nextIndex += 1;
+
+          updateRemoveButtons();
+          updateTotals();
+        }
+      );
+
+      linesBody.addEventListener(
+        "click",
+        (event) => {
+          const button =
+            event.target.closest(
+              "[data-remove-journal-line]"
+            );
+
+          if (!button) return;
+
+          const rows =
+            linesBody.querySelectorAll(
+              "[data-journal-line]"
+            );
+
+          if (rows.length <= 2) return;
+
+          button
+            .closest(
+              "[data-journal-line]"
+            )
+            .remove();
+
+          updateRemoveButtons();
+          updateTotals();
+        }
+      );
+
+      linesBody.addEventListener(
+        "input",
+        (event) => {
+          if (
+            event.target.matches(
+              "[data-journal-debit], " +
+              "[data-journal-credit]"
+            )
+          ) {
+            updateTotals();
+          }
+        }
+      );
+
+      updateRemoveButtons();
+      updateTotals();
+    };
+
+    document.addEventListener(
+      "turbo:load",
+      initializeManualJournal
+    );
+
+    document.addEventListener(
+      "DOMContentLoaded",
+      initializeManualJournal
+    );
+
+    initializeManualJournal();
+  })();
+</script>
